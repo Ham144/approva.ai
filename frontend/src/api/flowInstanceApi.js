@@ -1,0 +1,82 @@
+import axiosInstance from "./axiosInstance";
+
+const flowInstanceApi = {
+  getFlowInstanceById: async (id) => {
+    if (!id) {
+      throw new Error("ID is required");
+    }
+    const res = await axiosInstance.get(
+      `/api/flowInstance/flowInstanceById/${id}`
+    );
+    return res.data;
+  },
+  //untuk membuat baru dan mengedit request
+  requestNewFlowInstance: async ({
+    instanceTitle,
+    flowTemplateId,
+    overallStatus,
+    requestData,
+  }) => {
+    const res = await axiosInstance.post(`/api/flowInstance/request/new`, {
+      instanceTitle,
+      flowTemplateId,
+      overallStatus,
+      requestData,
+    });
+    return res.data;
+  },
+  // getFlowInstanceList menerima query string hasil serialisasi filter, hasilnya array data
+  getFlowInstanceList: async ({ query, page = 1, limit = 10 }) => {
+    try {
+      const res = await axiosInstance.get(
+        `/api/flowInstance/getFlowInstanceList?${query}&page=${page}&limit=${limit}`
+      );
+      return res.data;
+    } catch (error) {
+      throw Error(error);
+    }
+  },
+  editRequestFlowInstance: async ({
+    instanceId,
+    instanceTitle,
+    overallStatus,
+    requestData,
+  }) => {
+    const res = await axiosInstance.put(
+      `/api/flowInstance/edit/${instanceId}`,
+      {
+        instanceTitle,
+        overallStatus,
+        requestData,
+      }
+    );
+    return res.data;
+  },
+  submitStatusFulfillment: async (instanceId, statuses) => {
+    const res = await axiosInstance.post(
+      `/api/flowInstance/submitStatusFulfillment/${instanceId}`,
+      statuses
+    );
+    return res.data;
+  },
+  delete: async (instanceId) => {
+    const res = await axiosInstance.delete(
+      `/api/flowInstance/delete/${instanceId}`
+    );
+    return res.data;
+  },
+  getFlowInstanceOnDuty: async ({ page = 1, limit = 10 }) => {
+    const res = await axiosInstance.get(
+      `/api/flowInstance/onduty/list?page=${page}&limit=${limit}`
+    );
+    return res.data;
+  },
+  rollback: async (instanceId) => {
+    const res = await axiosInstance.put(
+      `/api/flowInstance/rollback/${instanceId}`
+    );
+    return res.data;
+  },
+};
+
+export default flowInstanceApi;

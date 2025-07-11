@@ -1,0 +1,12 @@
+
+[x] sempurnakan flowcreation dulu aja
+[] sempurnakan request edit page untuk bisa menyimpan img
+[] fix edit request RequestEditPage.jsx (belakangan ja)
+[x] fix jika template dihapus harusnya semua flowInstance nya jg terhapus untuk menghindari kehilangan refrensi aturan 
+[x] buat izin fitur siapa saja yang boleh membuat request flow tertentu
+[x] process page action hanya melihat
+[x] edit template flow
+[x] user role
+[] pindahin authorizedUser ke template nya jangan simpan di instance nya
+[] edit flow fix
+
