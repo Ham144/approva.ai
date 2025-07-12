@@ -5,7 +5,7 @@ import NumberInput from "./NumberInput";
 import TableInput from "./TableInput";
 import SelectInput from "./SelectInput";
 import MultipleCheckboxInput from "./MultipleCheckboxInput";
-import { MessageSquareText, Turtle, User2 } from "lucide-react";
+import { MessageSquareText, User2 } from "lucide-react";
 
 export const renderHelpText = (input) => (
   <div className="mb-1 flex items-center gap-2">
@@ -119,7 +119,7 @@ export default function PreviewFlow({
           </div>
         );
 
-      case "number":
+      case "number": //✅
         return (
           <NumberInput
             key={input._id}
@@ -127,6 +127,8 @@ export default function PreviewFlow({
             isOnlyPreview={isOnlyPreview}
             inputRefs={inputRefs}
             baseProps={baseProps}
+            statusIndex={statusIndex}
+            isRequirementInput={isRequirementInput}
           />
         );
 
@@ -152,8 +154,22 @@ export default function PreviewFlow({
                     }
                   : {}
               }
-              value={requestData[input._id]}
-              onChange={(e) => setRequestData(input._id, e.target.value)}
+              value={
+                isRequirementInput
+                  ? (statuses[statusIndex]?.requirementsData || {})[
+                      input._id
+                    ] || ""
+                  : requestData[input._id] || ""
+              }
+              onChange={(e) =>
+                isRequirementInput
+                  ? setRequirement(
+                      currentStatusIndex,
+                      input._id,
+                      e.target.value
+                    )
+                  : setRequestData(input._id, e.target.value)
+              }
             />
           </div>
         );
@@ -173,23 +189,44 @@ export default function PreviewFlow({
             {isDisabled ? (
               // Tampilkan file yang sudah diisi dalam mode preview
               <>
-                {input.tipe === "image" && requestData[input._id] && (
-                  <img
-                    src={requestData[input._id]}
-                    alt="Preview"
-                    className="object-contain rounded-md mx-auto p-2 max-h-60"
-                  />
-                )}
-
+                {input.tipe === "image" &&
+                  (requestData[input._id] ||
+                    (statuses[statusIndex]?.requirementsData || {})[
+                      input._id
+                    ]) && (
+                    <img
+                      src={
+                        requestData[input._id] ||
+                        (statuses[statusIndex]?.requirementsData || {})[
+                          input._id
+                        ] ||
+                        ""
+                      }
+                      alt="Preview"
+                      className="object-contain rounded-md mx-auto p-2 max-h-60"
+                    />
+                  )}
                 {input.tipe === "pdf" &&
-                  requestData[input._id] &&
-                  typeof requestData[input._id] === "string" && (
+                  (requestData[input._id] ||
+                    (statuses[statusIndex]?.requirementsData || {})[
+                      input._id
+                    ]) && (
                     <p className="text-sm text-gray-600">
-                      File dipilih: <strong>{requestData[input._id]}</strong>
+                      File dipilih:{" "}
+                      <strong>
+                        {requestData[input._id] ||
+                          (statuses[statusIndex]?.requirementsData || {})[
+                            input._id
+                          ] ||
+                          ""}
+                      </strong>
                     </p>
                   )}
 
-                {!requestData[input._id] && (
+                {!(
+                  requestData[input._id] ||
+                  (statuses[statusIndex]?.requirementsData || {})[input._id]
+                ) && (
                   <p className="text-sm text-gray-400 italic">
                     Belum ada file.
                   </p>
@@ -203,20 +240,36 @@ export default function PreviewFlow({
                   {...baseProps}
                   className="file-input file-input-bordered w-full file-input-primary"
                   onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
+                    const file = e.target.files?.[0];
+
+                    if (!file) {
+                      setRequestData(input._id, null);
+                      return;
+                    }
+
+                    if (isRequirementInput) {
+                      if (input.tipe === "image") {
+                        const fileUrl = URL.createObjectURL(file);
+                        setRequirement(currentStatusIndex, input._id, fileUrl);
+                      } else {
+                        setRequirement(
+                          currentStatusIndex,
+                          input._id,
+                          file.name
+                        );
+                      }
+                    } else {
                       if (input.tipe === "image") {
                         const fileUrl = URL.createObjectURL(file);
                         setRequestData(input._id, fileUrl);
                       } else {
                         setRequestData(input._id, file.name);
                       }
-                    } else {
-                      setRequestData(input._id, null);
                     }
                   }}
                 />
 
+                {/* Preview untuk tipe image */}
                 {input.tipe === "image" && requestData[input._id] && (
                   <img
                     src={requestData[input._id]}
@@ -225,6 +278,7 @@ export default function PreviewFlow({
                   />
                 )}
 
+                {/* Info file untuk tipe pdf */}
                 {input.tipe === "pdf" &&
                   requestData[input._id] &&
                   typeof requestData[input._id] === "string" && (
@@ -244,6 +298,8 @@ export default function PreviewFlow({
             input={input}
             isOnlyPreview={isOnlyPreview}
             inputRefs={inputRefs}
+            baseProps={baseProps}
+            isRequirementInput={isRequirementInput}
           />
         );
 
@@ -255,7 +311,12 @@ export default function PreviewFlow({
             className="space-y-1"
           >
             {renderHelpText(input)}
-            <SelectInput input={input} baseProps={baseProps} />
+            <SelectInput
+              input={input}
+              baseProps={baseProps}
+              isRequirementInput={isRequirementInput}
+              statusIndex={statusIndex}
+            />
           </div>
         );
 
@@ -267,7 +328,12 @@ export default function PreviewFlow({
             className="space-y-2"
           >
             {renderHelpText(input)}
-            <MultipleCheckboxInput input={input} baseProps={baseProps} />
+            <MultipleCheckboxInput
+              input={input}
+              baseProps={baseProps}
+              isRequirementInput={isRequirementInput}
+              statusIndex={statusIndex}
+            />
           </div>
         );
 
@@ -278,20 +344,16 @@ export default function PreviewFlow({
             input={input}
             inputRefs={inputRefs}
             initialRows={tableData[input._id] || []}
-            onChange={(updatedRows) => {
-              setTableData((prev) => ({
-                ...prev,
-                [input._id]: updatedRows,
-              }));
-            }}
             baseProps={baseProps}
+            isRequirementInput={isRequirementInput}
+            statusIndex={statusIndex}
           />
         );
 
       default:
         return (
           <div className="alert alert-warning">
-            <span>Tipe input tidak dikenali</span>
+            <span>Tipe input tidak dikenali: Terjadi kesalahan</span>
           </div>
         );
     }

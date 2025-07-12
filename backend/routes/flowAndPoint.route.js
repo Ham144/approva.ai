@@ -2,6 +2,8 @@ import { Router } from "express";
 import Input from "../models/Input.model.js";
 import FlowAndPoint from "../models/FlowAndPoint.model.js";
 import FlowInstance from "../models/FlowInstance.model.js";
+import UserRefrensi from "../models/User.model.js";
+import mongoose from "mongoose";
 
 const router = Router();
 
@@ -38,6 +40,17 @@ router.post("/createFlow", async (req, res) => {
     // buang _id nya untuk request menghindari duplikasi
     for (let input of request) {
       const { _id, ...rest } = input; // buang _id
+      if (
+        (input.tipe == "select" || input.tipe == "multipleCheckbox") &&
+        !input.sourceData
+      ) {
+        return res.status(400).json({
+          message:
+            "Source data harus diisi jika tipe select/multipleCheckbox" +
+            " " +
+            input?.title,
+        });
+      }
       const newInput = await Input.create(rest);
       inputRequest.push(newInput._id);
     }
@@ -56,9 +69,43 @@ router.post("/createFlow", async (req, res) => {
         });
       }
 
+      //cegah tidak ada requirements
+      if (statusItem?.requirements?.length == 0) {
+        return res.status(400).json({
+          message:
+            "Salah satu status anda buat tidak memiliki requirement : " +
+            statusItem?.title,
+        });
+      }
+
+      //cegah authorized tidak terdaftar
+      const authorizedFound = await UserRefrensi.find({
+        _id: { $in: statusItem?.authorized },
+      });
+      if (authorizedFound?.length != statusItem?.authorized.length) {
+        return res.status(400).json({
+          message:
+            "Salah satu status anda buat memiliki akun yang tidak dikenal untuk approve : " +
+            statusItem?.title,
+        });
+      }
+
       //buang _id nya menghidani 11000
       for (let requirement of statusItem.requirements) {
         const { _id, ...restReq } = requirement; // buang _id
+
+        if (
+          (requirement.tipe == "select" ||
+            requirement.tipe == "multipleCheckbox") &&
+          !requirement.sourceData
+        ) {
+          return res.status(400).json({
+            message:
+              "Source data harus diisi jika tipe select/multipleCheckbox" +
+              " " +
+              statusItem?.title,
+          });
+        }
         const newRequirement = await Input.create(restReq);
         requirementIds.push(newRequirement._id);
       }
@@ -74,10 +121,30 @@ router.post("/createFlow", async (req, res) => {
       });
     }
 
+    if (
+      isAllowanceModeRequest !== "undefined" &&
+      isAllowanceModeRequest !== null &&
+      isAllowanceModeRequest
+    ) {
+      newFlowAndPoint.isAllowanceModeRequest = isAllowanceModeRequest;
+
+      if (allowedUserToRequest && allowedUserToRequest.length > 0) {
+        // Validasi bahwa semua isi adalah ObjectId valid
+        const validUsers = await UserRefrensi.find({
+          _id: { $in: allowedUserToRequest },
+        });
+
+        if (validUsers.length !== allowedUserToRequest.length) {
+          return res.status(400).json({ error: "Beberapa userId tidak valid" });
+        }
+
+        newFlowAndPoint.allowedUserToRequest = allowedUserToRequest;
+      }
+    }
+
     // Set data final
     newFlowAndPoint.title = title;
     newFlowAndPoint.desc = desc;
-    newFlowAndPoint.isAllowanceModeRequest = isAllowanceModeRequest || false;
     newFlowAndPoint.request = inputRequest;
     newFlowAndPoint.status = statuses;
     const userId = req.user._id;
@@ -85,11 +152,6 @@ router.post("/createFlow", async (req, res) => {
     const existing = newFlowAndPoint.designedBy?.findIndex((d) => d == userId);
     if (existing == -1) {
       newFlowAndPoint.designedBy.push(userId);
-    }
-
-    //periksa jika mode isAllowanceModeRequest maka tambahin user yg diizinkan create
-    if (isAllowanceModeRequest) {
-      newFlowAndPoint.allowedUserToRequest = allowedUserToRequest;
     }
 
     await newFlowAndPoint
@@ -126,9 +188,14 @@ router.get("/list", async (req, res) => {
       };
     }
 
-    const list = await FlowAndPoint.find(query)
-      .select("title desc isAllowanceModeRequest allowedUserToRequest")
+    const rawList = await FlowAndPoint.find(query)
+      .select("title desc isAllowanceModeRequest allowedUserToRequest status")
       .populate("designedBy", "username");
+
+    const list = rawList.map((item) => ({
+      ...item.toObject(),
+      status: item.status?.map((s) => ({ title: s.title })), // hanya ambil title
+    }));
 
     //terakhir filter out instance yg isAllowanceModeRequest true dan template.allowedUserToRequest nya tidak mengandung current userId
     const flowListFiltered = list.filter((template) => {
@@ -190,6 +257,12 @@ router.get("/getFlowById/:id", async (req, res) => {
   }
 });
 
+function isValidObjectIdStrict(id) {
+  return (
+    mongoose.Types.ObjectId.isValid(id) &&
+    String(new mongoose.Types.ObjectId(id)) === id
+  );
+}
 router.put("/update/:id", async (req, res) => {
   const id = req.params.id;
   const {
@@ -201,83 +274,113 @@ router.put("/update/:id", async (req, res) => {
     allowedUserToRequest,
   } = req.body;
 
+  // Validasi input dasar
   if (!title || !desc) {
-    return res.status(400).json({ message: "Title and desc required" });
+    return res.status(400).json({ message: "Title dan deskripsi diperlukan." });
   }
 
   if (!request || request.length === 0) {
-    return res
-      .status(400)
-      .json({ message: "Form request setidaknya 1 input aktif" });
+    return res.status(400).json({
+      message: "Form request harus memiliki setidaknya 1 input aktif.",
+    });
   }
 
   if (!status || status.length === 0) {
-    return res
-      .status(400)
-      .json({ message: "Status setidaknya 1 status aktif" });
+    return res.status(400).json({
+      message: "Harus ada setidaknya 1 status dalam flow.",
+    });
   }
 
   try {
-    let existingFlow = await FlowAndPoint.findById(id);
+    const existingFlow = await FlowAndPoint.findById(id);
     if (!existingFlow) {
-      return res.status(400).json({ message: "Flow not found" });
+      return res.status(404).json({ message: "Flow tidak ditemukan." });
     }
 
+    // Validasi: user saat ini adalah salah satu desainer
     const youAreTheDesigner = existingFlow.designedBy.find(
-      (d) => d._id == req.user._id
+      (d) => d.toString() === req.user._id
     );
+    console.log(youAreTheDesigner);
+    // Buang _id hanya kalau _id memang tidak valid (misal berasal dari frontend bodoh)
+    const sanitizedInputs = [];
 
+    for (let input of request) {
+      const { _id, ...restInput } = input;
+
+      if (isValidObjectIdStrict(_id)) {
+        sanitizedInputs.push(_id); // langsung pakai
+      } else {
+        const newInput = await Input.create({
+          ...restInput, // pastikan _id tidak ikut
+          createdBy: req.user._id,
+        });
+        sanitizedInputs.push(newInput._id);
+      }
+    }
+
+    const updatedStatuses = [];
+    for (const s of status) {
+      const authorizedIds = s.authorized;
+
+      // Validasi user
+      const foundUsers = await UserRefrensi.find({
+        _id: { $in: authorizedIds },
+      });
+      if (foundUsers.length !== authorizedIds.length) {
+        return res
+          .status(400)
+          .json({ message: `User tidak valid di status: ${s.title}` });
+      }
+
+      const requirementIds = [];
+
+      for (let requirement of s.requirements) {
+        const { _id, ...restReq } = requirement;
+
+        if (isValidObjectIdStrict(_id)) {
+          requirementIds.push(_id);
+        } else {
+          const newRequirement = await Input.create({
+            ...restReq,
+            createdBy: req.user._id,
+          });
+          requirementIds.push(newRequirement._id);
+        }
+      }
+
+      updatedStatuses.push({
+        title: s.title,
+        desc: s.desc,
+        authorized: authorizedIds,
+        requirements: requirementIds,
+      });
+    }
+
+    // Update flow
     existingFlow.title = title;
     existingFlow.desc = desc;
-    existingFlow.request = request;
+    existingFlow.request = sanitizedInputs;
     existingFlow.isAllowanceModeRequest = isAllowanceModeRequest;
     existingFlow.allowedUserToRequest = allowedUserToRequest;
-    existingFlow.status = updatedStatus;
-    existingFlow.designedBy = youAreTheDesigner
-      ? existingFlow.designedBy
-      : [...existingFlow.designedBy, req.user._id];
+    existingFlow.status = updatedStatuses;
+
+    // Tambahkan desainer baru jika belum ada
+    if (!youAreTheDesigner) {
+      existingFlow.designedBy.push(req.user._id);
+    }
 
     await existingFlow.save();
 
     return res.json({
-      message: "Berhasil mengedit flow, beberapa aturan telah berubah",
+      message: "Flow berhasil diperbarui.",
     });
   } catch (error) {
+    console.error("Error updating flow:", error);
     return res.status(500).json({
-      message: "Internal server error",
+      message: "Terjadi kesalahan pada server.",
       error: error.message,
     });
-  }
-});
-
-router.put("/rollback/:id", async (req, res) => {
-  const id = req.params.id;
-
-  try {
-    const flowInstance = await FlowInstance.findById(id);
-    if (!flowInstance) {
-      return res.status(400).json({ message: "request tidak ditemukan" });
-    }
-
-    flowInstance.currentStatusIndex = 0;
-    flowInstance.statuses = flowInstance.statuses.map((status) => {
-      status.completed = false;
-      status.completedBy = null;
-      status.completedAt = null;
-      status.rejectedReason = null;
-      status.requirementsData = null;
-      status.verdict = "pending";
-      return status;
-    });
-
-    await flowInstance.save();
-
-    return res.json({
-      message: "Berhasil mengupdate, prosess kembali ke awal",
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({ message: "Terjadi kesalahan server" });
   }
 });
 

@@ -7,6 +7,7 @@
 [x] process page action hanya melihat
 [x] edit template flow
 [x] user role
-[] pindahin authorizedUser ke template nya jangan simpan di instance nya
-[] edit flow fix
-
+[x] pindahin authorizedUser ke template nya jangan simpan di instance nya
+[x] edit flow fix
+[x] rollback ke status awal
+[] sending email ke akun akun yang melewatkan giliran karena diambil org dan org2 yang mendapatkan giliran 

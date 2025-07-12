@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
-import { Save, Trash, ChevronUp, ChevronDown } from "lucide-react";
+import {
+  Save,
+  Trash,
+  ChevronUp,
+  ChevronDown,
+  History,
+  Move,
+  Pointer,
+} from "lucide-react";
 import PreviewFlow from "./PreviewFlow";
 import { useResponseCollector } from "@/store";
 import flowInstanceApi from "@/api/flowInstanceApi";
@@ -88,22 +96,23 @@ export default function StatusFullfillmentPage() {
   return (
     <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900">
       {/* HEADER KONTROL (Selalu Tampak) */}
-      <div className="sticky top-0 z-20 bg-gray-100 dark:bg-gray-900 p-2 sm:p-3 shadow-md border-b border-gray-200 dark:border-gray-700">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mx-auto max-w-4xl">
+      <div className="sticky top-0 z-20 bg-gray-100 dark:bg-gray-900 p-2 sm:p-3 shadow-md border-b border-gray-200 dark:border-gray-700 ">
+        <div className="flex gap-x-3">
           <button
             onClick={() => {
               navigate(-1);
             }}
-            className="btn btn-outline text-primary-focus dark:text-primary-content border-primary-focus dark:border-primary-content hover:bg-primary-focus hover:text-white dark:hover:bg-primary-content dark:hover:text-gray-900 rounded w-full py-2 px-4 flex items-center justify-center font-semibold text-sm"
+            className=" btn  btn-outline text-primary-focus dark:text-primary-content border-primary-focus dark:border-primary-content hover:bg-primary-focus hover:text-white dark:hover:bg-primary-content dark:hover:text-gray-900 rounded py-2 px-4 flex items-center justify-center font-semibold text-sm"
           >
             <Trash size={18} className="mr-1" /> Bersihkan Input
           </button>
           <button
-            disabled={statuses[currentStatusIndex]?.verdict == "pending"}
-            onClick={handleSubmitStatus}
-            className="btn btn-primary bg-blue-600 hover:bg-blue-700 text-white rounded w-full md:col-span-2 py-2 px-4 flex items-center justify-center font-semibold text-sm"
+            onClick={() => {
+              toast("Belum tersedia");
+            }}
+            className=" btn  btn-outline text-primary-focus dark:text-primary-content border-primary-focus dark:border-primary-content hover:bg-primary-focus hover:text-white dark:hover:bg-primary-content dark:hover:text-gray-900 rounded py-2 px-4 flex items-center justify-center font-semibold text-sm"
           >
-            <Save size={18} className="mr-1" /> Selesaikan Proses Saya
+            <History size={18} className="mr-1" /> Meminta Rollback
           </button>
         </div>
       </div>
@@ -177,7 +186,11 @@ export default function StatusFullfillmentPage() {
       {/* FOOTER KONTROL (ApprovalButton - Selalu Tampak) */}
       <div className="fixed bottom-14 left-0 right-0 z-20 bg-white dark:bg-gray-800 p-3 sm:p-4 shadow-lg border-t border-gray-200 dark:border-gray-700">
         <div className="mx-auto max-w-4xl">
-          <ApprovalButton isOnlyPreview={false} key={"approval-button"} />
+          <ApprovalButton
+            handleSubmitStatus={handleSubmitStatus}
+            isOnlyPreview={false}
+            key={"approval-button"}
+          />
         </div>
       </div>
     </div>

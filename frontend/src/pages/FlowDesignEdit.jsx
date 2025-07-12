@@ -21,21 +21,22 @@ export default function FlowDesignEdit() {
     queryFn: async () => {
       const res = await flowApi.getFlowById(id);
       setFlow(res?.data);
-
       return res;
     },
     enabled: !!id,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false, // <--- Ini yang penting
   });
 
   const { mutate: handleUpdateFlow } = useMutation({
     mutationFn: async () => await flowApi.updateFlowAndDesc(id, flow),
     onSuccess: () => {
       toast.success("Flow berhasil di Update");
-      // queryClient.invalidateQueries({ queryKey: ["flows"] });
-      // navigate("/management/flow");
+      queryClient.invalidateQueries({ queryKey: ["flows"] });
+      navigate("/management/flow");
     },
     onError: (err) => {
-      toast.error(err?.response?.data?.message || "Gagal menyimpan flow");
+      toast.error(err?.message || "Gagal menyimpan flow");
     },
   });
 

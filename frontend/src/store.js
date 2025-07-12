@@ -33,7 +33,7 @@ export const useEditor = create((set) => {
 
 export const useResponseCollector = create((set) => ({
   instanceTitle: "",
-  overallStatus: "draft",
+  overallStatus: "in-progress",
   requestData: {}, // object { [input._id]: jawaban }
   statuses: [], //pilih current dengan [flowInstance.currentStatusIndex]
   currentStatusIndex: null,
@@ -51,8 +51,9 @@ export const useResponseCollector = create((set) => ({
       instanceTitle: "",
       requestData: {},
       published: false,
-      overallStatus: "draft",
+      overallStatus: "in-progress",
     }),
+
   setOveralStatus: (status) => set({ overallStatus: status }),
   setInstanceTitle: (text) => set({ instanceTitle: text }),
   setRequirement: (currentStatusIndex, inputId, value) => {

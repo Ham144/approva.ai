@@ -1,55 +1,14 @@
-import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { login, getUserInfo } from "@/api/authApi";
-import toast from "react-hot-toast";
-import { useLocation, useNavigate } from "react-router";
-import { useUserInfo } from "@/store";
-import { APP_NAME } from "@/api/constant";
-import { LogIn } from "lucide-react";
-import OrgApi from "@/api/orgApi";
+import { useState } from "react";
 
-export default function Login({ className, ...props }) {
-  const [username, setUsername] = useState(``);
-  const [password, setPassword] = useState("");
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [selectedOrg, setSelectedOrg] = useState({});
-
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  const { data: orgList } = useQuery({
-    queryKey: ["orgs"],
-    queryFn: async () => OrgApi.getAllOrg(),
-  });
-
-  console.log(orgList);
-
-  // Zustand
-  const { setUserInfo } = useUserInfo();
-
-  const { mutateAsync: handleLogin, isPending } = useMutation({
-    mutationFn: async (e) => {
-      e.preventDefault();
-      const res = await login({ username, password });
-      return res.data;
-    },
-    retryDelay: 1000,
-    mutationKey: ["userInfo"],
-    onSuccess: async (res) => {
-      setUserInfo(res?.data);
-
-      //Invalidate query untuk memperbarui data
-      queryClient.invalidateQueries(["userInfo"]);
-
-      toast.success("Login berhasil!");
-      navigate("/");
-    },
-    onError: (err) => {
-      toast.error(
-        err?.response?.data?.message ||
-          "Login gagal. Periksa username dan password Anda."
-      );
-    },
+export default function RegisterPage() {
+  const [username, setUsername] = useState();
+  const [password, setPassword] = useState();
+  const [email, setEmail] = useState();
+  const [org, setOrg] = useState({});
+  const [selectedOrg, setSelectedOrg] = useState({
+    AD_HOST: "",
+    AD_PORT: "",
+    organizationName: "",
   });
 
   return (
@@ -108,19 +67,6 @@ export default function Login({ className, ...props }) {
                   required
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                   disabled={isPending || isVerifying}
-                />
-              </div>{" "}
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1"
-                >
-                  Cari Organisasi
-                </label>
-                <input
-                  type="text"
-                  placeholder=""
-                  className="input border w-full "
                 />
               </div>
             </div>

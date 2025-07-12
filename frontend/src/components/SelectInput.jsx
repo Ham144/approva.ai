@@ -2,14 +2,25 @@ import FlexSourceDataApi from "@/api/flexSourceDataApi";
 import { useResponseCollector } from "@/store";
 import { useQuery } from "@tanstack/react-query";
 
-export default function SelectInput({ input, baseProps }) {
+export default function SelectInput({
+  input,
+  baseProps,
+  isRequirementInput,
+  statusIndex,
+}) {
   const { data, isLoading } = useQuery({
     queryKey: ["sourceData", input.sourceData],
     queryFn: () => FlexSourceDataApi.getSourceDataByIdPost(input.sourceData),
     enabled: !!input.sourceData,
   });
 
-  const { setRequestData, requestData } = useResponseCollector();
+  const {
+    setRequestData,
+    currentStatusIndex,
+    setRequirement,
+    requestData,
+    statuses,
+  } = useResponseCollector();
 
   const options = data?.data?.keys || [];
   const isDisabled = baseProps?.disabled || isLoading;
@@ -28,8 +39,16 @@ export default function SelectInput({ input, baseProps }) {
       disabled={isDisabled}
       className="select select-bordered w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
       style={disabledStyle}
-      value={requestData[input._id]}
-      onChange={(e) => setRequestData(input._id, e.target.value)}
+      value={
+        isRequirementInput
+          ? statuses[statusIndex]?.requirementsData[input._id]
+          : requestData[input._id]
+      }
+      onChange={(e) => {
+        isRequirementInput
+          ? setRequirement(currentStatusIndex, input._id, e.target.value)
+          : setRequestData(input._id, e.target.value);
+      }}
     >
       <option value="">-- Pilih Opsi --</option>
       {options.map((k) => (

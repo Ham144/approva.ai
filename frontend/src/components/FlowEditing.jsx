@@ -16,6 +16,7 @@ export default function FlowEditing() {
       const res = await getAllAccount();
       return res;
     },
+    enabled: !!flow,
   });
 
   const handleAddStatus = () => {
@@ -400,7 +401,9 @@ export default function FlowEditing() {
               )}
               <div className="flex flex-wrap gap-2 mt-2">
                 {stat.authorized?.map((userId) => {
-                  const user = userList?.data?.find((u) => u._id === userId);
+                  const user = userList?.data?.find(
+                    (u) => u._id === userId || userId._id === u._id
+                  );
                   return (
                     <div
                       key={userId}

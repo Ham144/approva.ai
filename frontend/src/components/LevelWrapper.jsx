@@ -79,7 +79,7 @@ const LevelWrapper = () => {
       !isLoading &&
       userInfo &&
       isAdminOnlyPath &&
-      userInfo.role !== "pengelola"
+      userInfo.role !== "owner"
     ) {
       console.log(
         "Redirecting due to insufficient role:",
@@ -118,7 +118,7 @@ const LevelWrapper = () => {
 
   // 3. Jika user terautentikasi dan berada di rute admin-only tapi rolenya tidak pengelola
   // useEffect di atas sudah akan me-redirect ke /not-found
-  if (userInfo && isAdminOnlyPath && userInfo.role !== "pengelola") {
+  if (userInfo && isAdminOnlyPath && userInfo.role !== "owner") {
     return null; // Ini mengembalikan null, tidak me-redirect ke /
   }
 

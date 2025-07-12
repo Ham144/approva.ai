@@ -3,17 +3,34 @@ import FlexSourceDataApi from "@/api/flexSourceDataApi";
 import { useResponseCollector } from "@/store";
 import { useQuery } from "@tanstack/react-query";
 
-export default function MultipleCheckboxInput({ input, baseProps }) {
+export default function MultipleCheckboxInput({
+  input,
+  baseProps,
+  statusIndex,
+  isRequirementInput,
+}) {
   const { data, isLoading } = useQuery({
     queryKey: ["sourceData", input.sourceData],
     queryFn: () => FlexSourceDataApi.getSourceDataByIdPost(input.sourceData),
     enabled: !!input.sourceData,
   });
 
-  const { requestData, setRequestData } = useResponseCollector();
+  const { requestData, setRequestData, statuses, setRequirement } =
+    useResponseCollector();
   const options = data?.data?.keys || [];
 
-  const selectedValues = requestData[input._id] || [];
+  let selectedValues = [];
+
+  if (isRequirementInput) {
+    const status = statuses?.[statusIndex];
+    selectedValues = Array.isArray(status?.requirementsData?.[input._id])
+      ? status.requirementsData[input._id]
+      : [];
+  } else {
+    selectedValues = Array.isArray(requestData?.[input._id])
+      ? requestData[input._id]
+      : [];
+  }
 
   const handleCheckboxChange = (e, optionValue) => {
     const isChecked = e.target.checked;
@@ -25,7 +42,11 @@ export default function MultipleCheckboxInput({ input, baseProps }) {
       updatedValues = selectedValues.filter((val) => val !== optionValue);
     }
 
-    setRequestData(input._id, updatedValues);
+    if (isRequirementInput) {
+      setRequirement(statusIndex, input._id, updatedValues);
+    } else {
+      setRequestData(input._id, updatedValues);
+    }
   };
 
   if (isLoading) {

@@ -126,7 +126,6 @@ const AllAccounts = () => {
         outlet: userOutlet ? userOutlet._id : "",
         roleName: user?.roleName || "",
         blockedAccess: user?.blockedAccess || [],
-        type: user?.type == "SPG" ? "SPG" : user?.roleName,
         kodeKasir: user?.kodeKasir || "",
       });
     }, 0);

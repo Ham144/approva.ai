@@ -100,19 +100,19 @@ export default function OnlyPreview() {
                     flowInstanceData.data.currentStatusIndex
                   ]?.authorized
                     .map((user) => user.username)
-                    .join("/")}
+                    .join(" & ")}
                 </p>
 
                 <p className="font-medium">Private:</p>
                 <p>{flowInstanceData?.data.isPrivateRequest ? "Yes" : "No"}</p>
 
-                <p className="font-medium">Status Length:</p>
+                <p className="font-medium">Total Status:</p>
                 <p>{flowTemplate.status.length || "-"}</p>
 
                 <p className="font-medium">Current Index:</p>
                 <p>
-                  {flowInstanceData?.data?.currentStatusIndex} (note: urutan
-                  dimulai dari 0)
+                  {flowInstanceData?.data?.currentStatusIndex} dari{" "}
+                  {flowTemplate.status.length - 1} (note: urutan dimulai dari 0)
                 </p>
               </div>
             )}

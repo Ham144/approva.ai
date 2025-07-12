@@ -2,10 +2,17 @@ import React, { useRef, useEffect, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { useResponseCollector } from "../store";
 
-const SignatureInput = ({ input, isOnlyPreview, inputRefs }) => {
+const SignatureInput = ({
+  input,
+  isOnlyPreview,
+  inputRefs,
+  baseProps,
+  isRequirementInput,
+}) => {
   const sigRef = useRef();
   const containerRef = useRef();
-  const { requestData, setRequestData } = useResponseCollector();
+  const { requestData, setRequestData, currentStatusIndex } =
+    useResponseCollector();
 
   const [canvasDimensions, setCanvasDimensions] = useState({
     width: 0,
@@ -45,15 +52,31 @@ const SignatureInput = ({ input, isOnlyPreview, inputRefs }) => {
   // --- Pastikan fungsi-fungsi ini didefinisikan di sini ---
   const handleSignatureEnd = () => {
     if (sigRef.current.isEmpty()) {
-      setRequestData(input._id, null);
+      if (isRequirementInput) {
+        setRequirement(currentStatusIndex, input._id, null);
+      } else {
+        setRequestData(input._id, null);
+      }
     } else {
-      setRequestData(input._id, sigRef.current.toDataURL());
+      if (isRequirementInput) {
+        setRequirement(
+          currentStatusIndex,
+          input._id,
+          sigRef.current.toDataURL()
+        );
+      } else {
+        setRequestData(input._id, sigRef.current.toDataURL());
+      }
     }
   };
 
   const handleClearSignature = () => {
     sigRef.current.clear();
-    setRequestData(input._id, null);
+    if (isRequirementInput) {
+      setRequirement(currentStatusIndex, input._id, null);
+    } else {
+      setRequestData(input._id, null);
+    }
   };
   // --- Akhir definisi fungsi ---
 
@@ -74,13 +97,20 @@ const SignatureInput = ({ input, isOnlyPreview, inputRefs }) => {
           canvasProps={{
             width: canvasDimensions.width,
             height: canvasDimensions.height,
-            className: "border border-gray-300 w-full bg-white rounded",
+            className: `border border-gray-300 w-full bg-white rounded ${
+              baseProps?.disabled ? "pointer-events-none opacity-60" : ""
+            }`,
           }}
-          onEnd={handleSignatureEnd}
+          onEnd={() => {
+            if (!baseProps?.disabled) {
+              handleSignatureEnd();
+            }
+          }}
         />
       )}
       {!isOnlyPreview && (
         <button
+          {...baseProps}
           onClick={handleClearSignature}
           className="btn btn-sm btn-outline mt-3"
         >

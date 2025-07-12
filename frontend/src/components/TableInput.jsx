@@ -2,28 +2,54 @@ import React, { useEffect } from "react"; // Tambahkan useEffect
 import { useResponseCollector } from "@/store"; // Pastikan path benar
 import ZoomableImage from "./ZoomableImage";
 
-const TableInput = ({ input, inputRefs, baseProps }) => {
-  const { requestData, setRequestData } = useResponseCollector();
+const TableInput = ({
+  input,
+  inputRefs,
+  baseProps,
+  isRequirementInput,
+  statusIndex,
+}) => {
+  const { requestData, setRequirement, setRequestData, statuses } =
+    useResponseCollector();
+
   const keys = input?.table?.keys ?? [];
   const keysType = input?.table?.keysType ?? [];
 
-  const tableRows = Array.isArray(requestData[input._id])
-    ? requestData[input._id]
-    : [];
+  let tableRows = [];
+
+  if (isRequirementInput) {
+    const status = statuses?.[statusIndex];
+    const requirementData = status?.requirementsData?.[input._id];
+    tableRows = Array.isArray(requirementData) ? requirementData : [];
+  } else {
+    const data = requestData?.[input._id];
+    tableRows = Array.isArray(data) ? data : [];
+  }
 
   useEffect(() => {
-    if (tableRows.length === 0) {
+    if (tableRows?.length === 0) {
       const initialEmptyRow = { values: keys.map(() => "") };
-      setRequestData(input._id, [initialEmptyRow]);
+      if (isRequirementInput) {
+        setRequirement(statusIndex, input._id, [initialEmptyRow]);
+      } else {
+        setRequestData(input._id, [initialEmptyRow]);
+      }
     }
   }, [input._id, keys.length]);
+
+  console.log(tableRows);
 
   const handleChange = (rowIdx, colIdx, value) => {
     const updatedRows = [...tableRows];
     if (!updatedRows[rowIdx]) return;
     updatedRows[rowIdx].values ??= keys.map(() => "");
     updatedRows[rowIdx].values[colIdx] = value;
-    setRequestData(input._id, updatedRows);
+
+    if (isRequirementInput) {
+      setRequirement(statusIndex, input._id, updatedRows);
+    } else {
+      setRequestData(input._id, updatedRows);
+    }
   };
 
   const handleFileChange = (rowIdx, colIdx, file) => {
@@ -34,21 +60,38 @@ const TableInput = ({ input, inputRefs, baseProps }) => {
       if (!updatedRows[rowIdx]) return;
       updatedRows[rowIdx].values ??= keys.map(() => "");
       updatedRows[rowIdx].values[colIdx] = e.target.result;
-      setRequestData(input._id, updatedRows);
+
+      if (isRequirementInput) {
+        setRequirement(statusIndex, input._id, updatedRows);
+      } else {
+        setRequestData(input._id, updatedRows);
+      }
     };
     reader.readAsDataURL(file);
   };
 
   const addRow = () => {
     const newRow = { values: keys.map(() => "") };
-    setRequestData(input._id, [...tableRows, newRow]);
+    if (isRequirementInput) {
+      setRequirement(statusIndex, input._id, [...tableRows, newRow]);
+    } else {
+      setRequestData(input._id, [...tableRows, newRow]);
+    }
   };
 
   const removeRow = (rowIdx) => {
-    setRequestData(
-      input._id,
-      tableRows.filter((_, i) => i !== rowIdx)
-    );
+    if (isRequirementInput) {
+      setRequirement(
+        statusIndex,
+        input._id,
+        tableRows.filter((_, i) => i !== rowIdx)
+      );
+    } else {
+      setRequestData(
+        input._id,
+        tableRows.filter((_, i) => i !== rowIdx)
+      );
+    }
   };
 
   return (
@@ -79,7 +122,7 @@ const TableInput = ({ input, inputRefs, baseProps }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {tableRows.map((row, rIdx) => {
+            {tableRows?.map((row, rIdx) => {
               const values = Array.isArray(row.values)
                 ? row.values
                 : keys.map(() => "");
@@ -109,7 +152,7 @@ const TableInput = ({ input, inputRefs, baseProps }) => {
                               />
                             )}
 
-                            {val && (
+                            {typeof val === "string" && (
                               <ZoomableImage
                                 src={val}
                                 className="max-h-24 mx-auto"

@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 
+//ingat ya username boleh sama,  dia bisa punya beberapa akun gitu yang terdaftar di org yg beda
+//jadi bisa ada dua akun csi/yafizham yang punya akun di csi dan ril
+//oleh karena itu diperlukan pemilihan tenant (org) untuk setiap login agar ga salah masuk karena username sama
 const userSchema = new mongoose.Schema(
   //tetap pakai _id ya untuk link, biar bisa populate
   {
@@ -7,17 +10,20 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    email: String,
+    org: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Org",
+    },
     role: {
       type: String,
       required: true,
-      enum: ["pengelola", "user"],
-      default: "pengelola", //nanti ubah jadi user
+      enum: ["owner", "member"],
+      default: "member",
     },
   },
   { timestamps: true }
 );
-
-userSchema.index({ username: 1 }, { unique: true });
 
 const UserRefrensi = new mongoose.model("UserRefrensi", userSchema);
 

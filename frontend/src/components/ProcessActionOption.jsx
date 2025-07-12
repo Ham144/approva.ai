@@ -1,7 +1,7 @@
 import flowInstanceApi from "@/api/flowInstanceApi";
 import { useUserInfo } from "@/store";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Eye, List, PlusCircle, Trash, History, Pencil } from "lucide-react";
+import { Eye, PlusCircle, Trash, History, Pencil } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
 
@@ -9,18 +9,21 @@ export default function ProcessActionOption({ selectedInstance }) {
   const { userInfo } = useUserInfo();
   const navigate = useNavigate();
 
+  const queryClient = useQueryClient();
+
   const { mutateAsync: handleDeleteInstance } = useMutation({
     mutationKey: ["flowInstance", "delete"],
     mutationFn: (id) => flowInstanceApi.delete(id),
     onSuccess: () => {
       toast.success("Flow instance berhasil dihapus");
+      document.getElementById("modalprocessaction")?.close();
+      document.getElementById("deleteconfirm")?.close();
+      queryClient.invalidateQueries(["flowInstance"]);
     },
     onError: () => {
       toast.error("Flow instance gagal dihapus");
     },
   });
-
-  const queryClient = useQueryClient();
 
   const { mutate: handleRollbackToStart } = useMutation({
     mutationKey: ["flowInstance", "update"],
@@ -40,14 +43,17 @@ export default function ProcessActionOption({ selectedInstance }) {
   const isInProgress = selectedInstance?.overallStatus == "in-progress";
   const isMyTurn = selectedInstance?.flowTemplate?.status[
     selectedInstance?.currentStatusIndex
-  ].authorized.find((user) => user._id == userInfo._id);
+  ].authorized?.find((user) => user._id == userInfo._id);
 
   return (
     <dialog id="modalprocessaction" className="modal">
       <div className="modal-box">
-        <h3 className="font-bold text-lg mb-4">
-          Aksi untuk: {selectedInstance?.title}
+        <h3 className="font-bold text-lg mb-4 rounded-md p-3 bg-gray-100 dark:bg-gray-800">
+          Aksi untuk: {selectedInstance?.flowTemplate?.title}
         </h3>
+        <p className="text-gray-400 p-3 rounded-md bg-gray-50 dark:bg-gray-700">
+          {selectedInstance?.flowTemplate.desc}
+        </p>
         <div className="space-y-3">
           <button
             disabled={!isInProgress || !isMyTurn}
@@ -58,7 +64,10 @@ export default function ProcessActionOption({ selectedInstance }) {
           >
             <PlusCircle size={18} />
             Penuhi
-            {!isMyTurn && <span className="badge "> "Bukan giliran anda"</span>}
+            {!isMyTurn && <span className="badge">Bukan giliran</span>}
+            {!selectedInstance?.overallStatus == "completed" && (
+              <span className="badge badge-success">completed</span>
+            )}
           </button>
           <button
             onClick={(e) => {
@@ -84,14 +93,9 @@ export default function ProcessActionOption({ selectedInstance }) {
           </button>
 
           <button
-            disabled={
-              selectedInstance?.overallStatus != "draft" ||
-              selectedInstance?.requestedBy?._id != userInfo?._id ||
-              (userInfo?.role == "pengelola" &&
-                selectedInstance?.overallStatus != "draft")
-            }
-            onClick={() => handleRollbackToStart(selectedInstance?._id)}
-            className="w-full flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-slate-200 disabled:bg-slate-200 rounded text-gray-700 font-medium"
+            disabled={selectedInstance?.requestedBy?._id != userInfo?._id}
+            onClick={handleRollbackToStart}
+            className="w-full flex items-center gap-2 px-4 py-2 bg-purple-600  disabled:bg-slate-200 rounded hover:bg-slate-300 font-medium text-white"
           >
             <History size={18} />
             Rollback (mulai dari awal status)

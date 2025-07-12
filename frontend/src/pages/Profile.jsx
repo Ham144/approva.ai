@@ -197,7 +197,7 @@ const Profile = () => {
               <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-800 dark:text-gray-200 border-b pb-4 mb-4">
                 Pengaturan Lainnya
               </h2>
-              {userInfo?.role !== "pengelola" ? (
+              {userInfo?.role !== "owner" ? (
                 <ManagementButton />
               ) : (
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 shadow-sm border border-gray-200 dark:border-gray-700">

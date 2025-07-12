@@ -4,6 +4,7 @@ import UserRefrensi from "../models/User.model.js";
 import bcrypt from "bcryptjs";
 import LdapClient from "ldapjs-client";
 import authenticate from "../middlewares/authenticate.js";
+import Org from "../models/Organization.model.js";
 
 const router = Router();
 
@@ -13,7 +14,7 @@ const asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next); // Meneruskan error ke next()
 };
 
-// login biasa web
+// login biasa web deprecated
 router.post(
   "/login",
   asyncHandler(async (req, res) => {
@@ -74,19 +75,222 @@ router.post(
 );
 
 router.post(
+  "/multi-tenant/register",
+  asyncHandler(async (req, res) => {
+    const { username, password, email, org, selectedOrg } = req.body;
+
+    try {
+      if (!username || !password) {
+        return res.status(400).json({
+          success: false,
+          message: "Username dan password diperlukan.",
+        });
+      }
+
+      let client;
+      let ldapHost, ldapPort;
+      let organizationId;
+      let role = "member"; // default role
+
+      // ───── JOIN EXISTING ORG ─────
+      if (selectedOrg) {
+        const OrgDB = await Org.findById(selectedOrg);
+        if (!OrgDB) {
+          return res.status(400).json({
+            success: false,
+            message: "Organisasi yang dipilih tidak ditemukan.",
+          });
+        }
+
+        ldapHost = OrgDB.AD_HOST;
+        ldapPort = OrgDB.AD_PORT;
+        organizationId = OrgDB._id;
+
+        client = new LdapClient({
+          url: `ldap://${ldapHost}:${ldapPort}`,
+        });
+      }
+
+      // ───── CREATE NEW ORG ─────
+      else if (org) {
+        const { AD_HOST, AD_PORT, organizationName } = org;
+
+        if (!AD_HOST || !AD_PORT || !organizationName) {
+          return res.status(400).json({
+            success: false,
+            message: "Field konfigurasi organisasi tidak lengkap.",
+          });
+        }
+
+        ldapHost = AD_HOST;
+        ldapPort = AD_PORT;
+
+        client = new LdapClient({
+          url: `ldap://${ldapHost}:${ldapPort}`,
+        });
+
+        // tes koneksi LDAP
+        try {
+          await client.bind(username, password);
+        } catch (error) {
+          return res.status(403).json({
+            success: false,
+            message: "Gagal login ke LDAP, periksa koneksi dan kredensial.",
+          });
+        }
+
+        // buat org baru
+        const existingOrg = await Org.findOne({
+          organizationName,
+        });
+        if (existingOrg) {
+          return res.status(400).json({
+            success: false,
+            message: "Organisasi dengan nama ini sudah ada.",
+          });
+        }
+        const newOrg = await Org.create({
+          organizationName,
+          AD_HOST,
+          AD_PORT,
+          owners: [], // ditambahkan nanti setelah user dibuat
+          members: [],
+        });
+
+        organizationId = newOrg._id;
+        role = "owner";
+      }
+
+      // ───── HANDLE ERROR: TIDAK PILIH APA-APA ─────
+      else {
+        return res.status(400).json({
+          success: false,
+          message: "Anda harus memilih atau membuat organisasi.",
+        });
+      }
+
+      // ───── VALIDASI USER KE LDAP ─────
+      try {
+        const userLDAP = await client.bind(username, password);
+
+        if (!userLDAP || userLDAP.success === false) {
+          return res.status(403).json({
+            message: "User tidak ditemukan di LDAP.",
+          });
+        }
+      } catch (error) {
+        console.log(error);
+        return res.status(403).json({
+          message: "Gagal login ke LDAP.",
+        });
+      }
+      // ───── SIMPAN DI DATABASE ─────
+      let userDB = await UserRefrensi.findOne({
+        username,
+        org: organizationId,
+      });
+
+      if (!email) {
+        return res
+          .status(400)
+          .json({ message: "Gagal, email diperlukan untuk notifikasi" });
+      }
+      if (userDB) {
+        return res
+          .status(400)
+          .json({ message: "Anda sudah terdaftar, coba login saja" });
+      } else {
+        userDB = await UserRefrensi.create({
+          username,
+          email,
+          org: organizationId,
+          role,
+        });
+
+        // Tambahkan ke org.members dan org.owners jika owner
+        await Org.findByIdAndUpdate(organizationId, {
+          $addToSet: {
+            members: userDB._id,
+            ...(role === "owner" ? { owners: userDB._id } : {}),
+          },
+        });
+      }
+
+      // ───── BUAT TOKEN LOGIN ─────
+      const payload = {
+        _id: userDB._id,
+        username: userDB.username,
+        org: userDB.organizationId,
+        role: userDB.role,
+      };
+
+      const token = await generateTokenJWT(payload);
+
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "Lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      return res.json({
+        success: true,
+        message:
+          userDB.status === "pending"
+            ? "Pendaftaran berhasil, menunggu persetujuan organisasi."
+            : "Login berhasil. Selamat datang!",
+        data: {
+          username: userDB.username,
+          role: userDB.role,
+          organizationId: userDB._id,
+        },
+      });
+    } catch (error) {
+      if (error.code === "11000") {
+        return res.status(400).json({
+          message: "Terdapat duplikat",
+        });
+      }
+      return res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  })
+);
+
+router.post(
   "/login/ldap",
   asyncHandler(async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password, selectedOrg } = req.body;
 
-    if (!username || !password) {
+    if (!username || !password || !selectedOrg) {
       return res.status(400).json({
         success: false,
-        message: "Username dan password diperlukan.",
+        message: "perlu melengkapi semua credentials",
+      });
+    }
+
+    const OrgDB = await Org.findById(selectedOrg);
+    if (!OrgDB) {
+      return res.status(400).json({
+        success: false,
+        message: "Organisasi yang dipilih tidak ditemukan.",
+      });
+    }
+
+    let userDB = await UserRefrensi.findOne({ username, org: selectedOrg });
+
+    if (!userDB) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Anda tidak diemukan di organisasi ini, mohon register dulu dan pilih organisasi anda dengan username:password LDAP anda.",
       });
     }
 
     const client = new LdapClient({
-      url: `ldap://${process.env.AD_HOST}:${process.env.AD_PORT}`,
+      url: `ldap://${OrgDB.AD_HOST}:${OrgDB.AD_PORT}`,
     });
 
     try {
@@ -94,24 +298,24 @@ router.post(
       try {
         userLDAP = await client.bind(username, password);
       } catch (error) {
-        throw Error("Gagal menemukan user demikian di LDAP");
+        return res.status(403).json({
+          message:
+            "Gagal menghubungkan kredensial user ke LDAP, mungkin kesalahan pemmilihan organisasi atau username:password.",
+        });
       }
 
       if (userLDAP?.success == false || userLDAP.message == "null") {
         return res.status(403).json({
-          message: "Anda tidak ditemukan di LDAP",
+          message:
+            "Anda tidak ditemukan pada LDAP organisasi demikian, mungkin kesalahan pemmilihan organisasi atau username:password",
         });
-      }
-      console.log("user ditemukan di database");
-
-      let userDB = await UserRefrensi.findOne({ username });
-      if (!userDB) {
-        userDB = await UserRefrensi.create({ username });
       }
 
       const payload = {
         _id: userDB._id,
         username: username,
+        org: OrgDB._id,
+        role: userDB.role,
       };
 
       const token = await generateTokenJWT(payload);
@@ -138,76 +342,16 @@ router.post(
   })
 );
 
-// Create new user endpoint
-router.post("/createNewUser", async (req, res) => {
-  const { username, password, role } = req.body;
-
-  if (!username || !password) {
-    return res.status(400).json({
-      success: false,
-      message: "Username dan password diperlukan.",
-    });
-  }
-
-  const user = await UserRefrensi.findOne({ username });
-  if (user) {
-    return res.status(400).json({
-      success: false,
-      message: "Username sudah ada.",
-    });
-  }
-
-  // Validasi password
-  if (password.length < 6) {
-    return res.status(400).json({
-      success: false,
-      message: "Password harus memiliki setidaknya 6 karakter.",
-    });
-  }
-  if (!/[A-Z]/.test(password)) {
-    return res.status(400).json({
-      success: false,
-      message: "Password harus memiliki setidaknya satu huruf besar.",
-    });
-  }
-  if (!/\d/.test(password)) {
-    return res.status(400).json({
-      success: false,
-      message: "Password harus memiliki setidaknya satu angka.",
-    });
-  }
-
-  const hashedPass = bcrypt.hashSync(password, 10);
-  const newUser = new UserRefrensi({
-    username,
-    password: hashedPass,
-    role: role,
-  });
-
-  await newUser.save();
-  return res.status(201).json({
-    // 201 Created untuk resource baru
-    success: true,
-    message: "User berhasil dibuat.",
-  });
-});
-
 router.put(
   "/updateUser",
+  authenticate,
   asyncHandler(async (req, res) => {
-    const { _id, password, role, isDisabled, username } = req.body;
+    const { _id, role } = req.body;
 
-    if (!_id) {
+    if (!_id || !role) {
       return res.status(400).json({
         success: false,
-        message: "ID user diperlukan.",
-      });
-    }
-    if (!role) {
-      // Role mungkin opsional untuk update, sesuaikan kebutuhan Anda
-      return res.status(400).json({
-        success: false,
-        message: "Role diperlukan.",
+        message: "ID dan role diperlukan.",
       });
     }
 
@@ -219,50 +363,44 @@ router.put(
       });
     }
 
-    // Hanya update jika username diberikan dan berbeda
-    if (username && user.username !== username) {
-      const existingUserWithNewUsername = await UserRefrensi.findOne({
-        username,
+    if (user.role === role) {
+      return res.status(400).json({
+        success: false,
+        message: "Role sama, tidak ada perubahan.",
       });
-      if (
-        existingUserWithNewUsername &&
-        existingUserWithNewUsername._id.toString() !== _id
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: "Username sudah digunakan oleh akun lain.",
-        });
+    }
+
+    const orgDB = await Org.findById(req.user.org);
+    if (!orgDB) {
+      return res.status(404).json({
+        success: false,
+        message: "Organisasi tidak ditemukan.",
+      });
+    }
+
+    // Pastikan selalu ada di members[]
+    if (!orgDB.members.includes(user._id)) {
+      orgDB.members.push(user._id);
+    }
+
+    // Update role dan update array
+    if (role === "owner") {
+      // Tambahkan ke owners jika belum ada
+      if (!orgDB.owners.includes(user._id)) {
+        orgDB.owners.push(user._id);
       }
-      user.username = username;
+    } else if (role === "member") {
+      // Hapus dari owners jika ada
+      orgDB.owners = orgDB.owners.filter(
+        (ownerId) => ownerId.toString() !== user._id.toString()
+      );
     }
 
     user.role = role;
-    user.isDisabled = isDisabled !== undefined ? isDisabled : user.isDisabled; // Hanya update jika isDisabled diberikan
 
-    if (password && password !== "") {
-      // Validasi password baru
-      if (password.length < 6) {
-        return res.status(400).json({
-          success: false,
-          message: "Password harus memiliki setidaknya 6 karakter.",
-        });
-      }
-      if (!/[A-Z]/.test(password)) {
-        return res.status(400).json({
-          success: false,
-          message: "Password harus memiliki setidaknya satu huruf besar.",
-        });
-      }
-      if (!/\d/.test(password)) {
-        return res.status(400).json({
-          success: false,
-          message: "Password harus memiliki setidaknya satu angka.",
-        });
-      }
-      user.password = bcrypt.hashSync(password, 10);
-    }
-
+    await orgDB.save();
     await user.save();
+
     return res.json({
       success: true,
       message: "User berhasil diperbarui.",

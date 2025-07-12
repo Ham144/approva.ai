@@ -347,16 +347,16 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
       return status;
     });
 
-    if (verdictOfRequirement === "approved") {
-      flowInstance.currentStatusIndex = currentStatusIndex + 1;
-    }
     if (verdictOfRequirement === "rejected") {
       flowInstance.overallStatus = "rejected";
     }
 
-    //terakhir cek apakah completed
-    if (flowInstance.currentStatusIndex === flowInstance.statuses.length) {
-      flowInstance.overallStatus = "completed";
+    if (verdictOfRequirement === "approved") {
+      if (currentStatusIndex == flowInstance.flowTemplate.status.length - 1) {
+        flowInstance.overallStatus = "approved";
+      } else {
+        flowInstance.currentStatusIndex += 1;
+      }
     }
 
     await flowInstance.save();
@@ -370,6 +370,38 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Gagal, Internal server error" });
+  }
+});
+
+router.put("/rollback/:id", async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const flowInstance = await FlowInstance.findById(id);
+    if (!flowInstance) {
+      return res.status(400).json({ message: "request tidak ditemukan" });
+    }
+
+    flowInstance.overallStatus = "in-progress";
+    flowInstance.currentStatusIndex = 0;
+    flowInstance.statuses = flowInstance.statuses.map((status) => {
+      status.completed = false;
+      status.completedBy = null;
+      status.completedAt = null;
+      status.rejectedReason = null;
+      status.requirementsData = null;
+      status.verdict = "pending";
+      return status;
+    });
+
+    await flowInstance.save();
+
+    return res.json({
+      message: "Berhasil mengupdate, prosess kembali ke awal",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Terjadi kesalahan server" });
   }
 });
 
@@ -389,7 +421,7 @@ router.delete("/delete/:instanceId", async (req, res) => {
 
 router.get("/onduty/list", async (req, res) => {
   const page = parseInt(req.query.page) || 1;
-  const limit = parsgfeInt(req.query.limit) || 10;
+  const limit = parseInt(req.query.limit) || 10;
   const userId = req.user._id;
 
   try {

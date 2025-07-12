@@ -3,7 +3,7 @@ import { renderHelpText } from "./PreviewFlow";
 import { useResponseCollector } from "@/store";
 import { CheckCircle2, XCircle } from "lucide-react";
 
-export default function ApprovalButton({ isOnlyPreview }) {
+export default function ApprovalButton({ isOnlyPreview, handleSubmitStatus }) {
   const { statuses, setStatuses, currentStatusIndex } = useResponseCollector();
   const verdict = statuses[currentStatusIndex]?.verdict;
   const rejectedReason = statuses[currentStatusIndex]?.rejectedReason;
@@ -60,56 +60,63 @@ export default function ApprovalButton({ isOnlyPreview }) {
         </div>
       ) : (
         /* Tampilan Pilihan (isOnlyPreview false) */
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="flex flex-1 w-full sm:w-auto gap-3">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start w-full">
+          {/* Tombol Approve/Reject */}
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <button
               disabled={isOnlyPreview}
-              className={`
-                btn flex-1 py-3 px-4 rounded-lg font-semibold text-white transition-all duration-300 shadow-md
-                ${
-                  verdict === "rejected"
-                    ? "bg-red-600 dark:bg-red-700 border-2 border-red-800 dark:border-red-900 ring-2 ring-red-400 dark:ring-red-600" // Aktif dan terpilih
-                    : "bg-red-500 dark:bg-red-600 hover:bg-red-700 dark:hover:bg-red-700" // Normal
-                }
-              `}
               onClick={() => handleSelect("rejected")}
+              className={`
+              btn w-full sm:w-36 py-3 px-4 rounded-lg font-semibold text-white transition-all duration-300 shadow
+              ${
+                verdict === "rejected"
+                  ? "bg-red-600 dark:bg-red-700 border-2 border-red-800 ring-2 ring-red-400"
+                  : "bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+              }
+              ${isOnlyPreview ? "opacity-50 cursor-not-allowed" : ""}
+            `}
             >
-              <XCircle className="w-4 h-4 mr-1" /> Reject
+              <XCircle className="w-4 h-4 mr-2" /> Reject
             </button>
 
             <button
               disabled={isOnlyPreview}
-              className={`
-                btn flex-1 py-3 px-4 rounded-lg font-semibold text-white transition-all duration-300 shadow-md
-                ${
-                  verdict === "approved"
-                    ? "bg-green-600 dark:bg-green-700 border-2 border-green-800 dark:border-green-900 ring-2 ring-green-400 dark:ring-green-600" // Aktif dan terpilih
-                    : "bg-green-500 dark:bg-green-600 hover:bg-green-700 dark:hover:bg-green-700" // Normal
-                }
-              `}
               onClick={() => {
                 handleSelect("approved");
                 onChangeRejectedReason({ target: { value: "" } });
+                handleSubmitStatus();
               }}
+              className={`
+              btn w-full sm:w-36 py-3 px-4 rounded-lg font-semibold text-white transition-all duration-300 shadow
+              ${
+                verdict === "approved"
+                  ? "bg-green-600 dark:bg-green-700 border-2 border-green-800 ring-2 ring-green-400"
+                  : "bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
+              }
+              ${isOnlyPreview ? "opacity-50 cursor-not-allowed" : ""}
+            `}
             >
-              <CheckCircle2 className="w-4 h-4 mr-1" /> Approve
+              <CheckCircle2 className="w-4 h-4 mr-2" /> Approve
             </button>
           </div>
 
-          {/* Input Alasan Penolakan */}
+          {/* Input alasan jika rejected */}
           {verdict === "rejected" && (
-            <textarea
-              onChange={(e) => onChangeRejectedReason(e)}
-              value={rejectedReason || ""} // Pastikan value tidak undefined
-              placeholder="Berikan alasan penolakan di sini..."
-              className="
-                textarea textarea-bordered w-full sm:w-2/3 md:w-1/2 min-h-[80px] p-3 rounded-lg border border-gray-300 dark:border-gray-600
-                bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
-                focus:outline-none focus:ring-2 focus:ring-red-400 dark:focus:ring-red-500
-                transition-colors duration-200 resize-y
-              "
-              rows="3" // Tetapkan tinggi awal yang lebih responsif
-            />
+            <div className="flex flex-col gap-3 w-full">
+              <textarea
+                onChange={onChangeRejectedReason}
+                value={rejectedReason || ""}
+                placeholder="Berikan alasan penolakan di sini..."
+                className="textarea textarea-bordered w-full min-h-[80px] p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400 dark:focus:ring-red-500 transition-colors resize-y"
+              />
+              <button
+                onClick={handleSubmitStatus}
+                disabled={!rejectedReason}
+                className="btn btn-error w-full sm:w-auto"
+              >
+                Kirim Penolakan
+              </button>
+            </div>
           )}
         </div>
       )}
