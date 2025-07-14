@@ -33,7 +33,8 @@ router.post("/createSourceData", async (req, res) => {
         ...fl,
         key: fl.key.replaceAll(" ", "_"),
       })),
-      createdBy: req?.user?._id,
+      createdBy: req.user._id,
+      org: req.user.org, // ✅ penting: scope ke organisasi
     });
 
     await flexSourceDataInstance.save();
@@ -56,12 +57,13 @@ router.post("/createSourceData", async (req, res) => {
   }
 });
 
-//kembalikan hanya judul dan desc
 router.get("/getAllSourceData/:search?", async (req, res) => {
   const search = req.params.search;
-  const query = {};
+  const query = {
+    org: req.user.org, // ✅ scope ke tenant
+  };
 
-  if (search != "undefined" && search) {
+  if (search && search !== "undefined") {
     query.title = { $regex: search, $options: "i" };
   }
 
@@ -87,11 +89,18 @@ router.get("/getSourceDataById/:id", async (req, res) => {
       .status(400)
       .json({ message: "Id is required to fetch full data" });
   }
+
   try {
-    const flexSourceData = await FlexSourceData.findById(id);
-    if (!flexSourceData)
-      return res.status(404).json({ message: "we cant find such id" });
-    else return res.json({ data: flexSourceData });
+    const flexSourceData = await FlexSourceData.findOne({
+      _id: id,
+      org: req.user.org,
+    });
+
+    if (!flexSourceData) {
+      return res.status(404).json({ message: "We can't find such id" });
+    }
+
+    return res.json({ data: flexSourceData });
   } catch (error) {
     console.log(error);
     return res
@@ -107,11 +116,18 @@ router.post("/getSourceDataByIdPost", async (req, res) => {
       .status(400)
       .json({ message: "Id is required to fetch full data" });
   }
+
   try {
-    const flexSourceData = await FlexSourceData.findById(id);
-    if (!flexSourceData)
-      return res.status(204).json({ message: "we cant find such id" });
-    else return res.json({ data: flexSourceData });
+    const flexSourceData = await FlexSourceData.findOne({
+      _id: id,
+      org: req.user.org,
+    });
+
+    if (!flexSourceData) {
+      return res.status(204).json({ message: "We can't find such id" });
+    }
+
+    return res.json({ data: flexSourceData });
   } catch (error) {
     return res
       .status(500)
@@ -144,9 +160,10 @@ router.put("/editSourceData/:id", async (req, res) => {
         .json({ message: "Each key must be a non-empty string" });
     }
   }
+
   try {
-    const updated = await FlexSourceData.findByIdAndUpdate(
-      id,
+    const updated = await FlexSourceData.findOneAndUpdate(
+      { _id: id, org: req.user.org }, // ✅ scope ke tenant
       {
         title,
         desc,
@@ -154,7 +171,9 @@ router.put("/editSourceData/:id", async (req, res) => {
       },
       { new: true, runValidators: true }
     );
+
     if (!updated) return res.status(404).json({ message: "Data not found" });
+
     return res.json({ message: "Data updated", data: updated });
   } catch (error) {
     if (error.code === 11000) {
@@ -173,7 +192,10 @@ router.delete("/deleteSourceData/:id", async (req, res) => {
     return res.status(400).json({ message: "Id is required" });
   }
   try {
-    const deleted = await FlexSourceData.findByIdAndDelete(id);
+    const deleted = await FlexSourceData.findOneAndDelete({
+      _id: id,
+      org: req.user._id,
+    });
     if (!deleted) return res.status(404).json({ message: "Data not found" });
     return res.json({ message: "Data deleted" });
   } catch (error) {

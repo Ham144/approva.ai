@@ -59,7 +59,7 @@ const Home = () => {
         {/* Header */}
         <div className="mb-6 text-center ">
           <h1 className="text-2xl font-bold text-gray-800">
-            {APP_NAME}
+            Flexible Flow
             <span className="p-2 badge translate-y-[-8px]">BETA</span>
           </h1>
           <p className="text-sm text-gray-600">{APP_DESC}</p>
@@ -169,7 +169,6 @@ const Home = () => {
                 </div>
               </div>
             </button>
-
             {quickActions.map((action, index) => (
               <button
                 key={index}

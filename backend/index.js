@@ -11,6 +11,8 @@ import configRoutes from "./routes/config.route.js";
 import FlexSourceDataRoutes from "./routes/flexSourceData.route.js";
 import flowAndPointRoutes from "./routes/flowAndPoint.route.js";
 import flowInstanceroutes from "./routes/flowInstance.route.js";
+import orgRoutes from "./routes/org.routes.js";
+import fileRoutes from "./routes/file.route.js";
 
 const isProduction = process.env.NODE_ENV === "production";
 const corsOrigin = isProduction
@@ -32,7 +34,7 @@ app.use(
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Serve static files from uploads directory
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 //database
 connectDB();
@@ -48,6 +50,8 @@ app.use("/api/config", authenticate, configRoutes);
 app.use("/api/flexSourceData", authenticate, FlexSourceDataRoutes);
 app.use("/api/flow", authenticate, flowAndPointRoutes); //ini untuk designernya
 app.use("/api/flowInstance", authenticate, flowInstanceroutes); //ini untuk user
+app.use("/api/org", orgRoutes);
+app.use("/api/file", authenticate, fileRoutes);
 
 const port = process.env.PORT;
 app.listen(port, () => console.log("Server Berjalan di port "));

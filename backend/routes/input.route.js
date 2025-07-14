@@ -6,7 +6,7 @@ const router = Router();
 router.post("/update/:id", async (req, res) => {
   const id = req.params.id;
   try {
-    const input = await Input.findById(id);
+    const input = await Input.findOne({ _id: id, org: req.user.org });
     if (!input) {
       return res.status(404).json({ message: "Input tidak ditemukan" });
     }

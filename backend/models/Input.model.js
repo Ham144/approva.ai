@@ -34,6 +34,11 @@ export const InputSchema = new mongoose.Schema({
     keysType: ["image", "text", "date", "number"],
   },
   isNullable: Boolean,
+  org: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Org",
+    required: true,
+  },
 });
 
 const Input = mongoose.model("Input", InputSchema);

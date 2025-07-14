@@ -51,7 +51,11 @@ router.post("/createFlow", async (req, res) => {
             input?.title,
         });
       }
-      const newInput = await Input.create(rest);
+      const newInput = await Input.create({
+        ...rest,
+        org: req.user.org, // ✅ Tambahkan ini
+      });
+
       inputRequest.push(newInput._id);
     }
 
@@ -106,7 +110,10 @@ router.post("/createFlow", async (req, res) => {
               statusItem?.title,
           });
         }
-        const newRequirement = await Input.create(restReq);
+        const newRequirement = await Input.create({
+          ...restReq,
+          org: req.user.org, // ✅ Tambahkan ini juga
+        });
         requirementIds.push(newRequirement._id);
       }
 
@@ -154,6 +161,8 @@ router.post("/createFlow", async (req, res) => {
       newFlowAndPoint.designedBy.push(userId);
     }
 
+    newFlowAndPoint.org = req.user.org;
+
     await newFlowAndPoint
       .save()
       .then(() => {
@@ -177,38 +186,39 @@ router.post("/createFlow", async (req, res) => {
 
 router.get("/list", async (req, res) => {
   const { searchKey } = req.query;
-
   const userId = req.user._id;
-  try {
-    let query = {};
 
-    if (searchKey && searchKey !== "") {
-      query = {
-        title: { $regex: searchKey, $options: "i" },
-      };
+  try {
+    let query = {
+      org: req.user.org, // ✅ Scope tenant
+    };
+
+    if (searchKey && searchKey.trim() !== "") {
+      query.title = { $regex: searchKey, $options: "i" };
     }
 
     const rawList = await FlowAndPoint.find(query)
-      .select("title desc isAllowanceModeRequest allowedUserToRequest status")
+      .select(
+        "title desc isAllowanceModeRequest allowedUserToRequest status designedBy"
+      )
       .populate("designedBy", "username");
 
     const list = rawList.map((item) => ({
       ...item.toObject(),
-      status: item.status?.map((s) => ({ title: s.title })), // hanya ambil title
+      status: item.status?.map((s) => ({ title: s.title })),
     }));
 
-    //terakhir filter out instance yg isAllowanceModeRequest true dan template.allowedUserToRequest nya tidak mengandung current userId
     const flowListFiltered = list.filter((template) => {
       const iamCreator = template.designedBy?.findIndex((d) => d._id == userId);
-      if (iamCreator != -1) {
-        return true;
-      }
+      if (iamCreator !== -1) return true;
+
       if (
         template.isAllowanceModeRequest &&
         !template.allowedUserToRequest.includes(req.user._id)
       ) {
         return false;
       }
+
       return true;
     });
 
@@ -232,7 +242,10 @@ router.get("/getFlowById/:id", async (req, res) => {
   }
 
   try {
-    const flow = await FlowAndPoint.findById(id)
+    const flow = await FlowAndPoint.findOne({
+      _id: id,
+      org: req.user.org, // ✅ Scope tenant
+    })
       .populate({
         path: "request",
         populate: [{ path: "sourceData", model: "SourceData" }],
@@ -292,7 +305,10 @@ router.put("/update/:id", async (req, res) => {
   }
 
   try {
-    const existingFlow = await FlowAndPoint.findById(id);
+    const existingFlow = await FlowAndPoint.findOne({
+      _id: id,
+      org: req.user.org,
+    });
     if (!existingFlow) {
       return res.status(404).json({ message: "Flow tidak ditemukan." });
     }
@@ -314,6 +330,7 @@ router.put("/update/:id", async (req, res) => {
         const newInput = await Input.create({
           ...restInput, // pastikan _id tidak ikut
           createdBy: req.user._id,
+          org: req.user.org,
         });
         sanitizedInputs.push(newInput._id);
       }
@@ -326,6 +343,7 @@ router.put("/update/:id", async (req, res) => {
       // Validasi user
       const foundUsers = await UserRefrensi.find({
         _id: { $in: authorizedIds },
+        org: req.user.org,
       });
       if (foundUsers.length !== authorizedIds.length) {
         return res
@@ -344,6 +362,7 @@ router.put("/update/:id", async (req, res) => {
           const newRequirement = await Input.create({
             ...restReq,
             createdBy: req.user._id,
+            org: req.user.org,
           });
           requirementIds.push(newRequirement._id);
         }
@@ -391,12 +410,13 @@ router.delete("/delete/:id", async (req, res) => {
     //hapus instances nya
     const query = {
       flowTemplate: id,
+      org: req.user.org,
     };
 
     const deletedInstancesCount = await FlowInstance.countDocuments(query);
     await FlowInstance.deleteMany(query);
 
-    await FlowAndPoint.findByIdAndDelete(id);
+    await FlowAndPoint.findOneAndDelete({ _id: id, org: req.user.org });
     return res.json({
       message: `berhasil menghapus data flow${
         deletedInstancesCount > 0 ? " beserta proses yang terkait" : ""

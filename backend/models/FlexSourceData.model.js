@@ -14,6 +14,10 @@ const sourceDataSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "UserRefrensi",
   },
+  org: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Org",
+  },
 });
 
 sourceDataSchema.index({ title: 1, unique: true });

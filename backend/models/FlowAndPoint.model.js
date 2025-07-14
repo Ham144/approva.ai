@@ -55,6 +55,11 @@ const flowSchema = new mongoose.Schema(
         ref: "UserRefrensi",
       },
     ],
+    org: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Org",
+      required: true,
+    },
   },
   { timestamps: true }
 );

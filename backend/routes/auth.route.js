@@ -74,10 +74,11 @@ router.post(
   })
 );
 
+// register ldap ✅
 router.post(
   "/multi-tenant/register",
   asyncHandler(async (req, res) => {
-    const { username, password, email, org, selectedOrg } = req.body;
+    const { username, password, email, newOrg, selectedOrg } = req.body;
 
     try {
       if (!username || !password) {
@@ -90,10 +91,10 @@ router.post(
       let client;
       let ldapHost, ldapPort;
       let organizationId;
-      let role = "member"; // default role
+      let role = process.env.DEFAULT_ROLE; // default role
 
       // ───── JOIN EXISTING ORG ─────
-      if (selectedOrg) {
+      if (selectedOrg?._id) {
         const OrgDB = await Org.findById(selectedOrg);
         if (!OrgDB) {
           return res.status(400).json({
@@ -112,8 +113,8 @@ router.post(
       }
 
       // ───── CREATE NEW ORG ─────
-      else if (org) {
-        const { AD_HOST, AD_PORT, organizationName } = org;
+      else if (newOrg) {
+        const { AD_HOST, AD_PORT, organizationName } = newOrg;
 
         if (!AD_HOST || !AD_PORT || !organizationName) {
           return res.status(400).json({
@@ -149,7 +150,7 @@ router.post(
             message: "Organisasi dengan nama ini sudah ada.",
           });
         }
-        const newOrg = await Org.create({
+        const org = await Org.create({
           organizationName,
           AD_HOST,
           AD_PORT,
@@ -157,7 +158,7 @@ router.post(
           members: [],
         });
 
-        organizationId = newOrg._id;
+        organizationId = org._id;
         role = "owner";
       }
 
@@ -259,6 +260,7 @@ router.post(
   })
 );
 
+//login LDAP ✅
 router.post(
   "/login/ldap",
   asyncHandler(async (req, res) => {
@@ -342,6 +344,7 @@ router.post(
   })
 );
 
+//update user ✅
 router.put(
   "/updateUser",
   authenticate,
@@ -355,7 +358,7 @@ router.put(
       });
     }
 
-    const user = await UserRefrensi.findById(_id);
+    const user = await UserRefrensi.findOne({ _id, org: req.user.org });
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -409,6 +412,7 @@ router.put(
 );
 
 //ini untuk memperbarui userInfo karena di authenticate payload cuma di decode
+//get user info ✅
 router.get(
   "/getUserInfo",
   authenticate,
@@ -420,9 +424,10 @@ router.get(
       });
     }
 
-    const userDB = await UserRefrensi.findById(req.user._id).select(
-      "-password"
-    );
+    const userDB = await UserRefrensi.findOne({
+      _id: req.user._id,
+      org: req.user.org,
+    }).select("-password");
     if (!userDB) {
       return res.status(404).json({
         success: false,
@@ -437,6 +442,7 @@ router.get(
   })
 );
 
+//get user info complete ✅
 router.get(
   "/getUserInfoComplete",
   authenticate, // Asumsi middleware authorize akan mengisi req.userId
@@ -448,7 +454,10 @@ router.get(
         message: "Akses tidak sah. Token tidak ditemukan atau tidak valid.",
       });
     }
-    const userDB = await UserRefrensi.findById(req.userId).select("-password");
+    const userDB = await UserRefrensi.findOne({
+      _id: req.userId,
+      org: req.user.org,
+    }).select("-password");
     if (!userDB) {
       return res.status(404).json({
         success: false,
@@ -467,11 +476,18 @@ router.get(
   "/getAllAccount",
   authenticate,
   asyncHandler(async (req, res) => {
-    // Opsional: Tambahkan logika otorisasi peran di sini, misalnya:
-    // if (req.user.role !== 'admin') {
-    //   return res.status(403).json({ success: false, message: "Akses ditolak. Hanya admin yang bisa melihat semua akun." });
-    // }
-    const userDBs = await UserRefrensi.find().select("-password -isDisabled");
+    // Opsional: Validasi role jika hanya pemilik/owner yang boleh lihat
+    if (req.user.role !== "owner") {
+      return res.status(403).json({
+        success: false,
+        message: "Akses ditolak. Hanya owner yang bisa melihat semua akun.",
+      });
+    }
+
+    const userDBs = await UserRefrensi.find({
+      org: req.user.org,
+    }).select("-password");
+
     return res.json({
       success: true,
       message: "Semua akun berhasil diambil.",

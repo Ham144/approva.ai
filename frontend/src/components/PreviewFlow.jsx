@@ -6,6 +6,7 @@ import TableInput from "./TableInput";
 import SelectInput from "./SelectInput";
 import MultipleCheckboxInput from "./MultipleCheckboxInput";
 import { MessageSquareText, User2 } from "lucide-react";
+import FileApi from "@/api/fileApi";
 
 export const renderHelpText = (input) => (
   <div className="mb-1 flex items-center gap-2">
@@ -239,32 +240,30 @@ export default function PreviewFlow({
                   accept={input.tipe === "image" ? "image/*" : ".pdf"}
                   {...baseProps}
                   className="file-input file-input-bordered w-full file-input-primary"
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const file = e.target.files?.[0];
-
                     if (!file) {
                       setRequestData(input._id, null);
                       return;
                     }
 
-                    if (isRequirementInput) {
-                      if (input.tipe === "image") {
-                        const fileUrl = URL.createObjectURL(file);
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    formData.append("tipe", input.tipe); // opsional
+
+                    try {
+                      const res = await FileApi.uploadImage(formData); // ✅ pakai await
+                      console.log(res);
+                      const fileUrl = res.url; // ✅ langsung ambil dari response
+
+                      if (isRequirementInput) {
                         setRequirement(currentStatusIndex, input._id, fileUrl);
                       } else {
-                        setRequirement(
-                          currentStatusIndex,
-                          input._id,
-                          file.name
-                        );
-                      }
-                    } else {
-                      if (input.tipe === "image") {
-                        const fileUrl = URL.createObjectURL(file);
                         setRequestData(input._id, fileUrl);
-                      } else {
-                        setRequestData(input._id, file.name);
                       }
+                    } catch (err) {
+                      toast.error("Gagal upload file.");
+                      console.error(err);
                     }
                   }}
                 />

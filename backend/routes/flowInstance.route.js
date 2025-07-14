@@ -1,6 +1,7 @@
 import { Router } from "express";
 import FlowInstance from "../models/FlowInstance.model.js";
 import FlowAndPoint from "../models/FlowAndPoint.model.js";
+import mongoose from "mongoose";
 
 const router = Router();
 
@@ -20,7 +21,10 @@ router.post("/request/new", async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const template = await FlowAndPoint.findById(flowTemplateId).populate([
+    const template = await FlowAndPoint.findOne({
+      _id: flowTemplateId,
+      org: req.user.org,
+    }).populate([
       { path: "request" }, // Populate dokumen Input di dalam array request
       { path: "status.authorized" }, // Populate user refrensi jika perlu
     ]);
@@ -79,6 +83,7 @@ router.post("/request/new", async (req, res) => {
       overallStatus: overallStatus,
       statuses: statusesFromTemplate, // Tambahkan status yang sudah diinisialisasi
       currentStatusIndex: 0, // Mulai dari index 0
+      org: req.user.org,
     });
 
     return res
@@ -104,11 +109,14 @@ router.put("/edit/:instanceId", async (req, res) => {
   const { instanceTitle, overallStatus, requestData } = req.body;
 
   try {
-    const flowInstance = await FlowInstance.findByIdAndUpdate(instanceId, {
-      instanceTitle,
-      overallStatus,
-      requestData,
-    });
+    const flowInstance = await FlowInstance.findOneAndUpdate(
+      { _id: instanceId, org: req.user.org },
+      {
+        instanceTitle,
+        overallStatus,
+        requestData,
+      }
+    );
 
     return res.json({
       message: "Flow instance berhasil diupdate",
@@ -136,13 +144,16 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
   } = req.query;
 
   try {
-    let query = {};
+    let query = {
+      org: req.user.org,
+    };
     if (instanceId) {
       query._id = instanceId;
     } else {
       if (flowTemplateCategory) {
-        query.flowTemplate = flowTemplateCategory;
+        query.flowTemplate = new mongoose.Types.ObjectId(flowTemplateCategory);
       }
+
       if (overallStatus) {
         query.overallStatus = overallStatus;
       }
@@ -193,6 +204,7 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
       .status(200)
       .json({ data: flowInstanceList, totalPage, totalData });
   } catch (error) {
+    console.log(error);
     return res.status(400).json({ message: "Terjadi kesalahan server" });
   }
 });
@@ -207,7 +219,10 @@ router.get("/flowInstanceById/:id", async (req, res) => {
   }
 
   try {
-    const flowInstance = await FlowInstance.findById(id)
+    const flowInstance = await FlowInstance.findOne({
+      _id: id,
+      org: req.user.org,
+    })
       .populate({
         path: "flowTemplate",
         populate: [
@@ -245,7 +260,10 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const flowInstance = await FlowInstance.findById(instanceId)
+    const flowInstance = await FlowInstance.findOne({
+      _id: instanceId,
+      org: req.user.org,
+    })
       .populate({
         path: "flowTemplate",
         populate: [
@@ -353,7 +371,7 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
 
     if (verdictOfRequirement === "approved") {
       if (currentStatusIndex == flowInstance.flowTemplate.status.length - 1) {
-        flowInstance.overallStatus = "approved";
+        flowInstance.overallStatus = "completed";
       } else {
         flowInstance.currentStatusIndex += 1;
       }
@@ -377,7 +395,10 @@ router.put("/rollback/:id", async (req, res) => {
   const id = req.params.id;
 
   try {
-    const flowInstance = await FlowInstance.findById(id);
+    const flowInstance = await FlowInstance.findOne({
+      _id: id,
+      org: req.user.org,
+    });
     if (!flowInstance) {
       return res.status(400).json({ message: "request tidak ditemukan" });
     }
@@ -408,7 +429,10 @@ router.put("/rollback/:id", async (req, res) => {
 router.delete("/delete/:instanceId", async (req, res) => {
   const instanceId = req.params.instanceId;
   try {
-    const flowInstance = await FlowInstance.findByIdAndDelete(instanceId);
+    const flowInstance = await FlowInstance.findOneAndDelete({
+      _id: instanceId,
+      org: req.user.org,
+    });
     return res.json({
       message: "berhasil menghapus data flow instance",
       data: flowInstance,
@@ -431,25 +455,27 @@ router.get("/onduty/list", async (req, res) => {
           overallStatus: "in-progress",
           $expr: {
             $in: [
-              { $toObjectId: userId }, // pastikan ini ObjectId jika userId berupa string
+              { $toObjectId: userId },
               {
                 $let: {
                   vars: {
                     currentStatus: {
-                      $arrayElemAt: ["$statuses", "$currentStatusIndex"],
+                      $arrayElemAt: [
+                        "$flowTemplate.status",
+                        "$currentStatusIndex",
+                      ],
                     },
                   },
-                  in: "$$currentStatus.authorizedUsers",
+                  in: "$$currentStatus.authorized",
                 },
               },
             ],
           },
         },
       },
-      // JOIN dengan UserRefrensi
       {
         $lookup: {
-          from: "userrefrensis", // koleksi MongoDB (perhatikan nama lowercase + plural!)
+          from: "userrefrensis",
           localField: "requestedBy",
           foreignField: "_id",
           as: "requestedByInfo",
@@ -475,23 +501,31 @@ router.get("/onduty/list", async (req, res) => {
           _id: 1,
           instanceTitle: 1,
           createdAt: 1,
-          requestedByUsername: "$requestedByInfo.username", // ✅ gunakan alias
+          requestedByUsername: "$requestedByInfo.username",
         },
       },
     ]);
 
-    const totalCount = await FlowInstance.aggregate([
+    // Hitung total count
+    const totalCountAgg = await FlowInstance.aggregate([
       {
         $match: {
           overallStatus: "in-progress",
           $expr: {
             $in: [
-              userId,
+              { $toObjectId: userId },
               {
-                $arrayElemAt: [
-                  "$statuses.authorizedUsers",
-                  "$currentStatusIndex",
-                ],
+                $let: {
+                  vars: {
+                    currentStatus: {
+                      $arrayElemAt: [
+                        "$flowTemplate.status",
+                        "$currentStatusIndex",
+                      ],
+                    },
+                  },
+                  in: "$$currentStatus.authorized",
+                },
               },
             ],
           },
@@ -502,15 +536,16 @@ router.get("/onduty/list", async (req, res) => {
       },
     ]);
 
-    const pages = Math.ceil((totalCount[0]?.count || 0) / limit);
+    const totalCount = totalCountAgg[0]?.count || 0;
+    const pages = Math.ceil(totalCount / limit);
 
     return res.json({
       data: instanceList,
       pages,
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "internal server error" });
+    console.error("❌ Error on /onduty/list:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
 

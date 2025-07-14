@@ -119,7 +119,6 @@ export default function RequestStartCreatePage() {
           {/* Ikon panah kustom untuk dropdown */}
           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700 dark:text-gray-300">
             <CheckCircle className="w-5 h-5" />{" "}
-            {/* Atau gunakan ChevronDown jika lebih sesuai */}
           </div>
         </div>
       </div>

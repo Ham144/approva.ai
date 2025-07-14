@@ -88,6 +88,11 @@ const flowInstanceSchema = new mongoose.Schema(
         ref: "UserRefrensi",
       },
     ],
+    org: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Org",
+      required: true,
+    },
   },
   { timestamps: true } // createdAt dan updatedAt untuk setiap permintaan
 );

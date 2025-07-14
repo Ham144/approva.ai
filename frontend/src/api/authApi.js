@@ -1,13 +1,17 @@
 import axiosInstance from "./axiosInstance";
 
+//login LDAP
 export const login = async (body) => {
   const response = await axiosInstance.post(`/api/auth/login/ldap`, body);
   return response?.data;
 };
 
-export const createNewUser = async (body) => {
-  const response = await axiosInstance.post(`/api/auth/createNewUser`, body);
-  return response.data;
+export const register = async (body) => {
+  const response = await axiosInstance.post(
+    "/api/auth/multi-tenant/register",
+    body
+  );
+  return response?.data;
 };
 
 export const getUserInfo = async () => {
@@ -25,6 +29,7 @@ export const getAllAccount = async () => {
   return response.data;
 };
 
+//mostly update role
 export const updateUser = async (body) => {
   const response = await axiosInstance.put(`/api/auth/updateUser`, body);
   return response.data;

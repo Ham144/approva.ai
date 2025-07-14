@@ -11,15 +11,15 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
     email: String,
-    org: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Org",
-    },
     role: {
       type: String,
       required: true,
       enum: ["owner", "member"],
-      default: "member",
+      default: "owner",
+    },
+    org: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Org",
     },
   },
   { timestamps: true }

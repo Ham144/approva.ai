@@ -124,21 +124,6 @@ export default function UserManagement() {
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">User Management</h1>
-          <div className="flex gap-2">
-            <select
-              value={selectedRoleCategory}
-              onChange={(e) => setSelectedRoleCategory(e.target.value)}
-              className="select select-bordered"
-            >
-              <option value="all">All Roles</option>
-              <option value="driver">Driver</option>
-              <option value="admin">Admin</option>
-              <option value="pengelola">Pengelola</option>
-            </select>
-            <button onClick={() => setIsOpen(true)} className="btn btn-primary">
-              +
-            </button>
-          </div>
         </div>
 
         {/* Dialog */}
@@ -146,11 +131,11 @@ export default function UserManagement() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-base-100 p-6 rounded-lg w-full max-w-md">
               <h2 className="text-xl font-bold mb-4">
-                {isEditMode ? "Edit User" : "Tambah User Baru"}
+                {isEditMode && "Edit User"}
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="form-control">
+                <div className="form-control gap-y-3 gap-x-3">
                   <label className="label">
                     <span className="label-text">Username</span>
                   </label>
@@ -166,6 +151,18 @@ export default function UserManagement() {
                     placeholder="Masukkan username"
                     disabled={isEditMode} // Username tidak bisa diubah saat edit
                   />
+                  <input
+                    type="email"
+                    value={formData?.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    className={`input input-bordered ${
+                      errors.username ? "input-error" : ""
+                    }`}
+                    placeholder="Masukkan Email"
+                  />
+
                   {errors.username && (
                     <span className="text-error text-sm mt-1">
                       {errors.username}

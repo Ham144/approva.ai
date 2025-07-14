@@ -276,7 +276,7 @@ export default function ProcessPage() {
         </div>
 
         {/* --- Area Konten / Hasil --- */}
-        <div className="space-y-4 overflow-y-auto  ">
+        <div className="space-y-4 overflow-y-auto pb-20 ">
           <h3 className="text-lg font-semibold items-center gap-x-3">
             Ditemukan: {totalData ?? 0} Proses
             <div
@@ -301,7 +301,6 @@ export default function ProcessPage() {
                     <th className="py-4 px-6">Jenis Flow</th>
                     <th className="py-4 px-6">Pemohon</th>
                     <th className="py-4 px-6">Tanggal</th>
-                    <th className="py-4 px-6">Status</th>
                     <th className="py-4 px-6">Progress</th>
                     <th className="py-4 px-6">Proses Saat Ini</th>
                   </tr>
@@ -312,7 +311,7 @@ export default function ProcessPage() {
                       instance?.flowTemplate?.status?.length || 1;
                     const currentIndex = instance?.currentStatusIndex ?? 0;
                     const progress = Math.round(
-                      (currentIndex / (statusLength - 1)) * 100
+                      (currentIndex / statusLength) * 100
                     );
 
                     return (
@@ -342,27 +341,28 @@ export default function ProcessPage() {
                           {new Date(instance.createdAt).toLocaleDateString()}
                         </td>
 
-                        {/* Badge Status yang Ditingkatkan */}
-                        <td className="py-4 px-6">
-                          <span
-                            className={`badge ${getStatusBadge(
-                              instance?.overallStatus
-                            )} text-white font-bold text-xs px-3 py-1 rounded-full shadow-sm w-28`}
-                          >
-                            {instance?.overallStatus}
-                          </span>
-                        </td>
-
                         {/* Visualisasi Progres yang Lebih Jelas */}
-                        <td className="w-[150px] py-4 px-6">
-                          <div className="text-xs font-semibold text-gray-500 mb-2 text-center">
-                            {currentIndex}/{statusLength - 1}
+                        <td className="w-[150px] py-4 px-4 text-center">
+                          {instance?.overallStatus !== "completed" && (
+                            <div className="text-xs text-gray-500 font-semibold mb-1">
+                              {currentIndex}/{statusLength}
+                              <progress
+                                className="progress progress-primary w-full h-2 rounded-full mb-2"
+                                value={progress}
+                                max="100"
+                              ></progress>
+                            </div>
+                          )}
+
+                          <div>
+                            <span
+                              className={`badge ${getStatusBadge(
+                                instance?.overallStatus
+                              )} text-white font-bold text-xs px-3 py-1 rounded-full shadow-sm w-full`}
+                            >
+                              {instance?.overallStatus}
+                            </span>
                           </div>
-                          <progress
-                            className="progress progress-primary w-full h-2 rounded-full"
-                            value={progress}
-                            max="100"
-                          ></progress>
                         </td>
 
                         <td className="text-xs text-gray-600 py-4 px-6">

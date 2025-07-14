@@ -83,7 +83,8 @@ export default function ProcessActionOption({ selectedInstance }) {
           <button
             disabled={
               // selectedInstance?.overallStatus != "draft" ||
-              selectedInstance?.requestedBy?._id != userInfo?._id
+              selectedInstance?.requestedBy?._id != userInfo?._id &&
+              selectedInstance?.currentStatusIndex != 0
             }
             onClick={() => navigate(`/request/edit/${selectedInstance?._id}`)}
             className="w-full flex items-center gap-2 px-4 py-2 bg-yellow-300 hover:bg-slate-200 disabled:bg-slate-200 rounded text-gray-700 font-medium"
@@ -93,7 +94,11 @@ export default function ProcessActionOption({ selectedInstance }) {
           </button>
 
           <button
-            disabled={selectedInstance?.requestedBy?._id != userInfo?._id}
+            disabled={
+              selectedInstance?.requestedBy?._id != userInfo?._id ||
+              selectedInstance?.currentStatusIndex ==
+                selectedInstance?.flowTemplate?.status.length - 1
+            }
             onClick={handleRollbackToStart}
             className="w-full flex items-center gap-2 px-4 py-2 bg-purple-600  disabled:bg-slate-200 rounded hover:bg-slate-300 font-medium text-white"
           >
@@ -101,7 +106,7 @@ export default function ProcessActionOption({ selectedInstance }) {
             Rollback (mulai dari awal status)
           </button>
 
-          <button
+          {/* <button
             disabled={
               selectedInstance?.requestedBy?._id &&
               selectedInstance?.requestedBy?._id !== userInfo?._id
@@ -111,7 +116,7 @@ export default function ProcessActionOption({ selectedInstance }) {
           >
             <Trash size={18} />
             Hapus
-          </button>
+          </button> */}
         </div>
 
         <form method="dialog" className="modal-backdrop mt-4">
