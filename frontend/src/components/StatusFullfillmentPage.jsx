@@ -1,15 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  Save,
-  Trash,
-  ChevronUp,
-  ChevronDown,
-  History,
-  Move,
-  Pointer,
-} from "lucide-react";
+import { Trash, ChevronUp, ChevronDown, History } from "lucide-react";
 import PreviewFlow from "./PreviewFlow";
 import { useResponseCollector } from "@/store";
 import flowInstanceApi from "@/api/flowInstanceApi";
@@ -33,7 +25,10 @@ export default function StatusFullfillmentPage() {
   } = useResponseCollector();
 
   const queryClient = useQueryClient();
-  const { mutateAsync: handleSubmitStatus } = useMutation({
+  const {
+    mutateAsync: handleSubmitStatus,
+    isPending: isLoadinghandleSubmitStatus,
+  } = useMutation({
     mutationKey: ["flowInstance", "status", "fullfillment"],
     mutationFn: async () =>
       flowInstanceApi.submitStatusFulfillment(
@@ -189,6 +184,7 @@ export default function StatusFullfillmentPage() {
           <ApprovalButton
             handleSubmitStatus={handleSubmitStatus}
             isOnlyPreview={false}
+            isLoadinghandleSubmitStatus={isLoadinghandleSubmitStatus}
             key={"approval-button"}
           />
         </div>

@@ -14,8 +14,15 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ["owner", "member"],
+      enum: ["owner", "member", "supertenant"],
       default: "owner",
+    },
+    password: String, //ini untuk authMethod 'app'
+    authMethod: {
+      type: String,
+      required: true,
+      enum: ["app", "ldap"],
+      default: "ldap",
     },
     org: {
       type: mongoose.Schema.Types.ObjectId,

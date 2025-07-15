@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { login } from "@/api/authApi";
+import { loginApp, loginLdap } from "@/api/authApi";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
 import { useUserInfo } from "@/store";
@@ -14,6 +14,7 @@ export default function Login({ className, ...props }) {
   const [isVerifying, setIsVerifying] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState("");
   const [search, setSearch] = useState("");
+  const [authMethod, setAuthMethod] = useState("ldap");
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -29,10 +30,9 @@ export default function Login({ className, ...props }) {
   // Zustand
   const { setUserInfo } = useUserInfo();
 
-  const { mutateAsync: handleLogin, isPending } = useMutation({
-    mutationFn: async (e) => {
-      e.preventDefault();
-      const res = await login({ username, password, selectedOrg });
+  const { mutateAsync: handleLoginLdap, isPending } = useMutation({
+    mutationFn: async () => {
+      const res = await loginLdap({ username, password, selectedOrg });
       return res.data;
     },
     retryDelay: 1000,
@@ -47,6 +47,7 @@ export default function Login({ className, ...props }) {
       navigate("/");
     },
     onError: (err) => {
+      console.log(err);
       toast.error(
         err?.response?.data?.message ||
           "Login gagal. Periksa username dan password Anda."
@@ -54,15 +55,54 @@ export default function Login({ className, ...props }) {
     },
   });
 
+  const { mutateAsync: handleLoginApp, isPending: loadingAppLogin } =
+    useMutation({
+      mutationFn: async () => {
+        const res = await loginApp({ username, password, selectedOrg });
+        return res.data;
+      },
+      retryDelay: 1000,
+      mutationKey: ["userInfo"],
+      onSuccess: async (res) => {
+        setUserInfo(res?.data);
+
+        //Invalidate query untuk memperbarui data
+        queryClient.invalidateQueries(["userInfo"]);
+
+        toast.success("Login berhasil!");
+        navigate("/");
+      },
+      onError: (err) => {
+        toast.error(
+          err?.response?.data?.message ||
+            "Login gagal. Periksa username dan password Anda."
+        );
+      },
+    });
+
+  function loginGate() {
+    if (authMethod === "app") {
+      handleLoginApp();
+    } else {
+      handleLoginLdap();
+    }
+  }
+
   return (
     <div
-      className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4"
+      className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4 overflow-y-auto max-md:py-20"
       {...props}
     >
       <div className="w-full max-w-4xl rounded-xl overflow-hidden shadow-2xl bg-white dark:bg-gray-800">
         <div className="grid grid-cols-1 md:grid-cols-2">
           {/* Form Section */}
-          <form onSubmit={handleLogin} className="p-8 md:p-12 space-y-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              loginGate();
+            }}
+            className="p-8 md:p-12 space-y-6"
+          >
             <div className="flex flex-col items-center text-center mb-6">
               <h1 className="text-4xl font-extrabold text-blue-600 dark:text-blue-400 mb-2">
                 {APP_NAME}
@@ -71,11 +111,32 @@ export default function Login({ className, ...props }) {
                 Selamat datang! Silakan masuk untuk melanjutkan.
               </p>
               <p className="mt-3 px-4 py-1 text-sm bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 rounded-full font-medium">
-                Gunakan Kredensial LDAP CSI Anda
+                Gunakan Kredensial LDAP CSI Anda atau username:password yang
+                diberikan IT
               </p>
             </div>
 
             <div className="space-y-5">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setAuthMethod("app")}
+                  type="button"
+                  className={`btn rounded-md ${
+                    authMethod === "app" ? "btn-active" : ""
+                  }`}
+                >
+                  app
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAuthMethod("ldap")}
+                  className={`btn rounded-md ${
+                    authMethod === "ldap" ? "btn-active" : ""
+                  }`}
+                >
+                  ldap
+                </button>
+              </div>
               <div>
                 <label
                   htmlFor="username"
@@ -109,7 +170,7 @@ export default function Login({ className, ...props }) {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                  disabled={isPending || isVerifying}
+                  disabled={isPending || isVerifying || loadingAppLogin}
                 />
               </div>{" "}
               <>
@@ -171,14 +232,14 @@ export default function Login({ className, ...props }) {
                   bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600
                   shadow-lg transition-all duration-300 ease-in-out flex items-center justify-center gap-2
                   ${
-                    isPending || isVerifying
+                    isPending || isVerifying || loadingAppLogin
                       ? "opacity-70 cursor-not-allowed"
                       : ""
                   }
                 `}
-              disabled={isPending || isVerifying}
+              disabled={isPending || isVerifying || loadingAppLogin}
             >
-              {isPending || isVerifying ? (
+              {isPending || isVerifying || loadingAppLogin ? (
                 <>
                   <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
                   {isVerifying ? "Memverifikasi..." : "Memproses..."}
@@ -190,14 +251,14 @@ export default function Login({ className, ...props }) {
               )}
             </button>
 
-            <div className="text-right">
+            {/* <div className="text-right">
               <a
                 href="/register"
                 className="text-sm text-blue-600 dark:text-blue-400 underline-offset-2 hover:underline transition-colors duration-200"
               >
                 Registrasi (Validasi Akun baru)
               </a>
-            </div>
+            </div> */}
           </form>
 
           {/* Image Section */}

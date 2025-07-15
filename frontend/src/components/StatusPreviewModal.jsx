@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import React from "react";
 
 export const FlowStatusModal = ({ selectedFlow, onClose }) => {
@@ -38,7 +39,7 @@ export const FlowStatusModal = ({ selectedFlow, onClose }) => {
 
           <div className="space-y-5">
             <h4 className="text-lg font-bold text-indigo-700">
-              Langkah-langkah Proses ({selectedFlow.status?.length} Langkah)
+              Langkah-langkah Proses: {selectedFlow.status?.length} Langkah
             </h4>
 
             {/* Daftar Langkah dengan Visual Garis */}
@@ -53,9 +54,18 @@ export const FlowStatusModal = ({ selectedFlow, onClose }) => {
                     <h5 className="text-md font-medium text-gray-800">
                       {step.title}
                     </h5>
+                    <p className="text-sm text-gray-600">
+                      {step.authorized.map((u) => u.username).join(" atau ")}
+                    </p>
                   </div>
                 </li>
               ))}
+              <span className="absolute flex items-center justify-center w-7 h-7 rounded-full -left-4 bg-success text-white font-bold text-xs shadow-md ring-4 ring-white">
+                <Check />
+              </span>
+              <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+                <h5 className="text-md font-medium text-gray-800">Completed</h5>
+              </div>
             </ol>
           </div>
         </div>

@@ -6,7 +6,6 @@ import auhtRoutes from "./routes/auth.route.js";
 import authenticate from "./middlewares/authenticate.js";
 import cookieParser from "cookie-parser";
 import path from "path";
-import { fileURLToPath } from "url";
 import configRoutes from "./routes/config.route.js";
 import FlexSourceDataRoutes from "./routes/flexSourceData.route.js";
 import flowAndPointRoutes from "./routes/flowAndPoint.route.js";
@@ -31,7 +30,6 @@ app.use(
     credentials: true,
   })
 );
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Serve static files from uploads directory
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));

@@ -24,7 +24,7 @@ import ProcessPage from "./pages/ProcessPage";
 import StatusFullfillmentPage from "./components/StatusFullfillmentPage";
 import RequestEditPage from "./pages/RequestEditPage";
 import OnlyPreview from "./pages/OnlyPreview";
-import RegisterPage from "./pages/RegisterPage";
+// import RegisterPage from "./pages/RegisterPage";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -76,7 +76,7 @@ const router = createBrowserRouter(
         <Route path="/all_account" element={<AllAccounts />} />
       </Route>
       <Route index={true} path="/login" element={<Login />} />
-      <Route index={true} path="/register" element={<RegisterPage />} />
+      {/* <Route index={true} path="/register" element={<RegisterPage />} /> */}
 
       <Route path="*" element={<NotFound />} />
     </Route>

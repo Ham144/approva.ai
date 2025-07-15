@@ -199,16 +199,19 @@ router.get("/list", async (req, res) => {
 
     const rawList = await FlowAndPoint.find(query)
       .select(
-        "title desc isAllowanceModeRequest allowedUserToRequest status designedBy"
+        "title desc isAllowanceModeRequest allowedUserToRequest designedBy"
       )
+      .populate({
+        path: "status",
+        populate: {
+          path: "authorized",
+          model: "UserRefrensi",
+          select: "_id username",
+        },
+      })
       .populate("designedBy", "username");
 
-    const list = rawList.map((item) => ({
-      ...item.toObject(),
-      status: item.status?.map((s) => ({ title: s.title })),
-    }));
-
-    const flowListFiltered = list.filter((template) => {
+    const flowListFiltered = rawList.filter((template) => {
       const iamCreator = template.designedBy?.findIndex((d) => d._id == userId);
       if (iamCreator !== -1) return true;
 

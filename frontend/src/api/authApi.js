@@ -1,8 +1,13 @@
 import axiosInstance from "./axiosInstance";
 
 //login LDAP
-export const login = async (body) => {
+export const loginLdap = async (body) => {
   const response = await axiosInstance.post(`/api/auth/login/ldap`, body);
+  return response?.data;
+};
+
+export const loginApp = async (body) => {
+  const response = await axiosInstance.post(`/api/auth/login/app`, body);
   return response?.data;
 };
 
@@ -12,6 +17,11 @@ export const register = async (body) => {
     body
   );
   return response?.data;
+};
+
+export const createAppUser = async (body) => {
+  const response = await axiosInstance.post("/api/auth/createAppUser", body);
+  return response.data;
 };
 
 export const getUserInfo = async () => {
@@ -38,6 +48,11 @@ export const updateUser = async (body) => {
 export const getUserById = async (id) => {
   const response = await axiosInstance.get(`/api/auth/getUserById/${id}`);
   return response?.data;
+};
+
+export const deleteAppUser = async (id) => {
+  const response = await axiosInstance.delete(`/api/auth/deleteAppUser/${id}`);
+  return response.data;
 };
 
 export const logout = async () => {

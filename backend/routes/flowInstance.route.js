@@ -2,6 +2,10 @@ import { Router } from "express";
 import FlowInstance from "../models/FlowInstance.model.js";
 import FlowAndPoint from "../models/FlowAndPoint.model.js";
 import mongoose from "mongoose";
+import {
+  sendApprovalRequestEmail,
+  sendSkippedUserNotification,
+} from "../utils/emailService.js";
 
 const router = Router();
 
@@ -85,6 +89,29 @@ router.post("/request/new", async (req, res) => {
       currentStatusIndex: 0, // Mulai dari index 0
       org: req.user.org,
     });
+
+    // --- Start Email Notification Logic for First Approver ---
+    try {
+      if (flowInstance.overallStatus === "in-progress") {
+        const nextStatusTemplate =
+          template.status[flowInstance.currentStatusIndex];
+        const nextApprovers = nextStatusTemplate.authorized;
+
+        if (nextApprovers.length > 0) {
+          await sendApprovalRequestEmail(
+            nextApprovers,
+            flowInstance,
+            "System (Initial Request)" // Or use the requester's name: req.user.username
+          );
+        }
+      }
+    } catch (emailError) {
+      console.error(
+        "Email notification for initial request failed:",
+        emailError
+      );
+    }
+    // --- End Email Notification Logic ---
 
     return res
       .status(201) // Gunakan 201 Created untuk resource baru
@@ -272,7 +299,7 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
           {
             path: "status.authorized",
             model: "UserRefrensi",
-            select: "_id username",
+            select: "_id username email",
           },
         ],
       })
@@ -379,6 +406,48 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
 
     await flowInstance.save();
 
+    // --- Start Email Notification Logic ---
+    if (verdictOfRequirement === "approved") {
+      try {
+        // The `flowInstance` variable has the `flowTemplate` populated with authorized users (including email).
+
+        // 1. Notify users who were skipped on the step that was just completed.
+        const completedStatusTemplate =
+          flowInstance.flowTemplate.status[currentStatusIndex]; // Use the original index
+        const skippedUsers = completedStatusTemplate.authorized.filter(
+          (user) => !user._id.equals(userId)
+        );
+
+        if (skippedUsers.length > 0) {
+          await sendSkippedUserNotification(
+            skippedUsers,
+            flowInstance,
+            req.user.username,
+            flowInstance._id
+          );
+        }
+
+        // 2. Notify the next approvers if the flow is not yet complete.
+        if (flowInstance.overallStatus === "in-progress") {
+          const nextStatusTemplate =
+            flowInstance.flowTemplate.status[flowInstance.currentStatusIndex]; // Use the new, incremented index
+          const nextApprovers = nextStatusTemplate.authorized;
+
+          if (nextApprovers.length > 0) {
+            await sendApprovalRequestEmail(
+              nextApprovers,
+              flowInstance,
+              req.user.username
+            );
+          }
+        }
+      } catch (emailError) {
+        // Log the error but don't fail the request
+        console.error("Email notification failed:", emailError);
+      }
+    }
+    // --- End Email Notification Logic ---
+
     return res.json({
       message:
         "berhasil menyelesaikan proses anda, proses " +
@@ -417,6 +486,12 @@ router.put("/rollback/:id", async (req, res) => {
 
     await flowInstance.save();
 
+    await sendApprovalRequestEmail(
+      flowInstance.flowTemplate.status[0].authorized,
+      flowInstance,
+      req.user.username
+    );
+
     return res.json({
       message: "Berhasil mengupdate, prosess kembali ke awal",
     });
@@ -443,110 +518,110 @@ router.delete("/delete/:instanceId", async (req, res) => {
   }
 });
 
-router.get("/onduty/list", async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
-  const userId = req.user._id;
+// router.get("/onduty/list", async (req, res) => {
+//   const page = parseInt(req.query.page) || 1;
+//   const limit = parseInt(req.query.limit) || 10;
+//   const userId = req.user._id;
 
-  try {
-    const instanceList = await FlowInstance.aggregate([
-      {
-        $match: {
-          overallStatus: "in-progress",
-          $expr: {
-            $in: [
-              { $toObjectId: userId },
-              {
-                $let: {
-                  vars: {
-                    currentStatus: {
-                      $arrayElemAt: [
-                        "$flowTemplate.status",
-                        "$currentStatusIndex",
-                      ],
-                    },
-                  },
-                  in: "$$currentStatus.authorized",
-                },
-              },
-            ],
-          },
-        },
-      },
-      {
-        $lookup: {
-          from: "userrefrensis",
-          localField: "requestedBy",
-          foreignField: "_id",
-          as: "requestedByInfo",
-        },
-      },
-      {
-        $unwind: {
-          path: "$requestedByInfo",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $sort: { createdAt: -1 },
-      },
-      {
-        $skip: (page - 1) * limit,
-      },
-      {
-        $limit: limit,
-      },
-      {
-        $project: {
-          _id: 1,
-          instanceTitle: 1,
-          createdAt: 1,
-          requestedByUsername: "$requestedByInfo.username",
-        },
-      },
-    ]);
+//   try {
+//     const instanceList = await FlowInstance.aggregate([
+//       {
+//         $match: {
+//           overallStatus: "in-progress",
+//           $expr: {
+//             $in: [
+//               { $toObjectId: userId },
+//               {
+//                 $let: {
+//                   vars: {
+//                     currentStatus: {
+//                       $arrayElemAt: [
+//                         "$flowTemplate.status",
+//                         "$currentStatusIndex",
+//                       ],
+//                     },
+//                   },
+//                   in: "$$currentStatus.authorized",
+//                 },
+//               },
+//             ],
+//           },
+//         },
+//       },
+//       {
+//         $lookup: {
+//           from: "userrefrensis",
+//           localField: "requestedBy",
+//           foreignField: "_id",
+//           as: "requestedByInfo",
+//         },
+//       },
+//       {
+//         $unwind: {
+//           path: "$requestedByInfo",
+//           preserveNullAndEmptyArrays: true,
+//         },
+//       },
+//       {
+//         $sort: { createdAt: -1 },
+//       },
+//       {
+//         $skip: (page - 1) * limit,
+//       },
+//       {
+//         $limit: limit,
+//       },
+//       {
+//         $project: {
+//           _id: 1,
+//           instanceTitle: 1,
+//           createdAt: 1,
+//           requestedByUsername: "$requestedByInfo.username",
+//         },
+//       },
+//     ]);
 
-    // Hitung total count
-    const totalCountAgg = await FlowInstance.aggregate([
-      {
-        $match: {
-          overallStatus: "in-progress",
-          $expr: {
-            $in: [
-              { $toObjectId: userId },
-              {
-                $let: {
-                  vars: {
-                    currentStatus: {
-                      $arrayElemAt: [
-                        "$flowTemplate.status",
-                        "$currentStatusIndex",
-                      ],
-                    },
-                  },
-                  in: "$$currentStatus.authorized",
-                },
-              },
-            ],
-          },
-        },
-      },
-      {
-        $count: "count",
-      },
-    ]);
+//     // Hitung total count
+//     const totalCountAgg = await FlowInstance.aggregate([
+//       {
+//         $match: {
+//           overallStatus: "in-progress",
+//           $expr: {
+//             $in: [
+//               { $toObjectId: userId },
+//               {
+//                 $let: {
+//                   vars: {
+//                     currentStatus: {
+//                       $arrayElemAt: [
+//                         "$flowTemplate.status",
+//                         "$currentStatusIndex",
+//                       ],
+//                     },
+//                   },
+//                   in: "$$currentStatus.authorized",
+//                 },
+//               },
+//             ],
+//           },
+//         },
+//       },
+//       {
+//         $count: "count",
+//       },
+//     ]);
 
-    const totalCount = totalCountAgg[0]?.count || 0;
-    const pages = Math.ceil(totalCount / limit);
+//     const totalCount = totalCountAgg[0]?.count || 0;
+//     const pages = Math.ceil(totalCount / limit);
 
-    return res.json({
-      data: instanceList,
-      pages,
-    });
-  } catch (error) {
-    console.error("❌ Error on /onduty/list:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-});
+//     return res.json({
+//       data: instanceList,
+//       pages,
+//     });
+//   } catch (error) {
+//     console.error("❌ Error on /onduty/list:", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// });
 
 export default router;
