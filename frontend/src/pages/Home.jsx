@@ -1,20 +1,6 @@
-import React, { useState } from "react";
-import {
-  Package,
-  History,
-  AlertCircle,
-  Clock,
-  CheckCircle2,
-  AlertTriangle,
-  Crown,
-  X,
-  Store,
-  CheckCircle,
-  Ban,
-  Warehouse,
-  Flower,
-} from "lucide-react";
-import { APP_DESC, APP_NAME } from "@/api/constant";
+import React from "react";
+import { Package, History, Crown, CheckCircle } from "lucide-react";
+import { APP_DESC } from "@/api/constant";
 import { useNavigate } from "react-router-dom";
 import { useUserInfo } from "@/store";
 import { useQuery } from "@tanstack/react-query";
@@ -41,16 +27,9 @@ const Home = () => {
     },
   ];
 
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-
-  const { data: flowInstanceOnDuty, isPending: isLoadingReady } = useQuery({
-    queryKey: ["flowInstanceOnDuty", page, limit],
-    queryFn: async () => {
-      const res = await flowInstanceApi.getFlowInstanceOnDuty({ page, limit });
-      console.log(res);
-      return res;
-    },
+  const { data: myTasksQuery, isLoading } = useQuery({
+    queryKey: ["myTasks"],
+    queryFn: flowInstanceApi.getMyTasks,
   });
 
   return (
@@ -65,87 +44,59 @@ const Home = () => {
           <p className="text-sm text-gray-600">{APP_DESC}</p>
         </div>
 
-        {/* status READY untuk driver  */}
+        {/* My Tasks Section */}
         <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-4">Tertunda dibagian anda</h2>
-          {!flowInstanceOnDuty?.data?.length ? (
+          <h2 className="text-lg font-semibold mb-4">Tugas Untuk Anda</h2>
+          {isLoading ? (
+            <div className="flex justify-center py-6">
+              <span className="loading loading-ring loading-lg"></span>
+            </div>
+          ) : !myTasksQuery?.data?.length ? (
             <div className="alert alert-success badge-outline">
               <CheckCircle className="w-4 h-4" />
-              <span>Tampaknya Belum Ada</span>
+              <span>Tidak ada tugas yang menunggu. Kerja bagus!</span>
             </div>
           ) : (
             <div className="space-y-4">
-              {isLoadingReady ? (
-                <div className="flex justify-center py-6">
-                  <span className="loading loading-ring loading-lg"></span>
-                </div>
-              ) : (
-                <>
-                  <div className="overflow-x-auto">
-                    <table className="table table-zebra w-full bg-white rounded-lg shadow">
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>Judul Permintaan</th>
-                          <th>Dibuat Pada</th>
-                          <th>Di request oleh</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {flowInstanceOnDuty?.data?.map((item, index) => (
-                          <tr
-                            key={item._id}
-                            onClick={() =>
-                              navigate(`/status/fulfillment/${item._id}`)
-                            }
-                            className="cursor-pointer hover:bg-slate-100"
-                          >
-                            <td>{(page - 1) * limit + index + 1}</td>
-                            <td>{item.instanceTitle}</td>
-                            <td>
-                              {new Date(item.createdAt).toLocaleString(
-                                "id-ID",
-                                {
-                                  dateStyle: "medium",
-                                  timeStyle: "short",
-                                }
-                              )}
-                            </td>
-                            <td>{item.requestedByUsername}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Pagination */}
-                  {flowInstanceOnDuty?.pages > 1 && (
-                    <div className="flex justify-center gap-2 mt-6">
-                      <button
-                        className="btn btn-sm"
-                        disabled={page <= 1}
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      >
-                        Previous
-                      </button>
-                      <span className="px-4 py-2 flex items-center">
-                        Page {page} of {flowInstanceOnDuty.pages}
-                      </span>
-                      <button
-                        className="btn btn-sm"
-                        disabled={page >= flowInstanceOnDuty.pages}
+              <div className="overflow-x-auto">
+                <table className="table table-zebra w-full bg-white rounded-lg shadow">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Judul Permintaan</th>
+                      <th>Status Saat Ini</th>
+                      <th>Direquest oleh</th>
+                      <th>Tanggal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {myTasksQuery.data.map((task, index) => (
+                      <tr
+                        key={task._id}
                         onClick={() =>
-                          setPage((p) =>
-                            Math.min(flowInstanceOnDuty.pages, p + 1)
-                          )
+                          navigate(`/status/fulfillment/${task._id}`)
                         }
+                        className="cursor-pointer hover:bg-slate-100"
                       >
-                        Next
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
+                        <td>{index + 1}</td>
+                        <td>{task.instanceTitle}</td>
+                        <td>
+                          <span className="badge badge-warning">
+                            {task.currentStatusTitle}
+                          </span>
+                        </td>
+                        <td>{task.requestedByUsername}</td>
+                        <td>
+                          {new Date(task.createdAt).toLocaleString("id-ID", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -164,7 +115,7 @@ const Home = () => {
                   <Crown className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-medium">Pengelola Page</h3>
+                  <h3 className="font-medium">Organization Owner Page</h3>
                   <p className="text-sm text-gray-600">{userInfo?.username}</p>
                 </div>
               </div>

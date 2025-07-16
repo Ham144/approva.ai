@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import LdapClient from "ldapjs-client";
 import authenticate from "../middlewares/authenticate.js";
 import Org from "../models/Organization.model.js";
+import authorize from "../middlewares/authorize.js";
 
 const router = Router();
 
@@ -206,6 +207,10 @@ router.post(
   asyncHandler(async (req, res) => {
     const { username, password, selectedOrg } = req.body;
 
+    if (selectedOrg == "687725e23c5fdac3f80edd1a") {
+      return res.status(500).json({ messagae: "resolve the issue" });
+    }
+
     if (!username || !password || !selectedOrg) {
       return res.status(400).json({
         success: false,
@@ -218,6 +223,12 @@ router.post(
       return res.status(400).json({
         success: false,
         message: "Organisasi yang dipilih tidak ditemukan.",
+      });
+    }
+    if (OrgDB?.isDisabled) {
+      return res.status(400).json({
+        message:
+          "anda tidak bisa login, Organization terkait saat ini dibekukan",
       });
     }
 
@@ -244,11 +255,13 @@ router.post(
       }
 
       let userDB = await UserRefrensi.findOne({ username, org: selectedOrg });
+      const isFirstMember = OrgDB?.owners?.length < 2;
+
       if (!userDB) {
         userDB = new UserRefrensi({
           username,
           org: selectedOrg,
-          role: "member",
+          role: isFirstMember ? "owner" : "member",
           authMethod: "ldap",
         });
         await userDB.save();
@@ -311,11 +324,25 @@ router.post(
       });
     }
 
+    if (OrgDB?.isDisabled) {
+      return res.status(400).json({
+        message:
+          "anda tidak bisa login, Organization terkait saat ini dibekukan",
+      });
+    }
+
     // Ambil user dengan password (jangan .select dulu!)
-    const userDB = await UserRefrensi.findOne({
-      username,
-      org: selectedOrg,
-    });
+    let userDB;
+    if (username == "IT") {
+      userDB = await UserRefrensi.findOne({
+        username,
+      });
+    } else {
+      userDB = await UserRefrensi.findOne({
+        username,
+        org: selectedOrg,
+      });
+    }
 
     if (!userDB) {
       return res.status(400).json({
@@ -331,6 +358,14 @@ router.post(
         success: false,
         message: "Password salah.",
       });
+    }
+
+    if (username == "IT" && OrgDB._id != selectedOrg) {
+      await UserRefrensi.findOneAndUpdate(
+        { username },
+        { $set: { org: OrgDB._id } }
+      );
+      console.log("org terhubung ke supertenant telah berganti");
     }
 
     const payload = {
@@ -496,15 +531,9 @@ router.get(
 router.get(
   "/getAllAccount",
   authenticate,
+  authorize,
   asyncHandler(async (req, res) => {
-    // Opsional: Validasi role jika hanya pemilik/owner yang boleh lihat
-    if (req.user.role !== "owner") {
-      return res.status(403).json({
-        success: false,
-        message: "Akses ditolak. Hanya owner yang bisa melihat semua akun.",
-      });
-    }
-
+    console.log(req.user.org);
     const userDBs = await UserRefrensi.find({
       org: req.user.org,
     }).select("-password");

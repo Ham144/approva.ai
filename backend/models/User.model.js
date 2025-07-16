@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: ["owner", "member", "supertenant"],
-      default: "owner",
+      default: "member",
     },
     password: String, //ini untuk authMethod 'app'
     authMethod: {

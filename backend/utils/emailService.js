@@ -19,7 +19,7 @@ const transportOptions = {
 
 console.log("Initializing email transporter with options:", {
   ...transportOptions,
-  auth: { user: transportOptions.auth.user, pass: "[REDACTED]" },
+  auth: { user: transportOptions.auth.user },
 });
 
 const transporter = nodemailer.createTransport(transportOptions);
@@ -39,13 +39,13 @@ async function sendEmail(to, subject, html) {
   };
 
   try {
-    transporter.verify((error, success) => {
-      if (error) {
-        console.log("SMTP connection failed:", error);
-      } else {
-        console.log("SMTP server is ready to send messages");
-      }
-    });
+    // transporter.verify((error, success) => {
+    //   if (error) {
+    //     console.log("SMTP connection failed:", error);
+    //   } else {
+    //     console.log("SMTP server is ready to send messages");
+    //   }
+    // });
 
     const info = await transporter.sendMail(mailOptions);
 

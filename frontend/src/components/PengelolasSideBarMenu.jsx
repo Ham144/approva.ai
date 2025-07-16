@@ -7,7 +7,10 @@ import {
   GitPullRequest,
   List,
   Users2,
+  Crown,
+  Plus,
 } from "lucide-react";
+import { useUserInfo } from "@/store";
 
 export default function PengelolaSideBarMenu({ children }) {
   const menuItems = [
@@ -19,8 +22,10 @@ export default function PengelolaSideBarMenu({ children }) {
     },
     { name: "User Manager", path: "/management/user", icon: Users2 },
     { name: "Config Manager", path: "/management/config/app", icon: Cog },
+    { name: "supertenant", path: "/supertenant/management", icon: Crown },
   ];
 
+  const { userInfo } = useUserInfo();
   const [isOpen, setIsOpen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(64);
@@ -101,12 +106,16 @@ export default function PengelolaSideBarMenu({ children }) {
 
         <nav className="flex-1 overflow-y-auto">
           <ul className="space-y-1">
-            {menuItems.map(({ name, icon: Icon, path }) => (
+            {menuItems.map(({ name, icon: Icon, path }, i) => (
               <li key={name}>
                 <NavLink
                   to={path}
                   className={({ isActive }) =>
                     `flex items-center p-2 rounded-lg transition-all duration-200 ${
+                      userInfo.role != "supertenant" &&
+                      name == "supertenant" &&
+                      "hidden"
+                    } ${
                       isActive
                         ? "bg-blue-50 text-blue-700 font-medium"
                         : "text-gray-600 hover:bg-gray-100"

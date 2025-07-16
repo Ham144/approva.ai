@@ -624,4 +624,96 @@ router.delete("/delete/:instanceId", async (req, res) => {
 //   }
 // });
 
+// Get tasks assigned to the current user
+router.get("/my-tasks", async (req, res) => {
+  const userId = req.user._id;
+  const orgId = req.user.org;
+
+  if (!userId || !orgId) {
+    return res.status(400).json({ message: "User or organization not found" });
+  }
+
+  try {
+    const tasks = await FlowInstance.aggregate([
+      // Stage 1: Match initial documents that are in-progress and belong to the user's org
+      {
+        $match: {
+          overallStatus: "in-progress",
+          org: new mongoose.Types.ObjectId(orgId),
+        },
+      },
+      // Stage 2: Lookup to join with the flowandpoints collection to get template details
+      {
+        $lookup: {
+          from: "flowandpoints", // The collection name for the FlowAndPoint model
+          localField: "flowTemplate",
+          foreignField: "_id",
+          as: "flowTemplateDetails",
+        },
+      },
+      // Stage 3: Deconstruct the flowTemplateDetails array field from the input documents to output a document for each element
+      {
+        $unwind: "$flowTemplateDetails",
+      },
+      // Stage 4: Add a new field 'currentStatusObject' which holds the status object at the current index
+      {
+        $addFields: {
+          currentStatusObject: {
+            $arrayElemAt: [
+              "$flowTemplateDetails.status",
+              "$currentStatusIndex",
+            ],
+          },
+        },
+      },
+      // Stage 5: Filter documents to only include those where the current user is in the authorized array of the current status
+      {
+        $match: {
+          "currentStatusObject.authorized": new mongoose.Types.ObjectId(userId),
+        },
+      },
+      // Stage 6: Lookup to get the requester's username
+      {
+        $lookup: {
+          from: "userrefrensis", // The collection name for the UserRefrensi model
+          localField: "requestedBy",
+          foreignField: "_id",
+          as: "requestedByInfo",
+        },
+      },
+      // Stage 7: Unwind the requestedByInfo array
+      {
+        $unwind: {
+          path: "$requestedByInfo",
+          preserveNullAndEmptyArrays: true, // Keep instances even if requester is not found
+        },
+      },
+      // Stage 8: Sort documents by creation date in descending order
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+      // Stage 9: Project to shape the final output documents
+      {
+        $project: {
+          _id: 1,
+          instanceTitle: 1,
+          createdAt: 1,
+          currentStatusTitle: "$currentStatusObject.title",
+          requestedByUsername: "$requestedByInfo.username",
+        },
+      },
+    ]);
+
+    return res.json({
+      message: "Successfully retrieved your tasks.",
+      data: tasks,
+    });
+  } catch (error) {
+    console.error("Error fetching user tasks:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
 export default router;

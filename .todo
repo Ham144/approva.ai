@@ -14,3 +14,4 @@
 [x] approve/reject email ke orang yang sedang giliran saat ini mengirimkan tombol approve dan reject serta detail
 [x] notif email pemberitahun ke orang yang melewatkan giliran karena diambil org
 [x] notif email ke requester jika seorang approval memutuskan reject ataupun meminta rollback.
+[] supertenant yang bisa berpindah pindah organisasi

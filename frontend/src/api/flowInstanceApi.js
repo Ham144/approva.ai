@@ -65,10 +65,8 @@ const flowInstanceApi = {
     );
     return res.data;
   },
-  getFlowInstanceOnDuty: async ({ page = 1, limit = 10 }) => {
-    const res = await axiosInstance.get(
-      `/api/flowInstance/onduty/list?page=${page}&limit=${limit}`
-    );
+  getMyTasks: async () => {
+    const res = await axiosInstance.get(`/api/flowInstance/my-tasks`);
     return res.data;
   },
   rollback: async (instanceId) => {

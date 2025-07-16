@@ -24,6 +24,7 @@ import ProcessPage from "./pages/ProcessPage";
 import StatusFullfillmentPage from "./components/StatusFullfillmentPage";
 import RequestEditPage from "./pages/RequestEditPage";
 import OnlyPreview from "./pages/OnlyPreview";
+import SuperTenantPage from "./pages/SuperTenantPage";
 // import RegisterPage from "./pages/RegisterPage";
 
 const router = createBrowserRouter(
@@ -64,6 +65,7 @@ const router = createBrowserRouter(
         <Route path="/management/user" element={<UserManagement />} />
         <Route path="/management/config/app" element={<Config />} />
         <Route path="/management/flow" element={<FlowManagement />} />
+        <Route path="/supertenant/management" element={<SuperTenantPage />} />
         <Route
           path="/management/sourceData/options"
           element={<SourceDataOption />}

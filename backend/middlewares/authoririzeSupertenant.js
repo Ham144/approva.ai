@@ -1,6 +1,6 @@
 import UserRefrensi from "../models/User.model.js";
 
-const authorize = async (req, res, next) => {
+const authorizeSupertenant = async (req, res, next) => {
   try {
     // Check if userId is present from previous middleware (e.g., authenticate)
     if (!req?.user._id) {
@@ -12,7 +12,6 @@ const authorize = async (req, res, next) => {
 
     const userDB = await UserRefrensi.findOne({
       username: req.user.username,
-      org: req.user.org,
     }).select("-password -otp");
 
     if (!userDB) {
@@ -23,10 +22,10 @@ const authorize = async (req, res, next) => {
     }
 
     // Opsional: Validasi role jika hanya pemilik/owner yang boleh lihat
-    if (req.user.role !== "owner" && userDB.role !== "supertenant") {
+    if (userDB.role !== "supertenant") {
       return res.status(403).json({
         success: false,
-        message: "Akses ditolak. Hanya owner yang bisa melihat semua akun.",
+        message: "Akses ditolak, route ini bukan untuk member maupun owner.",
       });
     }
 
@@ -39,4 +38,4 @@ const authorize = async (req, res, next) => {
   }
 };
 
-export default authorize;
+export default authorizeSupertenant;

@@ -51,9 +51,6 @@ export default function ActionFlowModal({ selectedFlow }) {
           >
             <PencilLine size={20} />
             Edit Flow
-            <span className="badge badge-warning text-xs font-normal ml-2 py-1 px-2 rounded-full">
-              Fitur Mungkin Bermasalah
-            </span>
           </button>
 
           {/* Delete Flow Button */}

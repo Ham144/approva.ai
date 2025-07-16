@@ -35,7 +35,6 @@ export default function UserManagement() {
   const [errors, setErrors] = useState({});
   const queryClient = useQueryClient();
 
-  const [selectedRoleCategory, setSelectedRoleCategory] = useState("all");
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
 
