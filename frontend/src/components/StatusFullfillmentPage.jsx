@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { Trash, ChevronUp, ChevronDown, History } from "lucide-react";
 import PreviewFlow from "./PreviewFlow";
-import { useResponseCollector } from "@/store";
+import { useResponseCollector, useUserInfo } from "@/store";
 import flowInstanceApi from "@/api/flowInstanceApi";
 import toast from "react-hot-toast";
 import ApprovalButton from "./ApprovalButton";
@@ -59,6 +59,8 @@ export default function StatusFullfillmentPage() {
     queryFn: () => flowInstanceApi.getFlowInstanceById(instanceId),
     enabled: !!instanceId,
   });
+
+  const { userInfo } = useUserInfo();
   useEffect(() => {
     if (flowInstanceData?.data?.requestData) {
       setFullRequestData(flowInstanceData.data.requestData);
@@ -66,8 +68,32 @@ export default function StatusFullfillmentPage() {
       setInstanceTitle(flowInstanceData.data.instanceTitle);
       setStatuses(flowInstanceData.data.statuses);
       setCurrentStatusIndex(flowInstanceData.data.currentStatusIndex);
+
+      if (
+        flowInstanceData?.data?.flowTemplate?.status[currentStatusIndex]
+          ?.authorized
+      ) {
+        const isMyTurn = flowInstanceData?.data?.flowTemplate?.status[
+          currentStatusIndex
+        ].authorized.findIndex((current) => current?._id === userInfo?._id);
+        setTimeout(() => {
+          if (isMyTurn === -1 && instanceId) {
+            toast.error(
+              "Status ini telah berlalu, mungkin tahap telah didelegasikan kepada orang lain"
+            );
+            setTimeout(() => {
+              navigate(`/status/isOnlyPreview/${instanceId}`);
+            }, 300);
+          }
+        }, 0);
+      }
     }
-  }, [flowInstanceData?.data?.requestData, setRequestData]);
+  }, [
+    flowInstanceData?.data?.requestData,
+    setRequestData,
+    flowInstanceData?.data?.flowTemplate?.status[currentStatusIndex]
+      ?.authorized,
+  ]);
 
   let flowTemplate = flowInstanceData?.data.flowTemplate;
 

@@ -26,4 +26,25 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.put("/", async (req, res) => {
+  const { AD_HOST, AD_PORT } = req.body;
+
+  try {
+    await Org.findOneAndUpdate(
+      { _id: req.user.org },
+      {
+        AD_HOST,
+        AD_PORT,
+      }
+    );
+
+    return res.json({
+      message: "Berhasil mengubah konfigurasi LDAP organisasi.",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Gagal, internal server error." });
+  }
+});
+
 export default router;

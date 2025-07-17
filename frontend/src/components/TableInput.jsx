@@ -37,8 +37,6 @@ const TableInput = ({
     }
   }, [input._id, keys.length]);
 
-  console.log(tableRows);
-
   const handleChange = (rowIdx, colIdx, value) => {
     const updatedRows = [...tableRows];
     if (!updatedRows[rowIdx]) return;

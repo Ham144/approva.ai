@@ -1,4 +1,8 @@
-import { MessageSquareText } from "lucide-react";
+import {
+  ArrowDownFromLine,
+  ArrowUpFromLine,
+  MessageSquareText,
+} from "lucide-react";
 import ModalShowTips from "./ModalShowTips";
 import React, { useState } from "react";
 import FlexSourceDataApi from "@/api/flexSourceDataApi";
@@ -49,7 +53,7 @@ const getInputTypeIcon = (type) => {
   }
 };
 
-function InputItem({ input, index, onChange, deleteInput }) {
+function InputItem({ input, index, onChange, deleteInput, handleMoveRequest }) {
   const hasNew = !!input?.sourceDataNew;
   const [searchSourceDataTitle, setSearchSourceDataTitle] = useState("");
 
@@ -88,6 +92,20 @@ function InputItem({ input, index, onChange, deleteInput }) {
         >
           <Trash2 size={20} />
         </button>
+        <div className="flex gap-x-2">
+          <button
+            className="btn"
+            onClick={() => handleMoveRequest(index, "DOWN")}
+          >
+            <ArrowDownFromLine className="w-5 h-5" />
+          </button>
+          <button
+            className="btn"
+            onClick={() => handleMoveRequest(index, "UP")}
+          >
+            <ArrowUpFromLine className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* Baris Input: Nama Variabel & Boleh Kosong? */}

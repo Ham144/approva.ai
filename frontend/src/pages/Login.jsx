@@ -44,7 +44,9 @@ export default function Login({ className, ...props }) {
       queryClient.invalidateQueries(["userInfo"]);
 
       toast.success("Login berhasil!");
-      navigate("/");
+      setTimeout(() => {
+        navigate("/");
+      }, 500);
     },
     onError: (err) => {
       console.log(err);

@@ -255,7 +255,7 @@ router.get("/getFlowById/:id", async (req, res) => {
       })
       .populate("status.requirements")
       .populate("status.authorized")
-      .populate("designedBy");
+      .populate("designedBy", "username  _id authMethod role");
 
     if (!flow) {
       return res.status(404).json({ message: "Flow tidak ditemukan" });

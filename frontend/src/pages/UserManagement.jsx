@@ -285,31 +285,27 @@ export default function UserManagement() {
                     )}
                   </div>
                 )}
-                {/* Email Field (only for app auth) */}
-                {(!isEditMode || formData.authMethod === "app") && (
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text">Email</span>
-                    </label>
-                    <input
-                      type="email"
-                      value={formData?.email || ""}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
-                      className={`input input-bordered ${
-                        errors.email ? "input-error" : ""
-                      }`}
-                      placeholder="Masukkan Email"
-                      disabled={isEditMode && formData.authMethod === "ldap"}
-                    />
-                    {errors.email && (
-                      <span className="text-error text-sm mt-1">
-                        {errors.email}
-                      </span>
-                    )}
-                  </div>
-                )}
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Email</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={formData?.email || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    className={`input input-bordered ${
+                      errors.email ? "input-error" : ""
+                    }`}
+                    placeholder="Masukkan Email"
+                  />
+                  {errors.email && (
+                    <span className="text-error text-sm mt-1">
+                      {errors.email}
+                    </span>
+                  )}
+                </div>
                 {/* Password Field (only for new app auth) */}
                 {!isEditMode && formData.authMethod === "app" && (
                   <div className="form-control">

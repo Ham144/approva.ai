@@ -400,7 +400,7 @@ router.put(
   "/updateUser",
   authenticate,
   asyncHandler(async (req, res) => {
-    const { _id, role, password } = req.body;
+    const { _id, role, password, email } = req.body;
 
     if (!_id || !role) {
       return res.status(400).json({
@@ -435,6 +435,28 @@ router.put(
     // Pastikan selalu ada di members[]
     if (!orgDB.members.includes(user._id)) {
       orgDB.members.push(user._id);
+    }
+
+    if (email) {
+      const duplicateEmail = await UserRefrensi.findOne({
+        $and: [
+          {
+            email,
+            org: req.user.org,
+          },
+          {
+            _id: {
+              $ne: user._id,
+            },
+          },
+        ],
+      });
+      if (duplicateEmail) {
+        return res.status(400).json({
+          message: "duplicate email dalam 1 organisasi, coba email lain",
+        });
+      }
+      user.email = email;
     }
 
     // Update role dan update array

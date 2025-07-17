@@ -32,26 +32,29 @@ export default function RequestStartCreatePage() {
   const navigate = useNavigate();
 
   //flow Data instance untuk memulai flow instance baru
-  const { mutateAsync: handleSubmitNewRequest } = useMutation({
-    mutationKey: ["flowInstance", id],
-    mutationFn: async () =>
-      await flowInstanceApi.requestNewFlowInstance({
-        instanceTitle,
-        flowTemplateId: id,
-        overallStatus,
-        requestData,
-      }),
-    onSuccess: (res) => {
-      toast.success(res?.message);
-      //kembali instance Id
-      navigate(`/process?isMyRequestOnlyQuery=true`);
-      resetRequestData();
-    },
-    onError: (err) => {
-      console.log(err);
-      toast.error(err?.response?.data?.message);
-    },
-  });
+  const { mutateAsync: handleSubmitNewRequest, isPending: sendingEmail } =
+    useMutation({
+      mutationKey: ["flowInstance", id],
+      mutationFn: async () =>
+        await flowInstanceApi.requestNewFlowInstance({
+          instanceTitle,
+          flowTemplateId: id,
+          overallStatus,
+          requestData,
+        }),
+      onSuccess: (res) => {
+        toast.success(res?.message);
+        //kembali instance Id
+        setTimeout(() => {
+          navigate(`/process?isMyRequestOnlyQuery=true`);
+          resetRequestData();
+        }, 500);
+      },
+      onError: (err) => {
+        console.log(err);
+        toast.error(err?.response?.data?.message);
+      },
+    });
 
   if (isFlowLoading) {
     return <div className="text-center py-10">Loading...</div>;
@@ -70,6 +73,7 @@ export default function RequestStartCreatePage() {
       <div className="flex flex-wrap items-center justify-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-b-xl shadow-md border-t border-gray-200 dark:border-gray-700">
         {/* Save/Update Button */}
         <button
+          disabled={sendingEmail}
           onClick={handleSubmitNewRequest}
           className="
           flex-1 min-w-[150px] sm:min-w-[180px] px-6 py-3
@@ -81,7 +85,7 @@ export default function RequestStartCreatePage() {
           aria-label="Save or Update Request"
         >
           <Save className="w-5 h-5" />
-          Simpan
+          {sendingEmail ? "sendingEmail.." : "Simpan"}
         </button>
 
         {/* Clear Input Button */}

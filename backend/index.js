@@ -12,10 +12,11 @@ import flowAndPointRoutes from "./routes/flowAndPoint.route.js";
 import flowInstanceroutes from "./routes/flowInstance.route.js";
 import orgRoutes from "./routes/org.routes.js";
 import fileRoutes from "./routes/file.route.js";
+import authorize from "./middlewares/authorize.js";
 
 const isProduction = process.env.NODE_ENV === "production";
 const corsOrigin = isProduction
-  ? ["http://192.168.169.12:5173"]
+  ? ["http://192.168.169.22"]
   : ["http://192.168.169.12:5173"];
 
 const app = express();
@@ -44,7 +45,7 @@ app.get("/", async (req, res) => {
 
 //routes
 app.use("/api/auth", auhtRoutes);
-app.use("/api/config", authenticate, configRoutes);
+app.use("/api/config", authenticate, authorize, configRoutes);
 app.use("/api/flexSourceData", authenticate, FlexSourceDataRoutes);
 app.use("/api/flow", authenticate, flowAndPointRoutes); //ini untuk designernya
 app.use("/api/flowInstance", authenticate, flowInstanceroutes); //ini untuk user

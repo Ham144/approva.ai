@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import PengelolaSideBarMenu from "@/components/PengelolasSideBarMenu";
 import configApi from "@/api/configApi";
+import toast from "react-hot-toast";
 
 export default function Config() {
   const {
@@ -18,13 +19,30 @@ export default function Config() {
   const [AD_HOST, setAD_HOST] = useState("");
   const [AD_PORT, setAD_PORT] = useState("");
 
+  const queryClient = useQueryClient();
+  const { mutate: handleUpdate, isLoading: isUpdating } = useMutation({
+    mutationKey: ["config", "update"],
+    mutationFn: async () =>
+      await configApi.updateConfig({
+        AD_HOST,
+        AD_PORT,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["config"]);
+      toast.success("Config berhasil diperbarui");
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Gagal memperbarui config");
+    },
+  });
+
   useEffect(() => {
     // Jalankan kode ini hanya jika configData sudah ada
     if (configData?.data) {
-      setAD_HOST(configData?.data.AD_HOST || ""); // Tambahkan fallback string kosong
-      setAD_PORT(configData?.data.AD_PORT || ""); // Tambahkan fallback string kosong
+      setAD_HOST(configData?.data.AD_HOST || "");
+      setAD_PORT(configData?.data.AD_PORT || "");
     }
-  }, [configData]); // <--- Dependency array HARUS berisi configData
+  }, [configData]);
 
   if (isLoading) {
     return (
@@ -86,8 +104,15 @@ export default function Config() {
             placeholder="e.g., 389 or 636"
           />
         </div>
-        {/* Anda mungkin ingin menambahkan tombol Save di sini untuk memperbarui config */}
-        {/* <button className="btn btn-primary w-full">Save Config</button> */}
+        <button
+          disabled={isUpdating}
+          onClick={handleUpdate}
+          className={`btn btn-primary text-white font-bold  rounded-md w-full ${
+            isUpdating ? "loading" : ""
+          }`}
+        >
+          Update
+        </button>
       </div>
     </PengelolaSideBarMenu>
   );

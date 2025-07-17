@@ -3,7 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import ModalCreateSourceData from "./ModalCreateSourceData";
 import InputItem from "./InputItem";
-import { AlignLeft, Heading, Info, Trash, Lock } from "lucide-react";
+import {
+  AlignLeft,
+  Heading,
+  Info,
+  Trash,
+  Lock,
+  ArrowUpFromLine,
+  ArrowDownFromLine,
+} from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { useEditor } from "../store";
 
@@ -118,6 +126,44 @@ export default function FlowEditing() {
       };
       return { ...prev, status: updatedStatuses };
     });
+  };
+
+  const handleMoveStatusUp = (itsCurrentIndex) => {
+    if (itsCurrentIndex <= 0) return; // Tidak bisa pindah ke atas jika sudah di atas
+
+    const tempStatusArr = [...flow.status];
+    const temp = tempStatusArr[itsCurrentIndex];
+
+    tempStatusArr[itsCurrentIndex] = tempStatusArr[itsCurrentIndex - 1];
+    tempStatusArr[itsCurrentIndex - 1] = temp;
+
+    setFlow({ ...flow, status: tempStatusArr });
+  };
+
+  const handleMoveStatusDown = (itsCurrentIndex) => {
+    if (itsCurrentIndex >= flow.status.length - 1) return; // Tidak bisa pindah ke bawah jika sudah di bawah
+
+    const tempStatusArr = [...flow.status];
+    const temp = tempStatusArr[itsCurrentIndex];
+    tempStatusArr[itsCurrentIndex] = tempStatusArr[itsCurrentIndex + 1];
+    tempStatusArr[itsCurrentIndex + 1] = temp;
+    setFlow({ ...flow, status: tempStatusArr });
+  };
+
+  const handleMoveRequest = (itsCurrentIndex, direction) => {
+    const directionToNum = direction === "UP" ? -1 : 1;
+    const newIndex = itsCurrentIndex + directionToNum;
+
+    // Cegah keluar batas array
+    if (newIndex < 0 || newIndex >= flow.request.length) return;
+
+    const requestArr = [...flow.request];
+    [requestArr[itsCurrentIndex], requestArr[newIndex]] = [
+      requestArr[newIndex],
+      requestArr[itsCurrentIndex],
+    ];
+
+    setFlow({ ...flow, request: requestArr });
   };
 
   useEffect(() => {
@@ -313,6 +359,7 @@ export default function FlowEditing() {
                   };
                 });
               }}
+              handleMoveRequest={handleMoveRequest}
             />
           </div>
         ))}
@@ -332,23 +379,31 @@ export default function FlowEditing() {
           >
             <div className="flex justify-between">
               <h2 className="font-bold">{stat.title || `Status #${i + 1}`}</h2>
-              <button
-                onClick={() => {
-                  const isConfirm = window.confirm(
-                    "Are You Sure To Delete This Process?"
-                  );
-                  if (isConfirm) {
-                    setFlow((prev) => {
-                      const updatedStatuses = [...prev.status];
-                      updatedStatuses.splice(i, 1);
-                      return { ...prev, status: updatedStatuses };
-                    });
-                  }
-                }}
-                className="btn hover:bg-red-400 rounded-lg"
-              >
-                <Trash size={30} />
-              </button>
+              <div className="flex gap-x-2">
+                <button
+                  onClick={() => {
+                    const isConfirm = window.confirm(
+                      "Are You Sure To Delete This Process?"
+                    );
+                    if (isConfirm) {
+                      setFlow((prev) => {
+                        const updatedStatuses = [...prev.status];
+                        updatedStatuses.splice(i, 1);
+                        return { ...prev, status: updatedStatuses };
+                      });
+                    }
+                  }}
+                  className="btn hover:bg-red-400 rounded-lg"
+                >
+                  <Trash size={30} />
+                </button>
+                <button className="btn" onClick={() => handleMoveStatusDown(i)}>
+                  <ArrowDownFromLine className="w-5 h-5" />
+                </button>
+                <button className="btn" onClick={() => handleMoveStatusUp(i)}>
+                  <ArrowUpFromLine className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             <input
               className="border p-2 w-full mt-2 rounded-lg"
