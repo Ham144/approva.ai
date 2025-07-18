@@ -41,6 +41,7 @@ export default function FlowManagement() {
                   <th className="p-4 sm:p-5 whitespace-nowrap">
                     Didesain Oleh
                   </th>
+                  <th className="p-4 sm:p-5 whitespace-nowrap">Department</th>
                 </tr>
               </thead>
               <tbody>
@@ -83,6 +84,24 @@ export default function FlowManagement() {
                                 className="badge bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 border border-blue-200 dark:border-blue-700 px-3 py-1 text-xs rounded-full font-semibold"
                               >
                                 {designer.username}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-gray-500 dark:text-gray-400 text-sm">
+                              Tidak ditentukan
+                            </span>
+                          )}
+                        </div>
+                      </td>{" "}
+                      <td className="p-4 sm:p-5">
+                        <div className="flex flex-wrap gap-2">
+                          {flow?.isAllowanceModeRequest ? (
+                            flow?.allowedDepartmentToRequest?.map((dep) => (
+                              <span
+                                key={dep._id}
+                                className="badge bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 border border-blue-200 dark:border-blue-700 px-3 py-1 text-xs rounded-full font-semibold"
+                              >
+                                {dep.name}
                               </span>
                             ))
                           ) : (

@@ -13,6 +13,7 @@ import flowInstanceroutes from "./routes/flowInstance.route.js";
 import orgRoutes from "./routes/org.routes.js";
 import fileRoutes from "./routes/file.route.js";
 import authorize from "./middlewares/authorize.js";
+import departmentRoutes from "./routes/department.route.js";
 
 const isProduction = process.env.NODE_ENV === "production";
 const corsOrigin = isProduction
@@ -51,6 +52,7 @@ app.use("/api/flow", authenticate, flowAndPointRoutes); //ini untuk designernya
 app.use("/api/flowInstance", authenticate, flowInstanceroutes); //ini untuk user
 app.use("/api/org", orgRoutes);
 app.use("/api/file", authenticate, fileRoutes);
+app.use("/api/department", authenticate, departmentRoutes);
 
 const port = process.env.PORT;
 app.listen(port, () => console.log("Server Berjalan di port "));

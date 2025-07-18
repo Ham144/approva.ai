@@ -6,6 +6,7 @@ import {
   sendApprovalRequestEmail,
   sendSkippedUserNotification,
 } from "../utils/emailService.js";
+import Department from "../models/Department.model.js";
 
 const router = Router();
 
@@ -25,6 +26,18 @@ router.post("/request/new", async (req, res) => {
   try {
     const userId = req.user._id;
 
+    //cari department saya
+    const myDepartment = await Department.findOne({
+      org: req.user.org,
+      members: { $in: [userId] },
+    });
+
+    const isDeparmentInclude = await FlowAndPoint.findOne({
+      _id: flowTemplateId,
+      org: req.user.org,
+      allowedDepartmentToRequest: { $in: [myDepartment._id] },
+    }).lean();
+
     const template = await FlowAndPoint.findOne({
       _id: flowTemplateId,
       org: req.user.org,
@@ -36,15 +49,10 @@ router.post("/request/new", async (req, res) => {
     if (!template) {
       return res.status(400).json({ message: "Flow template tidak ditemukan" });
     }
-
     //validasi apakah si user boleh untuk buat request
-    if (
-      template.isAllowanceModeRequest &&
-      !template.allowedUserToRequest.includes(userId)
-    ) {
+    if (template.isAllowanceModeRequest && !isDeparmentInclude) {
       return res.status(400).json({
-        message:
-          "Anda mungkin kreator, tapi anda tidak terdaftar untuk membuat request",
+        message: "department anda tidak terdaftar untuk membuat request ini",
       });
     }
 

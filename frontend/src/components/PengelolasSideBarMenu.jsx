@@ -9,6 +9,7 @@ import {
   Users2,
   Crown,
   Plus,
+  Hotel,
 } from "lucide-react";
 import { useUserInfo } from "@/store";
 
@@ -22,6 +23,7 @@ export default function PengelolaSideBarMenu({ children }) {
     },
     { name: "User Manager", path: "/management/user", icon: Users2 },
     { name: "Config Manager", path: "/management/config/app", icon: Cog },
+    { name: "department", path: "/management/department", icon: Hotel },
     { name: "supertenant", path: "/supertenant/management", icon: Crown },
   ];
 

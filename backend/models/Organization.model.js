@@ -39,6 +39,30 @@ const organizationSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // start smtp---------------
+    EMAIL_USER: {
+      type: String,
+      required: true,
+    },
+    EMAIL_PASS: {
+      type: String,
+      required: true,
+    },
+    EMAIL_HOST: {
+      type: String,
+      required: true,
+    },
+    EMAIL_PORT: {
+      type: String,
+      required: true,
+      default: "587",
+    },
+    EMAIL_SECURE: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+    // start smtp---------------
   },
   {
     timestamps: true,

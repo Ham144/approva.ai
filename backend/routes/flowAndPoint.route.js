@@ -4,6 +4,7 @@ import FlowAndPoint from "../models/FlowAndPoint.model.js";
 import FlowInstance from "../models/FlowInstance.model.js";
 import UserRefrensi from "../models/User.model.js";
 import mongoose from "mongoose";
+import Department from "../models/Department.model.js";
 
 const router = Router();
 
@@ -14,7 +15,7 @@ router.post("/createFlow", async (req, res) => {
     request,
     status,
     isAllowanceModeRequest,
-    allowedUserToRequest,
+    allowedDepartmentToRequest,
   } = req.body;
 
   if (!title || !desc) {
@@ -135,17 +136,17 @@ router.post("/createFlow", async (req, res) => {
     ) {
       newFlowAndPoint.isAllowanceModeRequest = isAllowanceModeRequest;
 
-      if (allowedUserToRequest && allowedUserToRequest.length > 0) {
+      if (allowedDepartmentToRequest && allowedDepartmentToRequest.length > 0) {
         // Validasi bahwa semua isi adalah ObjectId valid
-        const validUsers = await UserRefrensi.find({
-          _id: { $in: allowedUserToRequest },
+        const validDepartment = await Department.find({
+          _id: { $in: allowedDepartmentToRequest },
         });
 
-        if (validUsers.length !== allowedUserToRequest.length) {
+        if (validDepartment.length !== allowedDepartmentToRequest.length) {
           return res.status(400).json({ error: "Beberapa userId tidak valid" });
         }
 
-        newFlowAndPoint.allowedUserToRequest = allowedUserToRequest;
+        newFlowAndPoint.allowedDepartmentToRequest = allowedDepartmentToRequest;
       }
     }
 
@@ -186,7 +187,6 @@ router.post("/createFlow", async (req, res) => {
 
 router.get("/list", async (req, res) => {
   const { searchKey } = req.query;
-  const userId = req.user._id;
 
   try {
     let query = {
@@ -198,9 +198,7 @@ router.get("/list", async (req, res) => {
     }
 
     const rawList = await FlowAndPoint.find(query)
-      .select(
-        "title desc isAllowanceModeRequest allowedUserToRequest designedBy"
-      )
+      .select("title desc isAllowanceModeRequest designedBy") // ⚠️ HAPUS allowedDepartmentToRequest dari sini
       .populate({
         path: "status",
         populate: {
@@ -209,20 +207,19 @@ router.get("/list", async (req, res) => {
           select: "_id username",
         },
       })
-      .populate("designedBy", "username");
+      .populate("designedBy", "username")
+      .populate("allowedDepartmentToRequest", "_id name") // ✅ populate ulang dengan field yg benar
+      .sort({ createdAt: -1 })
+      .lean();
 
-    const flowListFiltered = rawList.filter((template) => {
-      const iamCreator = template.designedBy?.findIndex((d) => d._id == userId);
-      if (iamCreator !== -1) return true;
-
-      if (
-        template.isAllowanceModeRequest &&
-        !template.allowedUserToRequest.includes(req.user._id)
-      ) {
-        return false;
+    const flowListFiltered = rawList.map((template) => {
+      if (template.isAllowanceModeRequest === false) {
+        return {
+          ...template,
+          allowedDepartmentToRequest: "all",
+        };
       }
-
-      return true;
+      return template;
     });
 
     return res.status(200).json({
@@ -287,7 +284,7 @@ router.put("/update/:id", async (req, res) => {
     request,
     status,
     isAllowanceModeRequest,
-    allowedUserToRequest,
+    allowedDepartmentToRequest,
   } = req.body;
 
   // Validasi input dasar
@@ -314,6 +311,28 @@ router.put("/update/:id", async (req, res) => {
     });
     if (!existingFlow) {
       return res.status(404).json({ message: "Flow tidak ditemukan." });
+    }
+    //validasi jika isAllowanceModeRequest ada atau tidak
+    if (
+      isAllowanceModeRequest !== "undefined" &&
+      isAllowanceModeRequest !== null &&
+      isAllowanceModeRequest
+    ) {
+      if (
+        !Array.isArray(allowedDepartmentToRequest) ||
+        allowedDepartmentToRequest.length === 0
+      ) {
+        return res.status(400).json({
+          message:
+            "jika isAllowanceModeRequest aktif: setidaknya pilih satu divisi",
+        });
+      }
+
+      existingFlow.isAllowanceModeRequest = isAllowanceModeRequest;
+      existingFlow.allowedDepartmentToRequest = allowedDepartmentToRequest;
+    } else {
+      existingFlow.isAllowanceModeRequest = false;
+      existingFlow.allowedDepartmentToRequest = [];
     }
 
     // Validasi: user saat ini adalah salah satu desainer
@@ -383,8 +402,6 @@ router.put("/update/:id", async (req, res) => {
     existingFlow.title = title;
     existingFlow.desc = desc;
     existingFlow.request = sanitizedInputs;
-    existingFlow.isAllowanceModeRequest = isAllowanceModeRequest;
-    existingFlow.allowedUserToRequest = allowedUserToRequest;
     existingFlow.status = updatedStatuses;
 
     // Tambahkan desainer baru jika belum ada

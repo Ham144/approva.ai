@@ -1,8 +1,7 @@
-
 [x] sempurnakan flowcreation dulu aja
 [x] sempurnakan request edit page untuk bisa menyimpan img
 [x] fix edit request RequestEditPage.jsx (belakangan ja)
-[x] fix jika template dihapus harusnya semua flowInstance nya jg terhapus untuk menghindari kehilangan refrensi aturan 
+[x] fix jika template dihapus harusnya semua flowInstance nya jg terhapus untuk menghindari kehilangan refrensi aturan
 [x] buat izin fitur siapa saja yang boleh membuat request flow tertentu
 [x] process page action hanya melihat
 [x] edit template flow
@@ -15,4 +14,9 @@
 [x] notif email pemberitahun ke orang yang melewatkan giliran karena diambil org
 [x] notif email ke requester jika seorang approval memutuskan reject ataupun meminta rollback.
 [x] supertenant yang bisa berpindah pindah organisasi
-[] bisa up down status/approval
+[x] bisa up down flow status/approval dan request
+[x] allowedUserToRequest harusnya per department bukan perakun: menjadi allowedDepartmentToRequest
+[x] config smtp. ad host
+[] modify emailService untuk mengambil data config email dari db bukan .env
+[] duplicate flow
+[] user ldap baru login bisa inherit user lama yg telah resign(option: copy \_id user, atau buat )

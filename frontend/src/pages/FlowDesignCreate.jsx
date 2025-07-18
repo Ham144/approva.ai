@@ -41,7 +41,7 @@ export default function FlowDesignCreate() {
         handleManualSave();
         console.log("beda");
       } else {
-        console.log("sama");
+        console.log("nothing change");
       }
     }, 7000);
 

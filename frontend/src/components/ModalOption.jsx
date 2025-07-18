@@ -2,28 +2,29 @@ import { useResponseCollector } from "@/store";
 import { List, PlusCircle } from "lucide-react";
 import { useNavigate } from "react-router";
 
-export default function ModalOption({ selectedFlow }) {
+export default function ModalOption({ selectedFlow, isforYou }) {
   const navigate = useNavigate();
   const { resetRequestData } = useResponseCollector();
 
   return (
     <dialog id="modalactionrequestlist" className="modal">
       <div className="modal-box">
-        <h3 className="font-bold text-lg mb-4">
-          Aksi untuk: {selectedFlow?.title}
+        <h3 className="font-bold text-center text-wrap  text-lg mb-4">
+          {selectedFlow?.title}
         </h3>
         <div className="space-y-3">
-          <button
-            onClick={() => {
-              resetRequestData();
-              navigate(`/request/create/${selectedFlow?._id}`);
-            }}
-            className="w-full flex items-center gap-2 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 rounded text-indigo-700 font-medium"
-          >
-            <PlusCircle size={18} />
-            Mulai Request
-          </button>
-
+          {isforYou(selectedFlow) && (
+            <button
+              onClick={() => {
+                resetRequestData();
+                navigate(`/request/create/${selectedFlow?._id}`);
+              }}
+              className="w-full flex items-center gap-2 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 rounded text-indigo-700 font-medium"
+            >
+              <PlusCircle size={18} />
+              Mulai Request
+            </button>
+          )}
           <button
             onClick={() =>
               navigate(

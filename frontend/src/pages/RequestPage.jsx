@@ -4,11 +4,13 @@ import { useNavigate } from "react-router-dom";
 import flowApi from "@/api/flowApi";
 import ModalOption from "@/components/ModalOption";
 import { FlowStatusModal } from "@/components/StatusPreviewModal";
+import { useUserInfo } from "@/store";
 
 export default function RequestPage() {
   const [searchKey, setSearchKey] = useState("");
   const [selectedFlow, setSelectedFlow] = useState(null);
   const navigate = useNavigate();
+  const { userInfo } = useUserInfo();
 
   const { data: flowList } = useQuery({
     queryKey: ["flows", searchKey],
@@ -32,6 +34,13 @@ export default function RequestPage() {
   const closeStatusModal = () => {
     setSelectedFlow(null);
   };
+
+  const isForYou = (flow) =>
+    !flow?.isAllowanceModeRequest ||
+    (flow?.isAllowanceModeRequest &&
+      flow?.allowedDepartmentToRequest?.some(
+        (dep) => dep?._id === userInfo?.department?._id
+      ));
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
@@ -83,7 +92,7 @@ export default function RequestPage() {
         </p>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-2 pb-10">
+      <div className="flex flex-col gap-y-3 pb-10">
         {filteredFlows?.length === 0 ? (
           <div className="md:col-span-2 lg:col-span-2 bg-gray-50 p-10 rounded-xl shadow-inner border border-gray-200 text-center">
             <p className="text-xl font-semibold text-gray-500">
@@ -97,7 +106,9 @@ export default function RequestPage() {
           filteredFlows?.map((flow) => (
             <div
               key={flow._id}
-              className="relative bg-white border border-gray-200 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden group cursor-pointer"
+              className={`${
+                isForYou(flow) ? "bg-white" : "bg-gray-200"
+              } relative  border border-gray-200 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden group cursor-pointer`}
             >
               {/* Hover Overlay */}
               <div className="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl z-0"></div>
@@ -113,6 +124,20 @@ export default function RequestPage() {
                     <p className="text-sm text-gray-500 mt-1 italic">
                       {flow.desc}
                     </p>
+                    {/* department */}
+                    <div className="flex mt-1 gap-x-2">
+                      {flow?.isAllowanceModeRequest ? (
+                        flow.allowedDepartmentToRequest?.map((f) => (
+                          <span className="bg-blue-100 text-blue-700 px-2 rounded-full">
+                            {f.name}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="bg-blue-100 text-blue-700 px-2 rounded-full">
+                          All
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex flex-col items-end space-y-2">
@@ -197,7 +222,11 @@ export default function RequestPage() {
         onClose={closeStatusModal}
       />
 
-      <ModalOption key={"modalactionrequestlist"} selectedFlow={selectedFlow} />
+      <ModalOption
+        key={"modalactionrequestlist"}
+        selectedFlow={selectedFlow}
+        isforYou={isForYou}
+      />
     </div>
   );
 }

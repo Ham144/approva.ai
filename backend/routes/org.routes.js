@@ -4,6 +4,69 @@ import authorizeSupertenant from "../middlewares/authoririzeSupertenant.js";
 import authenticate from "../middlewares/authenticate.js";
 
 const router = Router();
+router.post(
+  "/createOrg",
+  authenticate,
+  authorizeSupertenant,
+  async (req, res) => {
+    const {
+      organizationName,
+      AD_HOST,
+      AD_PORT,
+      EMAIL_USER,
+      EMAIL_PASS,
+      EMAIL_HOST,
+      EMAIL_PORT,
+      EMAIL_SECURE,
+    } = req.body;
+
+    // Validasi minimum
+    if (!organizationName || !AD_HOST || !AD_PORT) {
+      return res.status(400).json({
+        message: "Mohon lengkapi nama organisasi dan kredensial AD",
+      });
+    }
+
+    try {
+      // Cek jika sudah ada organisasi dengan nama sama
+      const orgExisting = await Org.findOne({ organizationName });
+      if (orgExisting) {
+        return res.status(400).json({
+          message: "Organisasi dengan nama ini sudah ada",
+        });
+      }
+
+      // Buat object organisasi baru
+      const newOrg = new Org({
+        organizationName,
+        AD_HOST,
+        AD_PORT,
+        smtpConfig: {
+          EMAIL_USER,
+          EMAIL_PASS,
+          EMAIL_HOST,
+          EMAIL_PORT,
+          EMAIL_SECURE,
+        },
+        createdBy: req.user._id,
+        owners: [req.user._id],
+        members: [req.user._id],
+      });
+
+      await newOrg.save();
+
+      return res.status(200).json({
+        message: "Berhasil membuat organisasi baru",
+        data: newOrg,
+      });
+    } catch (error) {
+      console.error("Error creating organization:", error);
+      return res.status(500).json({
+        message: "Terjadi kesalahan di server",
+      });
+    }
+  }
+);
 
 router.get("/getOrgById/:_id", async (req, res) => {
   const _id = req.params._id;
@@ -56,7 +119,9 @@ router.get(
     try {
       const orgList = await Org.find(query)
         .populate("createdBy", "username")
-        .select("-__v -AD_HOST -AD_PORT")
+        .select(
+          "-__v -AD_HOST -AD_PORT -EMAIL_USER -EMAIL_PASS -EMAIL_HOST -EMAIL_PORT -EMAIL_SECURE"
+        )
         .limit(limit || 10)
         .skip(skip || 0);
 
@@ -108,48 +173,6 @@ router.delete(
       }
       return res.status(500).json({
         message: "Internal server error while disabling organization.", // Pesan lebih deskriptif
-      });
-    }
-  }
-);
-
-router.post(
-  "/createOrg",
-  authenticate,
-  authorizeSupertenant,
-  async (req, res) => {
-    const { organizationName, AD_HOST, AD_PORT } = req.body;
-    if (!organizationName || !AD_HOST || !AD_PORT) {
-      return res.status(400).json({
-        message: "perlu melengkapi semua credentials",
-      });
-    }
-
-    try {
-      //validasi
-      const orgExisting = await Org.findOne({ organizationName });
-      if (!orgExisting) {
-        const newOrg = new Org({
-          organizationName,
-          AD_HOST,
-          AD_PORT,
-        });
-
-        newOrg.createdBy = req.user._id;
-        newOrg.owners = [req.user._id];
-        newOrg.members = [req.user._id];
-
-        await newOrg.save();
-
-        return res.status(200).json({
-          message: "berhasil buat organisasi",
-          data: newOrg,
-        });
-      }
-    } catch (error) {
-      console.log(error);
-      return res.status(500).json({
-        message: "internal server error",
       });
     }
   }

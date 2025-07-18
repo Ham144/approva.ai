@@ -6,6 +6,7 @@ import LdapClient from "ldapjs-client";
 import authenticate from "../middlewares/authenticate.js";
 import Org from "../models/Organization.model.js";
 import authorize from "../middlewares/authorize.js";
+import Department from "../models/Department.model.js";
 
 const router = Router();
 
@@ -16,190 +17,190 @@ const asyncHandler = (fn) => (req, res, next) => {
 };
 
 // register ldap depracated ✅
-router.post(
-  "/multi-tenant/register",
-  asyncHandler(async (req, res) => {
-    const { username, password, email, newOrg, selectedOrg } = req.body;
+// router.post(
+//   "/multi-tenant/register",
+//   asyncHandler(async (req, res) => {
+//     const { username, password, email, newOrg, selectedOrg } = req.body;
 
-    try {
-      if (!username || !password) {
-        return res.status(400).json({
-          success: false,
-          message: "Username dan password diperlukan.",
-        });
-      }
+//     try {
+//       if (!username || !password) {
+//         return res.status(400).json({
+//           success: false,
+//           message: "Username dan password diperlukan.",
+//         });
+//       }
 
-      let client;
-      let ldapHost, ldapPort;
-      let organizationId;
-      let role = process.env.DEFAULT_ROLE; // default role
+//       let client;
+//       let ldapHost, ldapPort;
+//       let organizationId;
+//       let role = process.env.DEFAULT_ROLE; // default role
 
-      // ───── JOIN EXISTING ORG ─────
-      if (selectedOrg?._id) {
-        const OrgDB = await Org.findById(selectedOrg);
-        if (!OrgDB) {
-          return res.status(400).json({
-            success: false,
-            message: "Organisasi yang dipilih tidak ditemukan.",
-          });
-        }
+//       // ───── JOIN EXISTING ORG ─────
+//       if (selectedOrg?._id) {
+//         const OrgDB = await Org.findById(selectedOrg);
+//         if (!OrgDB) {
+//           return res.status(400).json({
+//             success: false,
+//             message: "Organisasi yang dipilih tidak ditemukan.",
+//           });
+//         }
 
-        ldapHost = OrgDB.AD_HOST;
-        ldapPort = OrgDB.AD_PORT;
-        organizationId = OrgDB._id;
+//         ldapHost = OrgDB.AD_HOST;
+//         ldapPort = OrgDB.AD_PORT;
+//         organizationId = OrgDB._id;
 
-        client = new LdapClient({
-          url: `ldap://${ldapHost}:${ldapPort}`,
-        });
-      }
+//         client = new LdapClient({
+//           url: `ldap://${ldapHost}:${ldapPort}`,
+//         });
+//       }
 
-      // ───── CREATE NEW ORG ─────
-      else if (newOrg) {
-        const { AD_HOST, AD_PORT, organizationName } = newOrg;
+//       // ───── CREATE NEW ORG ─────
+//       else if (newOrg) {
+//         const { AD_HOST, AD_PORT, organizationName } = newOrg;
 
-        if (!AD_HOST || !AD_PORT || !organizationName) {
-          return res.status(400).json({
-            success: false,
-            message: "Field konfigurasi organisasi tidak lengkap.",
-          });
-        }
+//         if (!AD_HOST || !AD_PORT || !organizationName) {
+//           return res.status(400).json({
+//             success: false,
+//             message: "Field konfigurasi organisasi tidak lengkap.",
+//           });
+//         }
 
-        ldapHost = AD_HOST;
-        ldapPort = AD_PORT;
+//         ldapHost = AD_HOST;
+//         ldapPort = AD_PORT;
 
-        client = new LdapClient({
-          url: `ldap://${ldapHost}:${ldapPort}`,
-        });
+//         client = new LdapClient({
+//           url: `ldap://${ldapHost}:${ldapPort}`,
+//         });
 
-        // tes koneksi LDAP
-        try {
-          await client.bind(username, password);
-        } catch (error) {
-          return res.status(403).json({
-            success: false,
-            message: "Gagal login ke LDAP, periksa koneksi dan kredensial.",
-          });
-        }
+//         // tes koneksi LDAP
+//         try {
+//           await client.bind(username, password);
+//         } catch (error) {
+//           return res.status(403).json({
+//             success: false,
+//             message: "Gagal login ke LDAP, periksa koneksi dan kredensial.",
+//           });
+//         }
 
-        // buat org baru
-        const existingOrg = await Org.findOne({
-          organizationName,
-        });
-        if (existingOrg) {
-          return res.status(400).json({
-            success: false,
-            message: "Organisasi dengan nama ini sudah ada.",
-          });
-        }
-        const org = await Org.create({
-          organizationName,
-          AD_HOST,
-          AD_PORT,
-          owners: [], // ditambahkan nanti setelah user dibuat
-          members: [],
-        });
+//         // buat org baru
+//         const existingOrg = await Org.findOne({
+//           organizationName,
+//         });
+//         if (existingOrg) {
+//           return res.status(400).json({
+//             success: false,
+//             message: "Organisasi dengan nama ini sudah ada.",
+//           });
+//         }
+//         const org = await Org.create({
+//           organizationName,
+//           AD_HOST,
+//           AD_PORT,
+//           owners: [], // ditambahkan nanti setelah user dibuat
+//           members: [],
+//         });
 
-        organizationId = org._id;
-        role = "owner";
-      }
+//         organizationId = org._id;
+//         role = "owner";
+//       }
 
-      // ───── HANDLE ERROR: TIDAK PILIH APA-APA ─────
-      else {
-        return res.status(400).json({
-          success: false,
-          message: "Anda harus memilih atau membuat organisasi.",
-        });
-      }
+//       // ───── HANDLE ERROR: TIDAK PILIH APA-APA ─────
+//       else {
+//         return res.status(400).json({
+//           success: false,
+//           message: "Anda harus memilih atau membuat organisasi.",
+//         });
+//       }
 
-      // ───── VALIDASI USER KE LDAP ─────
-      try {
-        const userLDAP = await client.bind(username, password);
+//       // ───── VALIDASI USER KE LDAP ─────
+//       try {
+//         const userLDAP = await client.bind(username, password);
 
-        if (!userLDAP || userLDAP.success === false) {
-          return res.status(403).json({
-            message: "User tidak ditemukan di LDAP.",
-          });
-        }
-      } catch (error) {
-        console.log(error);
-        return res.status(403).json({
-          message: "Gagal login ke LDAP.",
-        });
-      }
-      // ───── SIMPAN DI DATABASE ─────
-      let userDB = await UserRefrensi.findOne({
-        username,
-        org: organizationId,
-      });
+//         if (!userLDAP || userLDAP.success === false) {
+//           return res.status(403).json({
+//             message: "User tidak ditemukan di LDAP.",
+//           });
+//         }
+//       } catch (error) {
+//         console.log(error);
+//         return res.status(403).json({
+//           message: "Gagal login ke LDAP.",
+//         });
+//       }
+//       // ───── SIMPAN DI DATABASE ─────
+//       let userDB = await UserRefrensi.findOne({
+//         username,
+//         org: organizationId,
+//       });
 
-      if (!email) {
-        return res
-          .status(400)
-          .json({ message: "Gagal, email diperlukan untuk notifikasi" });
-      }
-      if (userDB) {
-        return res
-          .status(400)
-          .json({ message: "Anda sudah terdaftar, coba login saja" });
-      } else {
-        userDB = await UserRefrensi.create({
-          username,
-          email,
-          org: organizationId,
-          role,
-        });
+//       if (!email) {
+//         return res
+//           .status(400)
+//           .json({ message: "Gagal, email diperlukan untuk notifikasi" });
+//       }
+//       if (userDB) {
+//         return res
+//           .status(400)
+//           .json({ message: "Anda sudah terdaftar, coba login saja" });
+//       } else {
+//         userDB = await UserRefrensi.create({
+//           username,
+//           email,
+//           org: organizationId,
+//           role,
+//         });
 
-        // Tambahkan ke org.members dan org.owners jika owner
-        await Org.findByIdAndUpdate(organizationId, {
-          $addToSet: {
-            members: userDB._id,
-            ...(role === "owner" ? { owners: userDB._id } : {}),
-          },
-        });
-      }
+//         // Tambahkan ke org.members dan org.owners jika owner
+//         await Org.findByIdAndUpdate(organizationId, {
+//           $addToSet: {
+//             members: userDB._id,
+//             ...(role === "owner" ? { owners: userDB._id } : {}),
+//           },
+//         });
+//       }
 
-      // ───── BUAT TOKEN LOGIN ─────
-      const payload = {
-        _id: userDB._id,
-        username: userDB.username,
-        org: userDB.organizationId,
-        role: userDB.role,
-      };
+//       // ───── BUAT TOKEN LOGIN ─────
+//       const payload = {
+//         _id: userDB._id,
+//         username: userDB.username,
+//         org: userDB.organizationId,
+//         role: userDB.role,
+//       };
 
-      const token = await generateTokenJWT(payload);
+//       const token = await generateTokenJWT(payload);
 
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "Lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
+//       res.cookie("token", token, {
+//         httpOnly: true,
+//         secure: process.env.NODE_ENV === "production",
+//         sameSite: "Lax",
+//         maxAge: 7 * 24 * 60 * 60 * 1000,
+//       });
 
-      return res.json({
-        success: true,
-        message:
-          userDB.status === "pending"
-            ? "Pendaftaran berhasil, menunggu persetujuan organisasi."
-            : "Login berhasil. Selamat datang!",
-        data: {
-          username: userDB.username,
-          role: userDB.role,
-          organizationId: userDB._id,
-        },
-      });
-    } catch (error) {
-      if (error.code === "11000") {
-        return res.status(400).json({
-          message: "Terdapat duplikat",
-        });
-      }
-      return res.status(500).json({
-        success: false,
-        message: error.message,
-      });
-    }
-  })
-);
+//       return res.json({
+//         success: true,
+//         message:
+//           userDB.status === "pending"
+//             ? "Pendaftaran berhasil, menunggu persetujuan organisasi."
+//             : "Login berhasil. Selamat datang!",
+//         data: {
+//           username: userDB.username,
+//           role: userDB.role,
+//           organizationId: userDB._id,
+//         },
+//       });
+//     } catch (error) {
+//       if (error.code === "11000") {
+//         return res.status(400).json({
+//           message: "Terdapat duplikat",
+//         });
+//       }
+//       return res.status(500).json({
+//         success: false,
+//         message: error.message,
+//       });
+//     }
+//   })
+// );
 
 //login LDAP ✅
 router.post(
@@ -272,11 +273,22 @@ router.post(
         });
       }
 
+      //cari departmentnya nya
+      const myDepartment = await Department.findOne({
+        org: OrgDB._id,
+        members: { $in: [userDB._id] },
+      });
+
+      if (!myDepartment) {
+        console.log("User baru, tidak terdaftar di department manapun");
+      }
+
       const payload = {
         _id: userDB._id,
         username: username,
         org: OrgDB._id,
         role: userDB.role,
+        department: myDepartment?._id,
       };
 
       const token = await generateTokenJWT(payload);
@@ -368,11 +380,22 @@ router.post(
       console.log("org terhubung ke supertenant telah berganti");
     }
 
+    //cari departmentnya nya
+    const myDepartment = await Department.findOne({
+      org: OrgDB._id,
+      members: { $in: [userDB._id] },
+    });
+
+    if (!myDepartment) {
+      console.log("User baru, tidak terdaftar di department manapun");
+    }
+
     const payload = {
       _id: userDB._id,
       username: userDB.username,
       org: OrgDB._id,
       role: userDB.role,
+      department: myDepartment?._id,
     };
 
     const token = await generateTokenJWT(payload);
@@ -502,16 +525,29 @@ router.get(
       });
     }
 
-    const userDB = await UserRefrensi.findOne({
+    const myDepartment = await Department.findOne({
+      org: req.user.org,
+      members: { $in: [req.user._id] },
+    }).select("name _id");
+
+    let userDB = await UserRefrensi.findOne({
       _id: req.user._id,
       org: req.user.org,
-    }).select("-password");
+    })
+      .select("-password")
+      .lean();
+
     if (!userDB) {
       return res.status(404).json({
         success: false,
         message: "User tidak ditemukan.",
       });
     }
+
+    userDB = {
+      ...userDB,
+      department: myDepartment,
+    };
 
     return res.json({
       success: true,
@@ -570,7 +606,7 @@ router.get(
 
 //ini untuk membuat user yang tidak terikat dengan LDAP
 router.post("/createAppUser", authenticate, async (req, res) => {
-  const { username, email, password, role } = req.body;
+  const { username, email, password, role, department } = req.body;
 
   // Validasi input awal
   if (!username || !email || !password) {
@@ -605,6 +641,18 @@ router.post("/createAppUser", authenticate, async (req, res) => {
       });
     }
 
+    const departmentExist = await Department.findOne({
+      _id: department,
+      org: req.user.org,
+    });
+
+    if (!departmentExist) {
+      return res.status(400).json({
+        success: false,
+        message: "Department tidak ditemukan, pilih lain.",
+      });
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -616,6 +664,7 @@ router.post("/createAppUser", authenticate, async (req, res) => {
       role: role || "member",
       authMethod: "app",
       org: req.user.org,
+      department,
     });
 
     return res.status(201).json({

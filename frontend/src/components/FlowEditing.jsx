@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { useEditor } from "../store";
+import DepartmentApi from "@/api/DepartmentApi";
 
 export default function FlowEditing() {
   const { setCurrentEditingInputID, flow, setFlow } = useEditor();
@@ -25,6 +26,11 @@ export default function FlowEditing() {
       return res;
     },
     enabled: !!flow,
+  });
+
+  const { data: departments, isLoading: isLoadingDepartments } = useQuery({
+    queryKey: ["departments"],
+    queryFn: DepartmentApi.getAllDepartment,
   });
 
   const handleAddStatus = () => {
@@ -222,12 +228,12 @@ export default function FlowEditing() {
             />
           </div>
 
-          {/* Checkbox Private Request */}
+          {/* Checkbox spesial department/division Request */}
           <div className="form-control w-full">
             <label className="label cursor-pointer justify-between pr-0">
               <div
                 className="tooltip tooltip-right flex items-center gap-2 text-gray-700 dark:text-gray-300"
-                data-tip="Jika Mode ini diaktifkan, maka hanya user terpilih saja yang dapat membuat request dengan flow design ini."
+                data-tip="Jika Mode ini diaktifkan, maka hanya user yg terdaftar di divisi itu yang bisa memulai request."
               >
                 <span className="label-text font-medium flex items-center gap-2">
                   <Lock size={18} /> Mode isAllowanceModeRequest
@@ -247,89 +253,58 @@ export default function FlowEditing() {
                 onChange={(e) =>
                   setFlow({ ...flow, isAllowanceModeRequest: e.target.checked })
                 }
-                aria-label="Atur Alur Sebagai user tertentu saja yg bisa request"
               />
             </label>
           </div>
 
           {flow.isAllowanceModeRequest && (
-            <div className="mt-4 relative">
-              <input
-                type="text"
-                placeholder="Pilih akun tertentu yang boleh memulai request"
-                className="border rounded p-2 w-full mb-2"
-                value={flow.search_allowedUserToRequest || ""}
-                onChange={(e) =>
-                  setFlow(() => ({
-                    ...flow,
-                    search_allowedUserToRequest: e.target.value,
-                  }))
-                }
-              />
-              {flow.search_allowedUserToRequest && (
-                <div className="absolute z-50 bg-white shadow rounded w-full max-h-60 overflow-y-auto">
-                  {userList?.data
-                    ?.filter(
-                      (user) =>
-                        user.username
-                          ?.toLowerCase()
-                          .includes(
-                            flow?.search_allowedUserToRequest?.toLowerCase()
-                          ) && !flow?.allowedUserToRequest?.includes(user._id)
-                    )
-                    .slice(0, 5)
-                    ?.map((user) => (
-                      <div
-                        key={user._id}
-                        className="cursor-pointer p-2 hover:bg-gray-200 rounded"
-                        onClick={() => {
-                          setFlow((prev) => ({
-                            ...prev,
-                            allowedUserToRequest: [
-                              ...(prev?.allowedUserToRequest || []),
-                              user._id,
-                            ],
-                          }));
-                          setFlow((prev) => ({
-                            ...prev,
-                            search_allowedUserToRequest: "",
-                          }));
-                        }}
-                      >
-                        <span className="font-medium">{user.username}</span>
-                        <span className="text-xs text-gray-500 ml-2">
-                          ({user._id})
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              )}
-              <div className="flex flex-wrap gap-2 mt-2">
-                {flow?.allowedUserToRequest?.map((userId) => {
-                  const user = userList?.data?.find((u) => u._id === userId);
-                  return (
-                    <div
-                      key={userId}
-                      className="bg-blue-100 text-blue-800 px-2 py-1 rounded flex items-center gap-1"
-                    >
-                      <span>{user?.username || "Unknown"}</span>
-                      <button
-                        onClick={() => {
-                          setFlow((prev) => ({
-                            ...prev,
-                            allowedUserToRequest:
-                              prev?.allowedUserToRequest?.filter(
-                                (id) => id !== userId
-                              ),
-                          }));
-                        }}
-                        className="ml-1 text-red-500 hover:text-red-700"
-                      >
-                        &times;
-                      </button>
-                    </div>
-                  );
-                })}
+            <div className="form-control mb-6">
+              <label className="label">
+                <span className="label-text text-gray-700 font-medium">
+                  Select Department
+                </span>
+              </label>
+              <div className="flex flex-col gap-2 p-3 border border-gray-200 rounded-lg max-h-48 overflow-y-auto bg-gray-50">
+                {departments?.data?.map((dep) => (
+                  <label
+                    key={dep._id}
+                    className="label cursor-pointer p-2 rounded-md hover:bg-blue-50 transition-colors duration-150"
+                  >
+                    <span className="label-text text-gray-800">{dep.name}</span>
+                    <input
+                      type="checkbox"
+                      checked={flow.allowedDepartmentToRequest?.includes(
+                        dep._id.toString()
+                      )}
+                      onChange={() => {
+                        setFlow((prevFlow) => {
+                          const current = Array.isArray(
+                            prevFlow?.allowedDepartmentToRequest
+                          )
+                            ? prevFlow?.allowedDepartmentToRequest
+                            : [];
+
+                          const depId = dep._id.toString();
+                          const next = current.includes(depId)
+                            ? current.filter((id) => id !== depId)
+                            : [...current, depId];
+
+                          return {
+                            ...prevFlow,
+                            allowedDepartmentToRequest: next,
+                          };
+                        });
+                      }}
+                      className="checkbox checkbox-primary"
+                    />
+                  </label>
+                ))}
+                {/* Optional: No users message */}
+                {departments?.data?.length === 0 && (
+                  <span className="text-center text-gray-500 py-2">
+                    No departments available to add.
+                  </span>
+                )}
               </div>
             </div>
           )}

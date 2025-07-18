@@ -24,7 +24,6 @@ export default function FlowDesignEdit() {
       return res;
     },
     enabled: !!id,
-    refetchOnMount: false,
     refetchOnWindowFocus: false, // <--- Ini yang penting
   });
 

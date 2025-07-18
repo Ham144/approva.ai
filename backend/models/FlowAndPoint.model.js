@@ -18,11 +18,11 @@ const flowSchema = new mongoose.Schema(
         ref: "Input",
       },
     ],
-    isAllowanceModeRequest: Boolean, //jika true maka akan cek apakah user yg coba create request dengan flow template ini terdaftar di allowedUserRequest
-    allowedUserToRequest: [
+    isAllowanceModeRequest: Boolean, //jika true maka akan cek apakah hanya untuk deparment tertentu. yg coba create request dengan flow template ini terdaftar di allowedDepartmentToRequest
+    allowedDepartmentToRequest: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "UserRefrensi",
+        ref: "Department",
       },
     ],
     status: [

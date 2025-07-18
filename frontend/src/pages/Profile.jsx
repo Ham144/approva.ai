@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query"; // Asumsi Anda pakai TanStack Query
-import { User, Settings, LogOut, KeyRound, Info, Group } from "lucide-react"; // Impor ikon Lucide React yang lebih relevan
+import {
+  User,
+  Settings,
+  LogOut,
+  KeyRound,
+  Info,
+  Group,
+  Hotel,
+} from "lucide-react"; // Impor ikon Lucide React yang lebih relevan
 import { toast } from "react-hot-toast"; // Asumsi Anda pakai react-hot-toast
 import { useUserInfo } from "@/store";
 import { logout } from "@/api/authApi";
@@ -208,6 +216,18 @@ const Profile = () => {
                   </div>
                   <p className="text-xl font-bold text-gray-900 dark:text-gray-100 capitalize">
                     {userInfo?.role || "N/A"}
+                  </p>
+                </div>
+                {/* department Card */}
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 shadow-sm border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Hotel className="w-6 h-6 text-balance-500" />
+                    <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                      Department
+                    </h4>
+                  </div>
+                  <p className="text-xl font-bold text-gray-900 dark:text-gray-100 capitalize">
+                    {userInfo?.department?.name || "N/A"}
                   </p>
                 </div>
               </div>
