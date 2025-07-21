@@ -10,6 +10,7 @@ import {
 } from "@/api/authApi";
 import { toast } from "react-hot-toast";
 import { Pencil, Plus, TrashIcon } from "lucide-react";
+import DepartmentApi from "@/api/DepartmentApi";
 
 // Penjelasan Akun
 // ----------------------------------------
@@ -32,6 +33,7 @@ export default function UserManagement() {
     role: "member",
     isDisabled: false,
     authMethod: "app",
+    department: "",
   });
   const [errors, setErrors] = useState({});
   const queryClient = useQueryClient();
@@ -83,6 +85,11 @@ export default function UserManagement() {
     },
   });
 
+  const { data: departments } = useQuery({
+    queryKey: ["department"],
+    queryFn: DepartmentApi.getAllDepartment,
+  });
+
   const handleCloseDialog = () => {
     setIsOpen(false);
     setIsEditMode(false);
@@ -95,6 +102,7 @@ export default function UserManagement() {
       role: "member",
       isDisabled: false,
       authMethod: "app",
+      department: "",
     });
     setErrors({});
   };
@@ -166,6 +174,7 @@ export default function UserManagement() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log(formData);
     const updateData = { ...formData };
     if (validateForm()) {
       if (isEditMode) {
@@ -355,6 +364,31 @@ export default function UserManagement() {
                     </span>
                   )}
                 </div>
+
+                {/* Department  */}
+                {!isEditMode && (
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text">Department</span>
+                    </label>
+                    <select
+                      value={formData.department}
+                      className="select select-bordered w-full"
+                      onChange={(e) => {
+                        console.log(e.target.value);
+                        setFormData({
+                          ...formData,
+                          department: e.target.value,
+                        });
+                      }}
+                    >
+                      <option value="">Pilih department user </option>
+                      {departments?.data?.map((dep) => (
+                        <option value={dep._id}>{dep.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 {/* Role Selection */}
                 <div className="form-control">

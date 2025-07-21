@@ -43,8 +43,9 @@ export default function Login({ className, ...props }) {
       queryClient.invalidateQueries(["userInfo"]);
 
       toast.success("Login berhasil!");
+      navigate("/");
       setTimeout(() => {
-        navigate("/");
+        navigate("/"); //emang sengaja ada 2 navigate karena sering gagal
       }, 1000);
     },
     onError: (err) => {

@@ -16,7 +16,7 @@ const authorize = async (req, res, next) => {
     }).select("-password -otp");
 
     if (!userDB) {
-      return res.status(403).json({
+      return res.status(401).json({
         success: false,
         message: "Anda tidak ditemukan di database. Silakan coba login ulang.",
       });
@@ -24,7 +24,7 @@ const authorize = async (req, res, next) => {
 
     // Opsional: Validasi role jika hanya pemilik/owner yang boleh lihat
     if (req.user.role !== "owner" && userDB.role !== "supertenant") {
-      return res.status(403).json({
+      return res.status(401).json({
         success: false,
         message: "Akses ditolak. Hanya owner yang bisa melihat semua akun.",
       });

@@ -241,6 +241,7 @@ router.post(
       let userLDAP;
       try {
         userLDAP = await client.bind(username, password);
+        console.log(userLDAP);
       } catch (error) {
         return res.status(403).json({
           message:
@@ -295,8 +296,8 @@ router.post(
 
       res.cookie("token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "Lax", // Menggunakan 'Lax' lebih fleksibel untuk banyak kasus
+        secure: false,
+        sameSite: "strict", // Menggunakan 'Lax' lebih fleksibel untuk banyak kasus
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
@@ -402,7 +403,7 @@ router.post(
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       sameSite: "Lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 hari
     });
@@ -713,11 +714,11 @@ router.put("/takeOverUser", authenticate, authorize, async (req, res) => {
 
     // Hindari menyalin _id atau __v, dan pastikan field yang disalin adalah yang benar-benar diinginkan
     // Gunakan set() untuk mengupdate field secara selektif
-    oldUserDoc.username = newUserDoc.username;
-    oldUserDoc.email = newUserDoc.email;
-    oldUserDoc.password = newUserDoc.password; // Hati-hati dengan ini, pastikan Anda menyalin hash password, bukan plain text
-    oldUserDoc.role = newUserDoc.role;
-    oldUserDoc.authMethod = newUserDoc.authMethod;
+    oldUserDoc.username = newUserDoc?.username;
+    oldUserDoc.email = newUserDoc?.email;
+    oldUserDoc.password = newUserDoc?.password; // Hati-hati dengan ini, pastikan Anda menyalin hash password, bukan plain text
+    oldUserDoc.role = newUserDoc?.role;
+    oldUserDoc.authMethod = newUserDoc?.authMethod;
 
     // Opsional: Reset status user lama menjadi aktif kembali
     oldUserDoc.isActive = true; // Atau set status ke 'active'

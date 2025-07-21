@@ -22,3 +22,5 @@
 [x] user ldap baru login bisa inherit user lama yg telah resign
 [x] fix: setelah mutation di /management/department untuk memperbarui userInfo
 [x] fix: fullfillment page 
+[x] fix take over
+[x] add: auth menerima department dari AD(active directory)
