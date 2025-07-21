@@ -40,6 +40,10 @@ const flowApi = {
       throw error.response?.data || error;
     }
   },
+  duplicateFlow: async (id) => {
+    const res = await axiosInstance.post(`/api/flow/duplicate/${id}`);
+    return res.data;
+  },
   deleteFlow: async (id) => {
     const res = await axiosInstance.delete(`/api/flow/delete/${id}`);
     return res.data;

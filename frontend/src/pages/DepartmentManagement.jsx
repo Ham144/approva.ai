@@ -28,6 +28,7 @@ const DepartmentManagement = () => {
     onSuccess: () => {
       queryClient.invalidateQueries("departments");
       modalRef.current.close();
+      window.location.reload();
     },
     onError: (er) => {
       toast.error(
@@ -43,6 +44,7 @@ const DepartmentManagement = () => {
     onSuccess: () => {
       queryClient.invalidateQueries("departments");
       modalRef.current.close();
+      window.location.reload();
     },
     onError: (er) => {
       toast.error(

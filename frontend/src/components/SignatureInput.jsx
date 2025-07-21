@@ -11,15 +11,24 @@ const SignatureInput = ({
 }) => {
   const sigRef = useRef();
   const containerRef = useRef();
-  const { requestData, setRequestData, currentStatusIndex } =
-    useResponseCollector();
+  const {
+    requestData,
+    setRequestData,
+    currentStatusIndex,
+    statuses,
+    setRequirement,
+  } = useResponseCollector();
 
   const [canvasDimensions, setCanvasDimensions] = useState({
     width: 0,
     height: 0,
   });
 
-  const existingSignature = requestData[input._id];
+  console.log(statuses[currentStatusIndex]);
+
+  const existingSignature = isRequirementInput
+    ? statuses[currentStatusIndex]?.requirementsData?.[input._id]
+    : requestData[input._id];
 
   useEffect(() => {
     const updateCanvasDimensions = () => {

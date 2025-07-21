@@ -80,8 +80,8 @@ const Home = () => {
                       >
                         <td>{index + 1}</td>
                         <td>{task.instanceTitle}</td>
-                        <td>
-                          <span className="badge badge-warning">
+                        <td className="w-1/3">
+                          <span className="badge text-wrap badge-warning ">
                             {task.currentStatusTitle}
                           </span>
                         </td>

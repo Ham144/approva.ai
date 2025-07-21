@@ -96,7 +96,7 @@ export default function ProcessActionOption({ selectedInstance }) {
           <button
             disabled={
               selectedInstance?.requestedBy?._id != userInfo?._id ||
-              selectedInstance.currentStatusIndex == 0
+              selectedInstance?.overallStatus == "completed"
             }
             onClick={handleRollbackToStart}
             className="w-full flex items-center gap-2 px-4 py-2 bg-purple-600  disabled:bg-slate-200 rounded hover:bg-slate-300 font-medium text-white"

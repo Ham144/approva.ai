@@ -1,54 +1,49 @@
 import nodemailer from "nodemailer";
-
-// For development, we'll use a JSON transport to log emails to the console.
-// In production, you would replace this with your actual SMTP transport configuration.
-const transportOptions = {
-  host: "smtp.office365.com",
-  port: 587,
-  secure: false, // ✅ gunakan false untuk STARTTLS
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false, // atau true, jika kamu pakai SSL resmi
-  },
-  connectionTimeout: 10000,
-  family: 4, // paksa IPv4
-};
-
-console.log("Initializing email transporter with options:", {
-  ...transportOptions,
-  auth: { user: transportOptions.auth.user },
-});
-
-const transporter = nodemailer.createTransport(transportOptions);
+import Org from "../models/Organization.model.js";
 
 /**
  * Sends an email notification.
  * @param {string} to - The recipient's email address.
  * @param {string} subject - The subject of the email.
  * @param {string} html - The HTML body of the email.
+ * @param {object} flowInstance - The flow instance document to get org context.
  */
-async function sendEmail(to, subject, html) {
-  const mailOptions = {
-    from: process.env.EMAIL_USER, // sender address
-    to: to, // list of receivers
-    subject: subject, // Subject line
-    html: html, // html body
-  };
-
+async function sendEmail(to, subject, html, flowInstance) {
   try {
-    // transporter.verify((error, success) => {
-    //   if (error) {
-    //     console.log("SMTP connection failed:", error);
-    //   } else {
-    //     console.log("SMTP server is ready to send messages");
-    //   }
-    // });
+    const org = await Org.findById(flowInstance.org);
+    if (!org) {
+      console.error(
+        "Organization not found for flow instance:",
+        flowInstance._id
+      );
+      return;
+    }
+
+    const transportOptions = {
+      host: org.EMAIL_HOST,
+      port: org.EMAIL_PORT,
+      secure: org.EMAIL_SECURE,
+      auth: {
+        user: org.EMAIL_USER,
+        pass: org.EMAIL_PASS,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+      connectionTimeout: 10000,
+      family: 4,
+    };
+
+    const transporter = nodemailer.createTransport(transportOptions);
+
+    const mailOptions = {
+      from: org.EMAIL_USER,
+      to: to,
+      subject: subject,
+      html: html,
+    };
 
     const info = await transporter.sendMail(mailOptions);
-
     console.log("Email sent:", info.response);
   } catch (error) {
     console.error("Error sending email:", error);
@@ -121,7 +116,7 @@ export async function sendApprovalRequestEmail(
       </div>
     `;
 
-    await sendEmail(user.email, subject, html);
+    await sendEmail(user.email, subject, html, flowInstance);
   }
 }
 
@@ -155,7 +150,7 @@ export async function sendSkippedUserNotification(
       <br/>
       <p>Terimakasih - CSI.</p>
     `;
-    await sendEmail(user.email, subject, html);
+    await sendEmail(user.email, subject, html, flowInstance);
   }
 }
 

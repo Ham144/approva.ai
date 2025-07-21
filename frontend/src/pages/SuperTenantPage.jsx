@@ -297,77 +297,104 @@ export default function SuperTenantPage() {
         </div>
       </dialog>
 
-      {/* --- Modal untuk Membuat Organisasi Baru --- */}
       <dialog id="newOrg" className="modal modal-middle sm:modal-middle">
-        <div className="modal-box">
-          <form method="dialog">
+        <div className="modal-box p-6 sm:p-8 bg-white rounded-lg shadow-2xl relative">
+          {/* Tombol Tutup Modal */}
+          <form method="dialog" className="absolute right-4 top-4">
             <button
-              className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-              onClick={closeNewOrgModal} // Tambahkan handler untuk menutup modal
+              className="btn btn-sm btn-circle btn-ghost text-gray-500 hover:text-gray-800 transition-colors duration-200"
+              onClick={closeNewOrgModal} // Pastikan handler ini benar
             >
               ✕
             </button>
           </form>
-          <h3 className="font-bold text-xl mb-4">Create New Organization</h3>
-          <div className="py-4">
-            <Toaster />
-            <>
-              <label className="block text-sm text-gray-600 dark:text-gray-300 mt-2 mb-1">
-                Nama Organisasi
-              </label>
-              <input
-                type="text"
-                value={newOrg.organizationName}
-                onChange={(e) =>
-                  setNewOrg({
-                    ...newOrg,
-                    organizationName: e.target.value,
-                  })
-                }
-                className="input input-bordered w-full mb-3"
-                placeholder="Contoh: Catur Sukses Internasional"
-              />
-
-              <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1">
-                LDAP Host (AD_HOST)
-              </label>
-              <input
-                type="text"
-                value={newOrg.AD_HOST}
-                onChange={(e) =>
-                  setNewOrg({ ...newOrg, AD_HOST: e.target.value })
-                }
-                className="input input-bordered w-full mb-3"
-                placeholder="contoh: ldap.perusahaan.com"
-              />
-
-              <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1">
-                LDAP Port (AD_PORT)
-              </label>
-              <input
-                type="text"
-                value={newOrg.AD_PORT}
-                onChange={(e) =>
-                  setNewOrg({ ...newOrg, AD_PORT: e.target.value })
-                }
-                className="input input-bordered w-full"
-                placeholder="contoh: 389"
-              />
-            </>
-            <div className="modal-action">
-              <button
-                className={`btn ${isLoadingOrgCreating && "loading"}`}
-                onClick={handleCreateOrg}
-              >
-                Create
-              </button>
-              <button
-                className={`btn ${isLoadingOrgCreating && "loading"}`}
-                onClick={closeNewOrgModal}
-              >
-                Cancel
-              </button>
-            </div>
+          {/* Judul Modal */}
+          <h3 className="font-extrabold text-2xl text-gray-800 mb-6 border-b pb-3">
+            Create New Organization
+          </h3>
+          <div className="py-2">
+            {" "}
+            {/* Mengurangi padding atas/bawah */}
+            <Toaster />{" "}
+            {/* Ini biasanya diletakkan di root aplikasi atau layout */}
+            <div className="space-y-4">
+              {" "}
+              {/* Menambahkan ruang antar grup form-control */}
+              {/* Input Nama Organisasi */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nama Organisasi
+                </label>
+                <input
+                  type="text"
+                  value={newOrg.organizationName}
+                  onChange={(e) =>
+                    setNewOrg({
+                      ...newOrg,
+                      organizationName: e.target.value,
+                    })
+                  }
+                  className="input input-bordered input-primary w-full focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-all duration-200 placeholder-gray-400"
+                  placeholder="Contoh: Catur Sukses Internasional"
+                  required // Menambah validasi HTML5 dasar
+                />
+              </div>
+              {/* Input LDAP Host (AD_HOST) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  LDAP Host (AD_HOST)
+                </label>
+                <input
+                  type="text"
+                  value={newOrg.AD_HOST}
+                  onChange={(e) =>
+                    setNewOrg({ ...newOrg, AD_HOST: e.target.value })
+                  }
+                  className="input input-bordered input-primary w-full focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-all duration-200 placeholder-gray-400"
+                  placeholder="contoh: ldap.perusahaan.com"
+                  required // Menambah validasi HTML5 dasar
+                />
+              </div>
+              {/* Input LDAP Port (AD_PORT) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  LDAP Port (AD_PORT)
+                </label>
+                <input
+                  type="number" // Menggunakan type="number" untuk port
+                  value={newOrg.AD_PORT}
+                  onChange={(e) =>
+                    setNewOrg({ ...newOrg, AD_PORT: e.target.value })
+                  }
+                  className="input input-bordered input-primary w-full focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-all duration-200 placeholder-gray-400"
+                  placeholder="contoh: 389"
+                  required // Menambah validasi HTML5 dasar
+                />
+              </div>
+            </div>{" "}
+            {/* Akhir dari space-y-4 */}
+          </div>{" "}
+          {/* Akhir dari py-2 */}
+          {/* Modal Actions (Buttons) */}
+          <div className="modal-action mt-8 flex justify-end gap-4">
+            {" "}
+            {/* Mengatur jarak dan posisi tombol */}
+            <button
+              type="button" // Penting: gunakan type="button" untuk mencegah submit form
+              className="btn btn-ghost border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 transform hover:scale-105"
+              onClick={closeNewOrgModal}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit" // Gunakan type="submit" jika ini bagian dari form submit
+              className={`btn btn-primary px-8 transform hover:scale-105 transition-all duration-200 ${
+                isLoadingOrgCreating ? "loading" : ""
+              }`}
+              onClick={handleCreateOrg}
+            >
+              {isLoadingOrgCreating ? "Creating..." : "Create Organization"}
+            </button>
           </div>
         </div>
       </dialog>

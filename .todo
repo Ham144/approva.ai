@@ -16,7 +16,9 @@
 [x] supertenant yang bisa berpindah pindah organisasi
 [x] bisa up down flow status/approval dan request
 [x] allowedUserToRequest harusnya per department bukan perakun: menjadi allowedDepartmentToRequest
-[x] config smtp. ad host
-[] modify emailService untuk mengambil data config email dari db bukan .env
-[] duplicate flow
-[] user ldap baru login bisa inherit user lama yg telah resign(option: copy \_id user, atau buat )
+[x] owner: config smtp. dan LDAP host
+[x] modify emailService untuk mengambil data config email dari organisasi masing2
+[x] duplicate flow
+[x] user ldap baru login bisa inherit user lama yg telah resign
+[x] fix: setelah mutation di /management/department untuk memperbarui userInfo
+[x] fix: fullfillment page 

@@ -359,29 +359,31 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
         .json({ message: "Gagal, anda tidak berhak menyelesaikan ini" });
     }
 
-    //validasi body.status[$].requirements apakah semua sudah di isi yg
-    for (const requirement of requirementsTemplate.requirements) {
-      const filled =
-        currentIndexStatusResponse?.requirementsData?.[
-          requirement._id?.toString()
-        ] ?? currentIndexStatusResponse?.requirementsData?.[requirement._id];
-
-      if (!requirement.isNullable && !filled) {
-        return res.status(400).json({
-          message: `Input '${
-            requirement.title || requirement._id
-          }' wajib diisi.`,
-        });
-      }
-    }
-
     const verdictOfRequirement = currentIndexStatusResponse.verdict;
-
     if (!verdictOfRequirement) {
       return res
         .status(400)
         .json({ message: "Gagal, anda perlu memutuskan lanjut atau tidak" });
     }
+
+    //validasi body.status[$].requirements apakah semua sudah di isi yg
+    if (verdictOfRequirement == "approved") {
+      for (const requirement of requirementsTemplate.requirements) {
+        const filled =
+          currentIndexStatusResponse?.requirementsData?.[
+            requirement._id?.toString()
+          ] ?? currentIndexStatusResponse?.requirementsData?.[requirement._id];
+
+        if (!requirement.isNullable && !filled) {
+          return res.status(400).json({
+            message: `Input '${
+              requirement.title || requirement._id
+            }' wajib diisi.`,
+          });
+        }
+      }
+    }
+
     flowInstance.statuses = flowInstance.statuses.map((status, index) => {
       if (index === currentStatusIndex) {
         return {
@@ -475,9 +477,30 @@ router.put("/rollback/:id", async (req, res) => {
     const flowInstance = await FlowInstance.findOne({
       _id: id,
       org: req.user.org,
+    }).populate({
+      path: "flowTemplate",
+      select: "status.authorized",
+      populate: [
+        {
+          path: "status.authorized",
+          model: "UserRefrensi",
+          select: "_id username email",
+        },
+      ],
     });
+
     if (!flowInstance) {
       return res.status(400).json({ message: "request tidak ditemukan" });
+    }
+
+    if (
+      flowInstance.overallStatus == "in-progress" &&
+      flowInstance.currentStatusIndex == 0
+    ) {
+      return res.status(400).json({
+        message:
+          "gagal: proses telah di paling awal email telah dikirim sebelumnya",
+      });
     }
 
     flowInstance.overallStatus = "in-progress";
@@ -491,8 +514,6 @@ router.put("/rollback/:id", async (req, res) => {
       status.verdict = "pending";
       return status;
     });
-
-    await flowInstance.save();
 
     await sendApprovalRequestEmail(
       flowInstance.flowTemplate.status[0].authorized,

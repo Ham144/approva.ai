@@ -680,6 +680,83 @@ router.post("/createAppUser", authenticate, async (req, res) => {
   }
 });
 
+//take over old user dengan menggantinya dengan data dari newuser dan mengahapus new user
+router.put("/takeOverUser", authenticate, authorize, async (req, res) => {
+  const { oldUser, newUser } = req.body; // oldUser dan newUser seharusnya adalah _id string
+
+  if (oldUser == newUser) {
+    return res.status(400).json({
+      message: "User target dan user takeover tidak boleh sama.",
+    });
+  }
+
+  try {
+    // 1. Validasi Input
+    if (!oldUser || !newUser) {
+      return res.status(400).json({
+        message: "Bad Request: 'oldUser' dan 'newUser' ID harus disediakan.",
+      });
+    }
+
+    // 2. Temukan Dokumen User
+    // Pastikan _id adalah ObjectId yang valid, jika tidak, findOne akan gagal atau mengembalikan null
+    const [newUserDoc, oldUserDoc] = await Promise.all([
+      UserRefrensi.findOne({ _id: newUser, org: req.user.org }),
+      UserRefrensi.findOne({ _id: oldUser, org: req.user.org }),
+    ]);
+
+    if (!newUserDoc || !oldUserDoc) {
+      return res.status(404).json({
+        message: "User baru atau user lama tidak ditemukan di database.",
+      });
+    }
+
+    // Hindari menyalin _id atau __v, dan pastikan field yang disalin adalah yang benar-benar diinginkan
+    // Gunakan set() untuk mengupdate field secara selektif
+    oldUserDoc.username = newUserDoc.username;
+    oldUserDoc.email = newUserDoc.email;
+    oldUserDoc.password = newUserDoc.password; // Hati-hati dengan ini, pastikan Anda menyalin hash password, bukan plain text
+    oldUserDoc.role = newUserDoc.role;
+    oldUserDoc.authMethod = newUserDoc.authMethod;
+
+    // Opsional: Reset status user lama menjadi aktif kembali
+    oldUserDoc.isActive = true; // Atau set status ke 'active'
+    oldUserDoc.resignedAt = null; // Jika ada field ini, reset juga
+
+    // Anda mungkin juga ingin menyalin field lain seperti:
+    // oldUserDoc.ldapUsername = newUserDoc.ldapUsername;
+    // oldUserDoc.profilePicture = newUserDoc.profilePicture;
+    // ...dll.
+
+    // 5. Simpan Perubahan ke User Lama
+    await oldUserDoc.save();
+
+    // 6. Hapus User Baru
+    await UserRefrensi.deleteOne({
+      // Gunakan deleteOne, bukan findOneAndDelete jika Anda sudah punya _id
+      _id: newUserDoc._id, // Gunakan _id dari dokumen yang sudah ditemukan
+      org: req.user.org,
+    });
+
+    // 7. Berikan Respon Sukses
+    return res.status(200).json({
+      message: `Berhasil take over user. Akun ${oldUserDoc.username} (sebelumnya ${newUserDoc.username}) kini telah diwarisi.`,
+    });
+  } catch (error) {
+    console.error("Error during user takeover:", error); // Gunakan console.error untuk log error
+    // Tangani error Mongoose spesifik, misalnya CastError untuk _id yang tidak valid
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        message: "Bad Request: Format ID user tidak valid.",
+      });
+    }
+    return res.status(500).json({
+      message: "Terjadi kesalahan internal server saat mengambil alih user.",
+      error: error.message, // Sertakan pesan error untuk debugging di lingkungan dev
+    });
+  }
+});
+
 router.delete("/deleteAppUser/:id", authenticate, async (req, res) => {
   const id = req?.params?.id;
 

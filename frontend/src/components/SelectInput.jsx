@@ -33,6 +33,8 @@ export default function SelectInput({
         cursor: "default",
       }
     : {};
+  console.log(isRequirementInput);
+  console.log(statuses[statusIndex]?.requirementsData);
 
   return (
     <select
@@ -41,13 +43,15 @@ export default function SelectInput({
       style={disabledStyle}
       value={
         isRequirementInput
-          ? statuses[statusIndex]?.requirementsData[input._id]
-          : requestData[input._id]
+          ? statuses[statusIndex]?.requirementsData?.[input._id] ?? ""
+          : requestData?.[input._id] ?? ""
       }
       onChange={(e) => {
-        isRequirementInput
-          ? setRequirement(currentStatusIndex, input._id, e.target.value)
-          : setRequestData(input._id, e.target.value);
+        if (isRequirementInput) {
+          setRequirement(currentStatusIndex, input._id, e.target.value);
+        } else {
+          setRequestData(input._id, e.target.value);
+        }
       }}
     >
       <option value="">-- Pilih Opsi --</option>

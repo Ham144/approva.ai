@@ -423,6 +423,48 @@ router.put("/update/:id", async (req, res) => {
   }
 });
 
+router.post("/duplicate/:_id", async (req, res) => {
+  const { _id } = req.params;
+
+  try {
+    const existingFlow = await FlowAndPoint.findOne({
+      _id: _id,
+      org: req.user.org,
+    });
+    if (!existingFlow) {
+      return res.status(404).json({ message: "Flow tidak ditemukan." });
+    }
+
+    const uniqueAddition =
+      " (Copy) " + // Spasi ditambahkan agar ada jarak dengan waktu
+      new Date().toLocaleTimeString("id-ID", {
+        // Gunakan 'id-ID' untuk format waktu Indonesia (24 jam)
+        hour: "2-digit", // Angka 2 digit (misal: 09, 15)
+        minute: "2-digit", // Angka 2 digit (misal: 05, 30)
+        second: "2-digit", // Angka 2 digit (misal: 07, 45)
+        hourCycle: "h23", // Memastikan format 24 jam (00-23)
+      });
+
+    await FlowAndPoint.create({
+      title: existingFlow.title + uniqueAddition,
+      desc: existingFlow.desc,
+      request: existingFlow.request,
+      status: existingFlow.status,
+      designedBy: [req.user._id],
+      isAllowanceModeRequest: existingFlow.isAllowanceModeRequest,
+      allowedDepartmentToRequest: existingFlow.allowedDepartmentToRequest,
+      org: req.user.org,
+    });
+
+    return res.json({
+      message: "Flow berhasil duplikat.",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Terjadi kesalahan server" });
+  }
+});
+
 router.delete("/delete/:id", async (req, res) => {
   const { id } = req.params;
 

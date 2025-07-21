@@ -50,6 +50,11 @@ export const getUserById = async (id) => {
   return response?.data;
 };
 
+export const takeOverUser = async (body) => {
+  const res = await axiosInstance.put(`/api/auth/takeOverUser`, body);
+  return res.data;
+};
+
 export const deleteAppUser = async (id) => {
   const response = await axiosInstance.delete(`/api/auth/deleteAppUser/${id}`);
   return response.data;

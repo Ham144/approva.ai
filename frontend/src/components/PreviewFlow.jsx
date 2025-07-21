@@ -5,7 +5,7 @@ import NumberInput from "./NumberInput";
 import TableInput from "./TableInput";
 import SelectInput from "./SelectInput";
 import MultipleCheckboxInput from "./MultipleCheckboxInput";
-import { MessageSquareText, User2 } from "lucide-react";
+import { CheckCircle, Clock, MessageSquareText, User2 } from "lucide-react";
 import FileApi from "@/api/fileApi";
 
 export const renderHelpText = (input) => (
@@ -530,50 +530,107 @@ export default function PreviewFlow({
                   </div>
 
                   <div
-                    className={`flex justify-between items-center mt-5 px-3 py-2 rounded-lg ${
-                      statuses[i]?.verdict === "approved"
-                        ? "bg-green-50"
-                        : statuses[i]?.verdict === "rejected"
-                        ? "bg-red-50"
-                        : ""
-                    }`}
+                    className={`
+    flex flex-col md:flex-row md:items-center justify-between
+    mt-4 p-4 rounded-xl shadow-md border
+    transition-all duration-300 ease-in-out
+    ${
+      statuses[i]?.verdict === "approved"
+        ? "bg-green-50 border-green-200 text-green-800"
+        : statuses[i]?.verdict === "rejected"
+        ? "bg-red-50 border-red-200 text-red-800"
+        : "bg-white border-gray-200 text-gray-800"
+    }
+  `}
                   >
-                    {/* Verdict Row */}
-                    <div className="flex items-center gap-2 font-bold text-lg md:col-span-2 rounded-lg">
-                      <span>Status: {statuses[i]?.verdict}</span>
+                    {/* Verdict & Status Indicator - Selalu tampil */}
+                    <div className="flex items-center gap-3 font-extrabold text-xl mb-3 md:mb-0 md:w-1/3">
+                      {/* Mengganti teks "Status: " dengan ikon yang lebih visual */}
+                      {statuses[i]?.verdict === "approved" && (
+                        <CheckCircle className="w-7 h-7 text-green-600 flex-shrink-0" />
+                      )}
+                      {statuses[i]?.verdict === "rejected" && (
+                        <XCircle className="w-7 h-7 text-red-600 flex-shrink-0" />
+                      )}
+                      {/* Jika status bukan approved/rejected, anggap itu pending atau lainnya */}
+                      {statuses[i]?.verdict !== "approved" &&
+                        statuses[i]?.verdict !== "rejected" && (
+                          <Clock className="w-7 h-7 text-blue-600 flex-shrink-0" /> // Ikon untuk pending
+                        )}
+                      <span className="capitalize">
+                        Status: {statuses[i]?.verdict || "Pending"}
+                      </span>
                     </div>
 
-                    {/* Alasan Ditolak (hanya untuk rejected) */}
-                    {statuses[i]?.verdict === "rejected" && (
-                      <div className="flex items-start gap-2 col-span-2 md:col-span-1 border-t md:border-t-0 md:border-r border-current pt-3 md:pt-0 md:pr-4">
-                        <MessageSquareText className="w-4 h-4 mt-1 flex-shrink-0" />
-                        <div className="flex flex-col">
-                          <span className="font-semibold">Alasan Ditolak:</span>
-                          <p className="font-normal whitespace-pre-wrap">
-                            {statuses[i]?.rejectedReason || "Tidak ada alasan."}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Info Completed */}
                     {statuses[i]?.verdict !== "pending" && (
-                      <div
-                        className={`flex items-start gap-2 ${
-                          statuses[i]?.verdict === "rejected"
-                            ? "col-span-2 md:col-span-1 pt-3 md:pt-0 md:pl-4"
-                            : "col-span-2"
-                        }`}
-                      >
-                        <User2 className="w-4 h-4 mt-1 flex-shrink-0" />
-                        <div className="flex flex-col">
-                          <p className="font-normal">
-                            {statuses[i]?.verdict === "approved"
-                              ? "Disetujui oleh"
-                              : "Ditolak oleh"}
-                            : {statuses[i]?.completedBy?.username || "-"}
-                          </p>
-                        </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full md:w-2/3 md:ml-auto md:border-l md:border-current md:pl-6 pt-4 md:pt-0">
+                        {/* Alasan Ditolak (hanya untuk rejected) */}
+                        {statuses[i]?.verdict === "rejected" && (
+                          <div className="flex items-start gap-2 text-sm">
+                            <MessageSquareText className="w-5 h-5 mt-0.5 text-red-600 flex-shrink-0" />
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-red-700">
+                                Alasan Ditolak:
+                              </span>
+                              <p className="font-normal whitespace-pre-wrap text-red-800">
+                                {statuses[i]?.rejectedReason ||
+                                  "Tidak ada alasan spesifik."}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Info Completed By */}
+                        {/* Menampilkan jika status sudah completed (approved/rejected) */}
+                        {statuses[i]?.completedBy?.username && (
+                          <div className="flex items-start gap-2 text-sm">
+                            <User2 className="w-5 h-5 mt-0.5 text-gray-600 flex-shrink-0" />
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-gray-700">
+                                {statuses[i]?.verdict === "approved"
+                                  ? "Disetujui oleh"
+                                  : "Ditolak oleh"}
+                                :
+                              </span>
+                              <p className="font-normal text-gray-800">
+                                {statuses[i]?.completedBy?.username || "-"}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Info Completed At */}
+                        {/* Menampilkan jika status sudah completed (approved/rejected) */}
+                        {statuses[i]?.completedAt && (
+                          <div className="flex items-start gap-2 text-sm">
+                            <Clock className="w-5 h-5 mt-0.5 text-gray-600 flex-shrink-0" />
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-gray-700">
+                                Waktu:
+                              </span>
+                              <p className="font-normal text-gray-800">
+                                {new Date(
+                                  statuses[i]?.completedAt
+                                ).toLocaleString("id-ID", {
+                                  day: "numeric",
+                                  month: "long",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }) || "-"}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {statuses[i]?.verdict !== "pending" &&
+                          !statuses[i]?.rejectedReason &&
+                          !statuses[i]?.completedBy?.username &&
+                          !statuses[i]?.completedAt && (
+                            <div className="col-span-full text-center text-gray-500 text-sm italic py-2">
+                              Informasi detail tidak tersedia untuk status ini.
+                            </div>
+                          )}
                       </div>
                     )}
                   </div>

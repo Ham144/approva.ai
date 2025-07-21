@@ -39,14 +39,13 @@ export default function Login({ className, ...props }) {
     mutationKey: ["userInfo"],
     onSuccess: async (res) => {
       setUserInfo(res?.data);
-
       //Invalidate query untuk memperbarui data
       queryClient.invalidateQueries(["userInfo"]);
 
       toast.success("Login berhasil!");
       setTimeout(() => {
         navigate("/");
-      }, 500);
+      }, 1000);
     },
     onError: (err) => {
       console.log(err);
