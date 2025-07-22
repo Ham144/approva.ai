@@ -19,6 +19,8 @@ export default function Config() {
   // State for AD Config
   const [AD_HOST, setAD_HOST] = useState("");
   const [AD_PORT, setAD_PORT] = useState("");
+  const [AD_DOMAIN, setAD_DOMAIN] = useState("");
+  const [AD_BASE_DN, setAD_BASE_DN] = useState("");
 
   // State for SMTP Config
   const [smtpConfig, setSmtpConfig] = useState(initialSmtp);
@@ -45,7 +47,8 @@ export default function Config() {
 
   // Mutation for updating AD Config
   const { mutate: updateAdMutate, isLoading: isUpdatingAD } = useMutation({
-    mutationFn: () => configApi.updateConfigAD({ AD_HOST, AD_PORT }),
+    mutationFn: () =>
+      configApi.updateConfigAD({ AD_HOST, AD_PORT, AD_BASE_DN, AD_DOMAIN }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["config"] });
       toast.success("Konfigurasi AD berhasil diperbarui");
@@ -90,6 +93,8 @@ export default function Config() {
     if (configData?.data) {
       setAD_HOST(configData.data.AD_HOST || "");
       setAD_PORT(configData.data.AD_PORT || "");
+      setAD_DOMAIN(configData.data.AD_DOMAIN || "");
+      setAD_BASE_DN(configData.data.AD_BASE_DN || "");
     }
   }, [configData]);
 
@@ -168,6 +173,40 @@ export default function Config() {
                   name="AD_PORT"
                   className="input input-bordered w-full focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
                   placeholder="e.g., 389 or 636"
+                />
+              </div>
+              <div className="mb-6">
+                <label
+                  htmlFor="ad-port"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  AD DOMAIN:
+                </label>
+                <input
+                  id="ad-port"
+                  type="text"
+                  value={AD_DOMAIN}
+                  onChange={(e) => e.target.value}
+                  name="AD_DOMAIN"
+                  className="input input-bordered w-full focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
+                  placeholder="e.g., csi"
+                />
+              </div>
+              <div className="mb-6">
+                <label
+                  htmlFor="ad-port"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  AD BASE DN:
+                </label>
+                <input
+                  id="ad-port"
+                  type="text"
+                  value={AD_BASE_DN}
+                  onChange={(e) => setAD_BASE_DN(e.target.value)}
+                  name="AD_PORT"
+                  className="input input-bordered w-full focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
+                  placeholder="e.g., DC=csi,DC=my,DC=id"
                 />
               </div>
               <button

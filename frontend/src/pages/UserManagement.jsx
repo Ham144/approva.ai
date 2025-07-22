@@ -239,6 +239,7 @@ export default function UserManagement() {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
             User Management
           </h1>
+
           <button
             onClick={handleOpenDialog}
             className="btn btn-primary text-white flex items-center"
@@ -248,6 +249,11 @@ export default function UserManagement() {
           </button>
         </div>
 
+        <p className="p-2 font-bold  bg-warning rounded-md ">
+          Untuk AuthMethod == "ldap" : Field field ini akan berubah menyesuikan,
+          jika diganti di Active Directory : "display Name", "email",
+          "physicalDeliveryOfficeName",
+        </p>
         {/* Add/Edit User Dialog */}
         {isOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
@@ -539,6 +545,9 @@ export default function UserManagement() {
                     Username
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">
+                    Display Name
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">
                     Email
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">
@@ -580,6 +589,11 @@ export default function UserManagement() {
                               SUPER
                             </span>
                           )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          {user.displayName || "-"}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-gray-800 dark:text-gray-200">

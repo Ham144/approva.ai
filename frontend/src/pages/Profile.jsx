@@ -191,7 +191,7 @@ const Profile = () => {
                     </h4>
                   </div>
                   <p className="text-xl font-bold text-gray-900 dark:text-gray-100 break-words">
-                    {userInfo?.username || "N/A"}
+                    {userInfo?.displayName || userInfo?.username || "N/A"}
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 shadow-sm border border-gray-200 dark:border-gray-700">

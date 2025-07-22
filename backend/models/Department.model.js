@@ -4,7 +4,6 @@ const departmentSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    unique: true,
   },
   org: {
     type: mongoose.Schema.Types.ObjectId,

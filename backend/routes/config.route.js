@@ -9,7 +9,9 @@ const router = Router();
 
 router.get("/ad", async (req, res) => {
   try {
-    const org = await Org.findById(req.user.org).select("AD_HOST AD_PORT");
+    const org = await Org.findById(req.user.org).select(
+      "AD_HOST AD_PORT AD_DOMAIN AD_BASE_DN"
+    );
 
     if (!org) {
       return res.status(404).json({ message: "Organisasi tidak ditemukan." });
@@ -20,6 +22,8 @@ router.get("/ad", async (req, res) => {
       data: {
         AD_HOST: org.AD_HOST,
         AD_PORT: org.AD_PORT,
+        AD_DOMAIN: org.AD_DOMAIN,
+        AD_BASE_DN: org.AD_BASE_DN,
       },
     });
   } catch (error) {
@@ -27,8 +31,10 @@ router.get("/ad", async (req, res) => {
   }
 });
 
+//edit
 router.put("/ad", async (req, res) => {
-  const { AD_HOST, AD_PORT } = req.body;
+  const { AD_HOST, AD_PORT, AD_DOMAIN, AD_BASE_DN } = req.body;
+  console.log(AD_HOST, AD_PORT, AD_DOMAIN, AD_BASE_DN);
 
   try {
     await Org.findOneAndUpdate(
@@ -36,6 +42,8 @@ router.put("/ad", async (req, res) => {
       {
         AD_HOST,
         AD_PORT,
+        AD_DOMAIN,
+        AD_BASE_DN,
       }
     );
 

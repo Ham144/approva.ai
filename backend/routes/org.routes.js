@@ -18,6 +18,8 @@ router.post(
       EMAIL_HOST,
       EMAIL_PORT,
       EMAIL_SECURE,
+      AD_DOMAIN,
+      AD_BASE_DN,
     } = req.body;
 
     // Validasi minimum
@@ -41,13 +43,13 @@ router.post(
         organizationName,
         AD_HOST,
         AD_PORT,
-        smtpConfig: {
-          EMAIL_USER,
-          EMAIL_PASS,
-          EMAIL_HOST,
-          EMAIL_PORT,
-          EMAIL_SECURE,
-        },
+        AD_DOMAIN,
+        AD_BASE_DN,
+        EMAIL_USER,
+        EMAIL_PASS,
+        EMAIL_HOST,
+        EMAIL_PORT,
+        EMAIL_SECURE,
         createdBy: req.user._id,
         owners: [req.user._id],
         members: [req.user._id],
@@ -145,11 +147,9 @@ router.delete(
     const _id = req.params._id;
 
     try {
-      const updatedOrg = await Org.findOneAndUpdate(
+      let updatedOrg = await Org.findOne(
         // Tambahkan variabel untuk menangkap hasilnya
-        { _id },
-        { $set: { isDisabled: true } },
-        { new: true }
+        { _id }
       );
 
       if (!updatedOrg) {
@@ -159,6 +159,9 @@ router.delete(
         });
       }
 
+      updatedOrg.isDisabled = !updatedOrg.isDisabled;
+
+      await updatedOrg.save();
       return res.json({
         message: "Organization disabled successfully.", // Pesan yang lebih jelas
         data: updatedOrg, // Opsional: kirim data organisasi yang sudah diupdate
@@ -179,7 +182,7 @@ router.delete(
 );
 
 router.delete(
-  "/delete/:_id",
+  "/deleteOrg/:_id",
   authenticate,
   authorizeSupertenant,
   async (req, res) => {

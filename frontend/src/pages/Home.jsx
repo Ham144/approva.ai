@@ -116,7 +116,9 @@ const Home = () => {
                 </div>
                 <div>
                   <h3 className="font-medium">Organization Owner Page</h3>
-                  <p className="text-sm text-gray-600">{userInfo?.username}</p>
+                  <p className="text-sm text-gray-600">
+                    {userInfo?.displayName || userInfo?.username}
+                  </p>
                 </div>
               </div>
             </button>

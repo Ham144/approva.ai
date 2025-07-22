@@ -5,7 +5,13 @@ import NumberInput from "./NumberInput";
 import TableInput from "./TableInput";
 import SelectInput from "./SelectInput";
 import MultipleCheckboxInput from "./MultipleCheckboxInput";
-import { CheckCircle, Clock, MessageSquareText, User2 } from "lucide-react";
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
+  MessageSquareText,
+  User2,
+} from "lucide-react";
 import FileApi from "@/api/fileApi";
 
 export const renderHelpText = (input) => (
@@ -593,7 +599,9 @@ export default function PreviewFlow({
                                 :
                               </span>
                               <p className="font-normal text-gray-800">
-                                {statuses[i]?.completedBy?.username || "-"}
+                                {statuses[i]?.completedBy?.displayName ||
+                                  statuses[i]?.completedBy?.username ||
+                                  "-"}
                               </p>
                             </div>
                           </div>

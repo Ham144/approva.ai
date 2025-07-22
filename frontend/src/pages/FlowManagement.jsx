@@ -83,7 +83,7 @@ export default function FlowManagement() {
                                 key={designer._id}
                                 className="badge bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 border border-blue-200 dark:border-blue-700 px-3 py-1 text-xs rounded-full font-semibold"
                               >
-                                {designer.username}
+                                {designer.displayName || designer.username}
                               </span>
                             ))
                           ) : (

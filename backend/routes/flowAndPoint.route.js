@@ -204,7 +204,7 @@ router.get("/list", async (req, res) => {
         populate: {
           path: "authorized",
           model: "UserRefrensi",
-          select: "_id username",
+          select: "_id username displayName",
         },
       })
       .populate("designedBy", "username")

@@ -6,12 +6,23 @@ import { LogIn, Search } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
-
 export const initialOrg = {
+  organizationName: "",
   AD_HOST: "",
   AD_PORT: "",
-  organizationName: "",
+  AD_DOMAIN: "",
+  AD_BASE_DN: "", // <- perlu tambahkan
+  EMAIL_USER: "",
+  EMAIL_PASS: "",
+  EMAIL_HOST: "",
+  EMAIL_PORT: "",
+  EMAIL_SECURE: false, // <- default false, bisa pakai checkbox di UI
 };
+
+/*
+REgister page sudah tidak dipakai lagi tapi jangan dihapus
+*/
+
 export default function RegisterPage() {
   const [username, setUsername] = useState();
   const [password, setPassword] = useState();

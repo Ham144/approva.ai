@@ -174,6 +174,7 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
     requestedBy,
     requestDate,
     isMyRequestOnly,
+    isMyDepartmentOnly,
     limit,
     skip,
   } = req.query;
@@ -202,6 +203,24 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
         const end = new Date(requestDate);
         end.setHours(23, 59, 59, 999);
         query.createdAt = { $gte: start, $lte: end };
+      }
+
+      if (isMyDepartmentOnly == "true") {
+        const myDepartment = await Department.findOne({
+          org: req.user.org,
+          members: { $in: [req.user._id] },
+        });
+        console.log(myDepartment);
+        if (myDepartment) {
+          query = {
+            ...query,
+            flowTemplate: {
+              $in: await FlowAndPoint.find({
+                allowedDepartmentToRequest: myDepartment._id,
+              }).distinct("_id"),
+            },
+          };
+        }
       }
     }
 
@@ -266,7 +285,7 @@ router.get("/flowInstanceById/:id", async (req, res) => {
           {
             path: "status.authorized",
             model: "UserRefrensi",
-            select: "_id username",
+            select: "_id username displayName",
           },
         ],
       })
@@ -514,6 +533,7 @@ router.put("/rollback/:id", async (req, res) => {
       status.verdict = "pending";
       return status;
     });
+    await flowInstance.save();
 
     await sendApprovalRequestEmail(
       flowInstance.flowTemplate.status[0].authorized,

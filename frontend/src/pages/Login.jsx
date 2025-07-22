@@ -144,7 +144,7 @@ export default function Login({ className, ...props }) {
                   htmlFor="username"
                   className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1"
                 >
-                  Username
+                  {authMethod === "app" ? "Username" : "sAMAccountName"}
                 </label>
                 <input
                   id="username"

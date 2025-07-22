@@ -82,6 +82,7 @@ const flowInstanceSchema = new mongoose.Schema(
       default: false,
     },
     whoCanSee: [
+      //not used
       //ini untuk mode isPrivateRequest active
       {
         type: mongoose.Schema.Types.ObjectId,

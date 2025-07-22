@@ -21,6 +21,8 @@
 [x] duplicate flow
 [x] user ldap baru login bisa inherit user lama yg telah resign
 [x] fix: setelah mutation di /management/department untuk memperbarui userInfo
-[x] fix: fullfillment page 
+[x] fix: fullfillment page
 [x] fix take over
-[x] add: auth menerima department dari AD(active directory)
+[x] add: auth menerima department dan email dari AD (active directory)
+[x] fix: config FE, create org (supertenant) 
+[x] jika sudah rejected tidak boleh rollback

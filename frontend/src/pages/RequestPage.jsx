@@ -180,19 +180,19 @@ export default function RequestPage() {
                             key={user._id}
                             className="font-semibold text-gray-700"
                           >
-                            {user.username.replace("csi\\", "")}
+                            {user?.displayName || user?.username}
                             {idx < flow.designedBy.length - 1 ? ", " : ""}
                           </span>
                         ))}
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="grid gap-2 grid-cols-2">
                     <button
                       onClick={() => {
                         setSelectedFlow(flow);
                         document.getElementById("statusmodal")?.showModal();
                       }}
-                      className="btn btn-sm bg-indigo-600 text-white hover:bg-indigo-700"
+                      className="btn btn-lg rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
                     >
                       Lihat Alur
                     </button>
@@ -204,7 +204,7 @@ export default function RequestPage() {
                           .getElementById("modalactionrequestlist")
                           ?.showModal();
                       }}
-                      className="btn btn-sm bg-amber-500 text-white hover:bg-amber-600"
+                      className="btn  rounded-md btn-lg bg-amber-500 text-white hover:bg-amber-600"
                     >
                       Aksi
                     </button>

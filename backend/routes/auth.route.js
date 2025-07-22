@@ -207,15 +207,16 @@ router.post(
   "/login/ldap",
   asyncHandler(async (req, res) => {
     const { username, password, selectedOrg } = req.body;
-
-    if (selectedOrg == "687725e23c5fdac3f80edd1a") {
-      return res.status(500).json({ messagae: "resolve the issue" });
-    }
-
     if (!username || !password || !selectedOrg) {
       return res.status(400).json({
         success: false,
         message: "perlu melengkapi semua credentials",
+      });
+    }
+    if (username == "SUPERTENANT") {
+      return res.status(400).json({
+        success: false,
+        message: "tidak boleh nama demikian karena termasuk role spesial",
       });
     }
 
@@ -233,30 +234,52 @@ router.post(
       });
     }
 
+    //LDAP/ AD
     const client = new LdapClient({
       url: `ldap://${OrgDB.AD_HOST}:${OrgDB.AD_PORT}`,
     });
 
+    const bindDn = `${OrgDB.AD_DOMAIN}\\${username}`;
+    // const baseDN = "dc=catur,dc=co,dc=id";
+    const baseDN = OrgDB.AD_BASE_DN;
+
     try {
       let userLDAP;
       try {
-        userLDAP = await client.bind(username, password);
-        console.log(userLDAP);
+        // Langkah 1: Bind dulu
+        await client.bind(bindDn, password);
+
+        // Langkah 2: Search
+        const result = await client.search(baseDN, {
+          scope: "sub",
+          filter: `(sAMAccountName=${username})`, // ganti dengan user yang kamu tahu
+          attributes: [
+            "physicalDeliveryOfficeName",
+            "displayName",
+            "mail",
+            "telephoneNumber",
+          ],
+        });
+        userLDAP = result[0];
       } catch (error) {
-        return res.status(403).json({
+        return res.status(400).json({
           message:
             "Gagal menghubungkan kredensial user ke LDAP, mungkin kesalahan pemmilihan organisasi atau username:password.",
+          error,
         });
       }
 
-      if (userLDAP?.success == false || userLDAP.message == "null") {
-        return res.status(403).json({
-          message:
-            "Anda tidak ditemukan pada LDAP organisasi demikian, mungkin kesalahan pemmilihan organisasi atau username:password",
-        });
-      }
+      //cari apakah user dan departement demikian sudah ada
+      let userDB = await UserRefrensi.findOne({
+        username,
+        org: selectedOrg,
+        authMethod: "ldap",
+      });
+      let departementDB = await Department.findOne({
+        org: selectedOrg,
+        name: userLDAP["physicalDeliveryOfficeName"],
+      });
 
-      let userDB = await UserRefrensi.findOne({ username, org: selectedOrg });
       const isFirstMember = OrgDB?.owners?.length < 2;
 
       if (!userDB) {
@@ -265,6 +288,8 @@ router.post(
           org: selectedOrg,
           role: isFirstMember ? "owner" : "member",
           authMethod: "ldap",
+          displayName: userLDAP["displayName"],
+          email: userLDAP["mail"],
         });
         await userDB.save();
         await Org.findByIdAndUpdate(selectedOrg, {
@@ -273,15 +298,49 @@ router.post(
           },
         });
       }
+      if (!departementDB) {
+        departementDB = new Department({
+          name: userLDAP["physicalDeliveryOfficeName"],
+          org: selectedOrg,
+          members: [userDB._id],
+        });
+      }
 
-      //cari departmentnya nya
-      const myDepartment = await Department.findOne({
+      //jika user ada cek apakah email dan physicalDeliveryOfficeName diubah di AD maka update
+      if (userDB.email !== userLDAP["mail"]) {
+        await UserRefrensi.findOneAndUpdate(
+          { username },
+          { $set: { email: userLDAP["mail"] } }
+        );
+      }
+      if (userDB.displayName !== userLDAP["displayName"]) {
+        await UserRefrensi.findOneAndUpdate(
+          { username },
+          { $set: { displayName: userLDAP["displayName"] } }
+        );
+      }
+
+      //cek apakah departement dari ldap cocok dengan departemnt si user
+      const myPreviousDepartment = await Department.findOne({
         org: OrgDB._id,
         members: { $in: [userDB._id] },
       });
-
-      if (!myDepartment) {
-        console.log("User baru, tidak terdaftar di department manapun");
+      if (
+        myPreviousDepartment &&
+        myPreviousDepartment.name !== departementDB.name
+      ) {
+        const toDeleteMemberIdx = await myPreviousDepartment.findIndex(
+          (i) => i.members === userDB._id
+        );
+        myPreviousDepartment.members = myPreviousDepartment.members.splice(
+          toDeleteMemberIdx,
+          1
+        );
+      } else {
+        //jika departement sebelumnya ga ada tapi departement yang dimaksud sudah terdaftar maka add
+        if (!myPreviousDepartment && departementDB) {
+          departementDB.members.push(userDB._id);
+        }
       }
 
       const payload = {
@@ -289,7 +348,7 @@ router.post(
         username: username,
         org: OrgDB._id,
         role: userDB.role,
-        department: myDepartment?._id,
+        department: departementDB?._id,
       };
 
       const token = await generateTokenJWT(payload);
@@ -301,10 +360,13 @@ router.post(
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
+      await userDB.save();
+      await departementDB.save();
+
       return res.json({
         success: true,
         message: "Selamat datang kembali.",
-        data: username,
+        data: payload,
       });
     } catch (error) {
       console.log(error);
@@ -346,7 +408,7 @@ router.post(
 
     // Ambil user dengan password (jangan .select dulu!)
     let userDB;
-    if (username == "IT") {
+    if (username == " ") {
       userDB = await UserRefrensi.findOne({
         username,
       });
@@ -373,7 +435,7 @@ router.post(
       });
     }
 
-    if (username == "IT" && OrgDB._id != selectedOrg) {
+    if (username == "SUPERTENANT" && OrgDB._id != selectedOrg) {
       await UserRefrensi.findOneAndUpdate(
         { username },
         { $set: { org: OrgDB._id } }

@@ -55,7 +55,9 @@ export const FlowStatusModal = ({ selectedFlow, onClose }) => {
                       {step.title}
                     </h5>
                     <p className="text-sm text-gray-600">
-                      {step.authorized.map((u) => u.username).join(" atau ")}
+                      {step.authorized
+                        .map((u) => u?.displayName || u?.username)
+                        .join(" atau ")}
                     </p>
                   </div>
                 </li>

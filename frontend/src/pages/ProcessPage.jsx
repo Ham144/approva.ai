@@ -249,30 +249,57 @@ export default function ProcessPage() {
           </div>
         </div>
 
-        <div className="flex justify-start">
-          <div
+        <div className="flex flex-wrap gap-2">
+          <button
             onClick={() =>
               setFilter((prev) => ({
                 ...prev,
                 isMyRequestOnly: false,
+                isMyDepartmentOnly: false,
               }))
             }
-            className={`badge rounded-lg p-2 cursor-pointer ${
-              filter.isMyRequestOnly == false ? "bg-blue-300" : "bg-gray-100"
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              !filter.isMyRequestOnly && !filter.isMyDepartmentOnly
+                ? "bg-blue-100 text-blue-700 border border-blue-200 shadow-inner"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
             }`}
           >
-            Public
-          </div>
-          <div
+            Semua Request
+          </button>
+
+          <button
             onClick={() =>
-              setFilter((prev) => ({ ...prev, isMyRequestOnly: true }))
+              setFilter((prev) => ({
+                ...prev,
+                isMyRequestOnly: false,
+                isMyDepartmentOnly: true,
+              }))
             }
-            className={`badge rounded-lg p-2 cursor-pointer ${
-              filter.isMyRequestOnly == true ? "bg-blue-300" : "bg-gray-100"
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              filter.isMyDepartmentOnly
+                ? "bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-inner"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
             }`}
           >
-            hanya request saya
-          </div>
+            Departemen Saya
+          </button>
+
+          <button
+            onClick={() =>
+              setFilter((prev) => ({
+                ...prev,
+                isMyRequestOnly: true,
+                isMyDepartmentOnly: false,
+              }))
+            }
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              filter.isMyRequestOnly
+                ? "bg-green-100 text-green-700 border border-green-200 shadow-inner"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            Request Saya
+          </button>
         </div>
 
         {/* --- Area Konten / Hasil --- */}

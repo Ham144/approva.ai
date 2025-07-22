@@ -383,7 +383,9 @@ export default function FlowCreation() {
                       key={userId}
                       className="bg-blue-100 text-blue-800 px-2 py-1 rounded flex items-center gap-1"
                     >
-                      <span>{user?.username || "Unknown"}</span>
+                      <span>
+                        {user?.displayName || user?.username || "Unknown"}
+                      </span>
                       <button
                         onClick={() => handleRemoveAuthorizedUser(i, userId)}
                         className="ml-1 text-red-500 hover:text-red-700"

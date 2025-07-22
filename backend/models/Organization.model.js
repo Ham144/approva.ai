@@ -8,6 +8,7 @@ const organizationSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    // start AD---------------
     AD_HOST: {
       type: String,
       required: true,
@@ -16,6 +17,17 @@ const organizationSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    AD_DOMAIN: {
+      type: String,
+      required: true,
+    },
+    AD_BASE_DN: {
+      //contoh : DC=csi,DC=my,DC=id
+      type: String,
+      required: true,
+    },
+    //END AD------------------
+
     owners: [
       {
         type: mongoose.Schema.Types.ObjectId,
