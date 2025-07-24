@@ -283,16 +283,21 @@ function InputItem({ input, index, onChange, deleteInput, handleMoveRequest }) {
                                 });
                               }}
                             >
-                              {["text", "number", "date", "image"].map(
-                                (typeOpt) => (
-                                  <option key={typeOpt} value={typeOpt}>
-                                    {typeOpt.charAt(0).toUpperCase() +
-                                      typeOpt.slice(1)}
-                                  </option>
-                                )
-                              )}
+                              {[
+                                "text",
+                                "number",
+                                "date",
+                                "image",
+                                "select",
+                              ].map((typeOpt) => (
+                                <option key={typeOpt} value={typeOpt}>
+                                  {typeOpt.charAt(0).toUpperCase() +
+                                    typeOpt.slice(1)}
+                                </option>
+                              ))}
                             </select>
                           </div>
+
                           <button
                             onClick={() => {
                               const newKeys = [...input.table.keys];
@@ -314,6 +319,159 @@ function InputItem({ input, index, onChange, deleteInput, handleMoveRequest }) {
                           >
                             <X size={14} /> Hapus
                           </button>
+                          {/* Bagian Konfigurasi Tipe 'select' atau 'multipleCheckbox' */}
+                          {input.table.keysType?.[idx] === "select" && (
+                            <div className="border border-dashed border-gray-300 dark:border-gray-600 p-4 rounded-lg bg-gray-50 dark:bg-gray-700 space-y-4">
+                              <h4 className="font-semibold text-gray-800 dark:text-gray-200 text-lg flex items-center gap-2">
+                                {getInputTypeIcon(input.tipe)} Konfigurasi
+                                Pilihan Data
+                              </h4>
+                              <label className="label-text font-semibold text-gray-700 dark:text-gray-300">
+                                Pilih Opsi Data yang sudah ada atau buat yang
+                                baru:
+                              </label>
+                              <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
+                                {!hasNew && (
+                                  <div className="form-control flex-1 w-full">
+                                    <div className="relative flex items-center w-full">
+                                      <span className="absolute left-3 text-gray-500 dark:text-gray-400">
+                                        <ListPlus size={18} />
+                                      </span>
+                                      <select
+                                        value={input.sourceData || ""}
+                                        onChange={(e) =>
+                                          onChange({
+                                            ...input,
+                                            sourceData: e.target.value,
+                                          })
+                                        }
+                                        className="select select-bordered w-full pl-10 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                      >
+                                        <option disabled value="">
+                                          Pilih daftar opsi dari koleksi...
+                                        </option>
+                                        {sourceDataList?.map((sd) => (
+                                          <option key={sd._id} value={sd._id}>
+                                            {sd.title}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                  </div>
+                                )}
+
+                                <button
+                                  onClick={() => {
+                                    document
+                                      .getElementById("modalsourcedata")
+                                      ?.showModal(); // Pastikan modalShowTips ada dan cara memanggilnya benar
+                                  }}
+                                  className="btn btn-outline btn-sm sm:btn-md text-purple-500 border-purple-500 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/20 transition-colors duration-200 flex items-center gap-1 mt-2 sm:mt-0"
+                                >
+                                  <Plus size={16} /> Buat Baru
+                                </button>
+                              </div>
+
+                              {input.sourceData && (
+                                <div className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 shadow-sm space-y-3">
+                                  <div className="font-bold text-lg text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                    <Eye size={20} /> Pratinjau Opsi Terpilih
+                                  </div>
+                                  <div className="italic text-gray-600 dark:text-gray-400 text-sm">
+                                    {sourceDataPreview?.data?.desc ||
+                                      "Tidak ada deskripsi."}
+                                  </div>
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {sourceDataPreview?.data?.keys?.length >
+                                    0 ? (
+                                      sourceDataPreview.data.keys.map(
+                                        (item, idx) => (
+                                          <div
+                                            key={item._id || idx} // Gunakan idx sebagai fallback key
+                                            className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 shadow-xs transition-transform transform hover:scale-105"
+                                          >
+                                            <div className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                                              {item.key}
+                                            </div>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                                              {item.value}
+                                            </div>
+                                          </div>
+                                        )
+                                      )
+                                    ) : (
+                                      <p className="col-span-full text-center italic text-gray-500 dark:text-gray-400">
+                                        Tidak ada opsi ditemukan.
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {hasNew && (
+                                <div className="p-4 border border-dashed border-green-300 dark:border-green-700 rounded-lg bg-green-50 dark:bg-green-900/20 space-y-3">
+                                  <h4 className="font-semibold text-green-700 dark:text-green-300 mb-2 flex items-center gap-2">
+                                    <Eye size={20} /> Pratinjau Opsi Baru
+                                  </h4>
+
+                                  {sourceDataPreviewErr ? (
+                                    <div
+                                      role="alert"
+                                      className="alert alert-error bg-red-100 dark:bg-red-900/40 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200"
+                                    >
+                                      <AlertCircle
+                                        size={24}
+                                        className="stroke-red-600 dark:stroke-red-300 shrink-0"
+                                      />
+                                      <span>
+                                        Error:{" "}
+                                        {JSON.stringify(sourceDataPreviewErr)}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <div className="text-sm space-y-2 text-gray-800 dark:text-gray-200">
+                                        <div>
+                                          <span className="font-bold flex items-center gap-1">
+                                            <FileText size={16} /> Judul:{" "}
+                                            {input.sourceDataNew?.title || "-"}
+                                          </span>
+                                        </div>
+                                        <div className="text-gray-600 dark:text-gray-400">
+                                          <span className="font-semibold flex items-center gap-1">
+                                            <MessageSquareText size={16} />{" "}
+                                            Deskripsi:
+                                          </span>
+                                          <p className="ml-6">
+                                            {input.sourceDataNew?.desc ||
+                                              "Tidak ada deskripsi."}
+                                          </p>
+                                        </div>
+                                        <div className="mt-2">
+                                          <span className="font-bold flex items-center gap-1">
+                                            <ListPlus size={16} /> Pilihan:
+                                          </span>
+                                          <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 ml-6">
+                                            {input.sourceDataNew?.keys?.length >
+                                            0 ? (
+                                              input.sourceDataNew.keys.map(
+                                                (k, i) => (
+                                                  <li key={i}>{k.value}</li>
+                                                )
+                                              )
+                                            ) : (
+                                              <li>Tidak ada pilihan.</li>
+                                            )}
+                                          </ul>
+                                        </div>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </th>
                     ))}

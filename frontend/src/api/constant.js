@@ -1,8 +1,8 @@
 const DEV_URL = "http://192.168.169.12:3000";
 const PROD_URL = "http://192.168.169.22:3000";
 
-// export const NODE_ENV = "development";
-export const NODE_ENV = "production";
+export const NODE_ENV = "development";
+// export const NODE_ENV = "production";
 
 export const ENUM_INPU_TYPE = [
   "pdf",

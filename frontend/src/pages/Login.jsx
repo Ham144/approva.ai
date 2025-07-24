@@ -73,6 +73,9 @@ export default function Login({ className, ...props }) {
 
         toast.success("Login berhasil!");
         navigate("/");
+        setTimeout(() => {
+          navigate("/"); //emang sengaja ada 2 navigate karena sering gagal
+        }, 1000);
       },
       onError: (err) => {
         toast.error(

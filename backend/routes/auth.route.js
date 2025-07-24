@@ -292,11 +292,17 @@ router.post(
           email: userLDAP["mail"],
         });
         await userDB.save();
-        await Org.findByIdAndUpdate(selectedOrg, {
+        const updateData = {
           $addToSet: {
             members: userDB._id,
           },
-        });
+        };
+
+        if (isFirstMember) {
+          updateData.$addToSet.owners = userDB._id;
+        }
+
+        await Org.findByIdAndUpdate(selectedOrg, updateData);
       }
       if (!departementDB) {
         departementDB = new Department({
@@ -847,11 +853,10 @@ router.delete("/deleteAppUser/:id", authenticate, async (req, res) => {
 // web
 router.delete(
   "/logout",
-  authenticate,
   asyncHandler(async (req, res) => {
     res.clearCookie("token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       sameSite: "Lax",
     }); // Pastikan opsi cookie sama saat menghapus
     return res.json({

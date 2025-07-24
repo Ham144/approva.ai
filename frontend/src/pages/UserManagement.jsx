@@ -11,6 +11,7 @@ import {
 import { toast } from "react-hot-toast";
 import { Pencil, Plus, TrashIcon } from "lucide-react";
 import DepartmentApi from "@/api/DepartmentApi";
+import axiosInstance from "@/api/axiosInstance";
 
 // Penjelasan Akun
 // ----------------------------------------
@@ -84,6 +85,23 @@ export default function UserManagement() {
       toast.error(error?.response?.data?.message || "Gagal memperbarui user");
     },
   });
+
+  const { mutateAsync: handleInitilize, isPending: initializing } = useMutation(
+    {
+      mutationKey: ["takeOverUser"],
+      mutationFn: async () => {
+        const res = await axiosInstance.post("/api/bulk/initialize/all");
+        return res.data;
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries(["users"]);
+        toast.success("User berhasil diperbarui");
+      },
+      onError: (error) => {
+        toast.error(error?.response?.data?.message || "Gagal memperbarui user");
+      },
+    }
+  );
 
   const { data: departments } = useQuery({
     queryKey: ["department"],
@@ -239,14 +257,32 @@ export default function UserManagement() {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
             User Management
           </h1>
-
-          <button
-            onClick={handleOpenDialog}
-            className="btn btn-primary text-white flex items-center"
-          >
-            <Plus className="h-5 w-5 mr-1" />
-            <span>Tambah User (non LDAP)</span>
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleOpenDialog}
+              className="btn btn-primary rounded-md text-white flex items-center"
+            >
+              <Plus className="h-5 w-5 mr-1" />
+              <span>Tambah User (non LDAP)</span>
+            </button>
+            <button
+              disabled={initializing}
+              onClick={() => {
+                const confirm = window.confirm(
+                  "Proses ini mungkin memakan waktu lama untuk menginisiasi semua user dari AD ?"
+                );
+                if (confirm) {
+                  handleInitilize();
+                }
+              }}
+              className={`${
+                initializing && "loading"
+              } btn bg-green-500 rounded-md text-white flex items-center`}
+            >
+              <Plus className="h-5 w-5 mr-1" />
+              <span>inisialisasi masal LDAP</span>
+            </button>
+          </div>
         </div>
 
         <p className="p-2 font-bold  bg-warning rounded-md ">
@@ -534,150 +570,156 @@ export default function UserManagement() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="table w-full">
-              <thead className="bg-gray-100 dark:bg-gray-700">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200 rounded-tl-lg">
-                    No
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">
-                    Username
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">
-                    Display Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">
-                    Email
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">
-                    Role
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">
-                    Auth Method
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200 rounded-tr-lg">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {isLoading ? (
+          <div className="overflow-x-auto ">
+            {initializing ? (
+              <div className="flex justify-center items-center min-h-[500px]">
+                <span className="loading loading-ring loading-lg"></span>
+              </div>
+            ) : (
+              <table className="table w-full">
+                <thead className="bg-gray-100 dark:bg-gray-700">
                   <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center">
-                      <div className="flex justify-center items-center gap-2 text-gray-500 dark:text-gray-400">
-                        <span className="loading loading-spinner loading-md"></span>
-                        Loading users...
-                      </div>
-                    </td>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200 rounded-tl-lg">
+                      No
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Username
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Display Name
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Email
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Role
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Auth Method
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200 rounded-tr-lg">
+                      Action
+                    </th>
                   </tr>
-                ) : filteredUsers && filteredUsers.length > 0 ? (
-                  filteredUsers.map((user, index) => (
-                    <tr
-                      key={user._id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                    >
-                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
-                        {index + 1}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          {user.username}
-                          {user?.role === "supertenant" && (
-                            <span className="badge badge-warning badge-xs">
-                              SUPER
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          {user.displayName || "-"}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-gray-800 dark:text-gray-200">
-                        {user.email || "-"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`badge capitalize ${
-                            user?.role === "supertenant"
-                              ? "badge-warning"
-                              : user?.role === "owner"
-                              ? "badge-primary text-white"
-                              : "badge-ghost"
-                          }`}
-                        >
-                          {user?.role}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`badge text-xs font-semibold px-2 py-1 rounded-full ${
-                            user.authMethod === "ldap"
-                              ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                              : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                          }`}
-                        >
-                          {user.authMethod}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              setCurrentUser(user);
-                              handleEdit(user);
-                              setIsEditMode(true);
-                            }}
-                            className="btn btn-ghost btn-sm text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 tooltip"
-                            data-tip="Edit User"
-                            disabled={
-                              user?.role === "supertenant" &&
-                              currentUser?.role !== "supertenant"
-                            }
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (
-                                user?.role === "supertenant" ||
-                                (user.authMethod === "ldap" &&
-                                  user?.role === "owner")
-                              ) {
-                                toast.error(
-                                  "Menghapus user authMethod= 'LDAP' tidak berdampak apa-apa, disable user di LDAP"
-                                );
-                              } else {
-                                setCurrentUser(user);
-                                document
-                                  .getElementById("confirm-delete")
-                                  .showModal();
-                              }
-                            }}
-                            className="btn btn-ghost btn-sm text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 tooltip"
-                            data-tip="Delete User"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
+                </thead>
+
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-6 text-center">
+                        <div className="flex justify-center items-center gap-2 text-gray-500 dark:text-gray-400">
+                          <span className="loading loading-spinner loading-md"></span>
+                          Loading users...
                         </div>
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="px-4 py-6 text-center text-gray-500 dark:text-gray-400"
-                    >
-                      Tidak ada user yang ditemukan.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  ) : filteredUsers && filteredUsers.length > 0 ? (
+                    filteredUsers.map((user, index) => (
+                      <tr
+                        key={user._id}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
+                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
+                          {index + 1}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            {user.username}
+                            {user?.role === "supertenant" && (
+                              <span className="badge badge-warning badge-xs">
+                                SUPER
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            {user.displayName || "-"}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-gray-800 dark:text-gray-200">
+                          {user.email || "-"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`badge capitalize ${
+                              user?.role === "supertenant"
+                                ? "badge-warning"
+                                : user?.role === "owner"
+                                ? "badge-primary text-white"
+                                : "badge-ghost"
+                            }`}
+                          >
+                            {user?.role}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`badge text-xs font-semibold px-2 py-1 rounded-full ${
+                              user.authMethod === "ldap"
+                                ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                                : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                            }`}
+                          >
+                            {user.authMethod}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                setCurrentUser(user);
+                                handleEdit(user);
+                                setIsEditMode(true);
+                              }}
+                              className="btn btn-ghost btn-sm text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 tooltip"
+                              data-tip="Edit User"
+                              disabled={
+                                user?.role === "supertenant" &&
+                                currentUser?.role !== "supertenant"
+                              }
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (
+                                  user?.role === "supertenant" ||
+                                  (user.authMethod === "ldap" &&
+                                    user?.role === "owner")
+                                ) {
+                                  toast.error(
+                                    "Menghapus user authMethod= 'LDAP' tidak berdampak apa-apa, disable user di LDAP"
+                                  );
+                                } else {
+                                  setCurrentUser(user);
+                                  document
+                                    .getElementById("confirm-delete")
+                                    .showModal();
+                                }
+                              }}
+                              className="btn btn-ghost btn-sm text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 tooltip"
+                              data-tip="Delete User"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="px-4 py-6 text-center text-gray-500 dark:text-gray-400"
+                      >
+                        Tidak ada user yang ditemukan.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
 

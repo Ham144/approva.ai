@@ -1,6 +1,7 @@
 import React, { useEffect } from "react"; // Tambahkan useEffect
 import { useResponseCollector } from "@/store"; // Pastikan path benar
 import ZoomableImage from "./ZoomableImage";
+import SelectInput from "./SelectInput";
 
 const TableInput = ({
   input,
@@ -163,19 +164,27 @@ const TableInput = ({
                               </p>
                             )}
                           </div>
+                        ) : colType === "select" ? (
+                          <div
+                            ref={(el) => (inputRefs.current[input._id] = el)}
+                            id={input._id}
+                            className="space-y-1"
+                          >
+                            <SelectInput
+                              input={input}
+                              baseProps={baseProps}
+                              isRequirementInput={isRequirementInput}
+                              statusIndex={statusIndex}
+                            />
+                          </div>
                         ) : (
                           <input
-                            disabled={baseProps?.disabled}
                             type={colType === "date" ? "date" : colType}
+                            className="input input-bordered w-full max-w-xs"
                             value={val}
                             onChange={(e) =>
                               handleChange(rIdx, cIdx, e.target.value)
                             }
-                            className={`input input-sm input-bordered w-full ${
-                              baseProps?.disabled
-                                ? "bg-gray-100 text-gray-700 opacity-100 cursor-default"
-                                : ""
-                            }`}
                           />
                         )}
                       </td>

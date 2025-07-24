@@ -34,5 +34,4 @@ const userSchema = new mongoose.Schema(
 );
 
 const UserRefrensi = new mongoose.model("UserRefrensi", userSchema);
-
 export default UserRefrensi;

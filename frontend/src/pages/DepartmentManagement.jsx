@@ -4,7 +4,7 @@ import DepartmentApi from "../api/DepartmentApi";
 import { getAllAccount } from "../api/authApi";
 import PengelolaSideBarMenu from "@/components/PengelolasSideBarMenu";
 import toast, { Toaster } from "react-hot-toast";
-import { Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 const DepartmentManagement = () => {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -128,63 +128,104 @@ const DepartmentManagement = () => {
           </div>
 
           {/* Table Section */}
-          <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
-            <table className="table table-zebra w-full">
-              {/* Table Head */}
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                    Department Name
-                  </th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                    Members
-                  </th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              {/* Table Body */}
-              <tbody>
-                {departments?.data?.map((department) => (
-                  <tr
-                    key={department._id}
-                    className="hover:bg-gray-50 transition-colors duration-150"
-                  >
-                    <td className="py-3 px-4 text-gray-700 font-medium">
-                      {department.name}
-                    </td>
-                    <td className="py-3 px-4 text-gray-600">
-                      {department.members
-                        .map((member) => member.username)
-                        .join(", ")}
-                    </td>
-                    <td className="py-3 px-4">
-                      <button
-                        onClick={() => handleEdit(department)}
-                        className="btn btn-sm btn-outline btn-info mr-2 transform transition-transform duration-200 hover:scale-105"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(department._id)}
-                        className="btn btn-sm btn-error transform transition-transform duration-200 hover:scale-105"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {/* Optional: No data message */}
-                {departments?.data?.length === 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                {/* Table Head */}
+                <thead className="bg-gray-50">
                   <tr>
-                    <td colSpan="3" className="text-center py-4 text-gray-500">
-                      No departments found. Create one to get started!
-                    </td>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Department Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Members
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+
+                {/* Table Body */}
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {departments?.data?.map((department) => (
+                    <tr
+                      key={department._id}
+                      className="hover:bg-gray-50 transition-colors duration-150"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span className="text-blue-600 font-medium">
+                              {department.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {department.name}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-wrap gap-1">
+                          {department.members.slice(0, 3).map((member, idx) => (
+                            <span
+                              key={member._id}
+                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                            >
+                              {member.username}
+                            </span>
+                          ))}
+                          {department.members.length > 3 && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                              +{department.members.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end space-x-2">
+                          <button
+                            onClick={() => handleEdit(department)}
+                            className="inline-flex items-center px-3 py-1.5 border border-blue-300 rounded-md shadow-sm text-sm font-medium text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
+                          >
+                            <Pencil className="h-4 w-4 mr-1.5" />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(department._id)}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1.5" />
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {/* Empty State */}
+                  {departments?.data?.length === 0 && (
+                    <tr>
+                      <td colSpan="3" className="px-6 py-12 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <FolderSearch className="h-12 w-12 text-gray-400 mb-3" />
+                          <h3 className="text-lg font-medium text-gray-900 mb-1">
+                            No departments found
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            Create your first department to get started
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
