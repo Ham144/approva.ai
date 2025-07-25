@@ -2,6 +2,7 @@ import React, { useEffect } from "react"; // Tambahkan useEffect
 import { useResponseCollector } from "@/store"; // Pastikan path benar
 import ZoomableImage from "./ZoomableImage";
 import SelectInput from "./SelectInput";
+import SelectInputInsideTable from "./SelectInputInsideTable";
 
 const TableInput = ({
   input,
@@ -170,11 +171,11 @@ const TableInput = ({
                             id={input._id}
                             className="space-y-1"
                           >
-                            <SelectInput
-                              input={input}
+                            <SelectInputInsideTable
+                              input={input?.table?.sourceDataList[cIdx]}
                               baseProps={baseProps}
-                              isRequirementInput={isRequirementInput}
-                              statusIndex={statusIndex}
+                              value={val}
+                              onChange={(v) => handleChange(rIdx, cIdx, v)}
                             />
                           </div>
                         ) : (

@@ -24,5 +24,9 @@
 [x] fix: fullfillment page
 [x] fix take over
 [x] add: auth menerima department dan email dari AD (active directory)
-[x] fix: config FE, create org (supertenant) 
+[x] fix: config FE, create org (supertenant)
 [x] jika sudah rejected tidak boleh rollback
+[x] add: tipe select di table
+[x] fix: auto scroll to buggy pas klik malah ke atas
+[x] process page ga bisa diakses oleh member
+[] fix: manajemen opsi sumber data tidak bisa update

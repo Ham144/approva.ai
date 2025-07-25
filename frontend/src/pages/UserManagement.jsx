@@ -224,8 +224,8 @@ export default function UserManagement() {
 
     const filteredFrontend = users.data.filter((user) => {
       if (
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+        user.username?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchTerm?.toLowerCase())
       ) {
         return true;
       }
@@ -556,11 +556,11 @@ export default function UserManagement() {
         {/* User Table Section */}
         <div className="bg-white dark:bg-gray-800 shadow-xl rounded-lg overflow-hidden">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="w-full md:w-auto">
+            <div className="w-full md:w-auto ">
               <input
                 type="text"
                 placeholder="Cari user..."
-                className="input input-bordered w-full md:w-64"
+                className="input input-bordered w-full rounded-lg md:w-64 font-bold "
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />

@@ -140,6 +140,8 @@ router.put("/editSourceData/:id", async (req, res) => {
   const { id } = req.params;
   const { title, desc, keys } = req.body;
 
+  console.log(id, req.body);
+
   if (!id) {
     return res.status(400).json({ message: "Id is required" });
   }

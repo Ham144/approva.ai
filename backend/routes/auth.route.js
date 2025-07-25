@@ -658,7 +658,6 @@ router.get(
 router.get(
   "/getAllAccount",
   authenticate,
-  authorize,
   asyncHandler(async (req, res) => {
     console.log(req.user.org);
     const userDBs = await UserRefrensi.find({

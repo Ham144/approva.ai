@@ -8,10 +8,11 @@ export default function SelectInput({
   isRequirementInput,
   statusIndex,
 }) {
+  const idToFetch = input.sourceData || input;
   const { data, isLoading } = useQuery({
-    queryKey: ["sourceData", input.sourceData],
-    queryFn: () => FlexSourceDataApi.getSourceDataByIdPost(input.sourceData),
-    enabled: !!input.sourceData,
+    queryKey: ["sourceData", idToFetch],
+    queryFn: () => FlexSourceDataApi.getSourceDataByIdPost(idToFetch),
+    enabled: !!idToFetch,
   });
 
   const {

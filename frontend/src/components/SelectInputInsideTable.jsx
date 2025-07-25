@@ -1,0 +1,46 @@
+import FlexSourceDataApi from "@/api/flexSourceDataApi";
+import { useQuery } from "@tanstack/react-query";
+
+export default function SelectInputInsideTable({
+  input,
+  baseProps,
+  value,
+  onChange,
+}) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["sourceData", input],
+    queryFn: () => FlexSourceDataApi.getSourceDataByIdPost(input),
+    enabled: !!input,
+  });
+
+  const options = data?.data?.keys || [];
+
+  const isDisabled = baseProps?.disabled || isLoading;
+  const disabledStyle = isDisabled
+    ? {
+        backgroundColor: "#f3f4f6",
+        color: "#374151",
+        opacity: 1,
+        cursor: "default",
+      }
+    : {};
+
+  return (
+    <select
+      disabled={isDisabled}
+      className="select select-bordered w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      style={disabledStyle}
+      value={value ?? ""}
+      onChange={(e) => {
+        onChange(e.target.value);
+      }}
+    >
+      <option value="">-- Pilih Opsi --</option>
+      {options.map((k) => (
+        <option key={k._id} value={k.key}>
+          {k.value}
+        </option>
+      ))}
+    </select>
+  );
+}

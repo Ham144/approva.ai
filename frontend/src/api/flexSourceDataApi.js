@@ -36,6 +36,7 @@ const FlexSourceDataApi = {
     }
   },
   editSourceData: async (id, body) => {
+    console.log(id, body);
     const res = await axiosInstance.put(
       `/api/flexSourceData/editSourceData/${id}`,
       body

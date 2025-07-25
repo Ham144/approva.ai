@@ -31,7 +31,8 @@ export const InputSchema = new mongoose.Schema({
   },
   table: {
     keys: [String],
-    keysType: ["image", "text", "date", "number"],
+    keysType: ["image", "text", "date", "number", "select"],
+    sourceDataList: [mongoose.Schema.Types.ObjectId],
   },
   isNullable: Boolean,
   org: {

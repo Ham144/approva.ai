@@ -31,7 +31,7 @@ export default function FlowCreation() {
     setFlow((prev) => ({ ...prev, status: [...prev?.status, newStatus] }));
   };
 
-  const { data: departments, isLoading: isLoadingDepartments } = useQuery({
+  const { data: departments } = useQuery({
     queryKey: ["departments"],
     queryFn: DepartmentApi.getAllDepartment,
   });

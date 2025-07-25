@@ -1,6 +1,6 @@
 import FlexSourceDataApi from "@/api/flexSourceDataApi";
 import PengelolaSideBarMenu from "@/components/PengelolasSideBarMenu";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   Search,
@@ -12,6 +12,7 @@ import {
   Database,
 } from "lucide-react"; // Impor ikon yang dibutuhkan
 import ModalCreateSourceData from "@/components/ModalCreateSourceData";
+import toast from "react-hot-toast";
 
 export default function SourceDataOption() {
   const [search, setSearch] = useState("");
@@ -41,16 +42,32 @@ export default function SourceDataOption() {
     setEditTitle(opt.title);
     setEditDesc(opt.desc);
   };
+  const { mutate: mutateEdit, isLoading: isLoadingEdit } = useMutation({
+    mutationFn: (updatedData) =>
+      FlexSourceDataApi.editSourceData(updatedData._id, updatedData),
+    onSuccess: (res) => {
+      setEditData(null);
+      queryClient.invalidateQueries(["sourceData"]); // fix typo dari "sourcedata-list"
+      toast.success(res?.response?.data?.message || "Berhasil");
+    },
+    onError: () => {
+      toast.error("Gagal memperbarui data");
+    },
+  });
 
-  const handleEditSubmit = async (e) => {
+  const handleEdit = (e) => {
     e.preventDefault();
-    await FlexSourceDataApi.editSourceData(editData._id, {
+
+    if (!editData) return;
+
+    const updatedData = {
+      ...editData,
       title: editTitle,
       desc: editDesc,
-      keys: editData.keys || [],
-    });
-    setEditData(null);
-    queryClient.invalidateQueries(["sourcedata-list"]);
+    };
+
+    // jalankan mutasi manual
+    mutateEdit(updatedData);
   };
 
   const openCreateNew = () => {
@@ -169,13 +186,13 @@ export default function SourceDataOption() {
 
       {/* Modal Edit Data (asumsi Anda memiliki state dan fungsi untuk ini) */}
       {editData && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 p-4 ">
           <form
-            className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md animate-fade-in"
-            onSubmit={handleEditSubmit}
+            onSubmit={handleEdit}
+            className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md animate-fade-in max-h-[80%] overflow-auto relative"
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+              <h3 className="text-2xl font-bold sticky top-7 right-3 text-gray-800 dark:text-gray-100">
                 Edit Data Sumber
               </h3>
               <button
@@ -187,7 +204,7 @@ export default function SourceDataOption() {
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto ">
               <div>
                 <label
                   htmlFor="edit-title"
@@ -219,7 +236,8 @@ export default function SourceDataOption() {
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-3 mt-6">
+
+            <div className="flex justify-end gap-3 mt-6 sticky bottom-1">
               <button
                 type="button"
                 className="btn btn-ghost dark:text-gray-300 dark:hover:bg-gray-700 px-4 py-2 rounded-lg font-medium transition-colors duration-200"
@@ -228,6 +246,7 @@ export default function SourceDataOption() {
                 Batal
               </button>
               <button
+                disabled={isLoadingEdit}
                 type="submit"
                 className="btn btn-primary bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center gap-2 px-4 py-2 rounded-lg shadow-md transition-colors duration-200"
               >

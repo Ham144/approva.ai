@@ -41,6 +41,20 @@ router.post("/createFlow", async (req, res) => {
     // buang _id nya untuk request menghindari duplikasi
     for (let input of request) {
       const { _id, ...rest } = input; // buang _id
+      if (input.tipe === "table") {
+        const selectTipeIndex = input?.table.keysType.findIndex(
+          (key) => key === "select"
+        );
+
+        if (selectTipeIndex !== -1 && input.table.sourceDataList.length === 0) {
+          return res.status(400).json({
+            message:
+              "Di dalam table terdapat tipe select, tapi sourceDataList masih kosong: " +
+              input?.title,
+          });
+        }
+      }
+
       if (
         (input.tipe == "select" || input.tipe == "multipleCheckbox") &&
         !input.sourceData
@@ -99,6 +113,23 @@ router.post("/createFlow", async (req, res) => {
       for (let requirement of statusItem.requirements) {
         const { _id, ...restReq } = requirement; // buang _id
 
+        if (requirement.tipe === "table") {
+          const hasSelectType =
+            requirement?.table?.keysType?.includes("select");
+
+          if (
+            hasSelectType &&
+            (!Array.isArray(requirement.table.sourceDataList) ||
+              requirement.table.sourceDataList.length === 0)
+          ) {
+            return res.status(400).json({
+              message:
+                "Di dalam table terdapat tipe select, tapi sourceDataList masih kosong: " +
+                (statusItem?.title || ""),
+            });
+          }
+        }
+
         if (
           (requirement.tipe == "select" ||
             requirement.tipe == "multipleCheckbox") &&
@@ -156,6 +187,7 @@ router.post("/createFlow", async (req, res) => {
     newFlowAndPoint.request = inputRequest;
     newFlowAndPoint.status = statuses;
     const userId = req.user._id;
+
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
     const existing = newFlowAndPoint.designedBy?.findIndex((d) => d == userId);
     if (existing == -1) {
@@ -346,7 +378,30 @@ router.put("/update/:id", async (req, res) => {
     for (let input of request) {
       const { _id, ...restInput } = input;
 
+      if (input.tipe === "table") {
+        const selectTipeIndex = input?.table.keysType.findIndex(
+          (key) => key === "select"
+        );
+
+        if (selectTipeIndex !== -1 && input.table.sourceDataList.length === 0) {
+          return res.status(400).json({
+            message:
+              "edit: Di dalam table terdapat tipe select, tapi sourceDataList masih kosong: " +
+              input?.title,
+          });
+        }
+      }
+
       if (isValidObjectIdStrict(_id)) {
+        // ✅ Update input yang sudah ada
+        await Input.findByIdAndUpdate(
+          _id,
+          {
+            ...restInput,
+            updatedAt: new Date(),
+          },
+          { new: true }
+        );
         sanitizedInputs.push(_id); // langsung pakai
       } else {
         const newInput = await Input.create({
@@ -378,7 +433,33 @@ router.put("/update/:id", async (req, res) => {
       for (let requirement of s.requirements) {
         const { _id, ...restReq } = requirement;
 
+        if (requirement.tipe === "table") {
+          const selectTipeIndex = requirement?.table.keysType.findIndex(
+            (key) => key === "select"
+          );
+
+          if (
+            selectTipeIndex !== -1 &&
+            requirement.table.sourceDataList.length === 0
+          ) {
+            return res.status(400).json({
+              message:
+                "Di dalam table terdapat tipe select, tapi sourceDataList masih kosong: " +
+                requirement?.title,
+            });
+          }
+        }
+
         if (isValidObjectIdStrict(_id)) {
+          // ✅ Update input yang sudah ada
+          await Input.findByIdAndUpdate(
+            _id,
+            {
+              ...restReq,
+              updatedAt: new Date(),
+            },
+            { new: true }
+          );
           requirementIds.push(_id);
         } else {
           const newRequirement = await Input.create({

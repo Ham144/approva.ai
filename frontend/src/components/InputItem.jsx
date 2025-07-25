@@ -65,7 +65,10 @@ function InputItem({ input, index, onChange, deleteInput, handleMoveRequest }) {
       );
       return res;
     },
-    enabled: input.tipe === "select" || input.tipe === "multipleCheckbox",
+    enabled:
+      input.tipe === "select" ||
+      input.tipe === "multipleCheckbox" ||
+      input.tipe === "table",
   });
 
   const { data: sourceDataPreview, error: sourceDataPreviewErr } = useQuery({
@@ -111,7 +114,7 @@ function InputItem({ input, index, onChange, deleteInput, handleMoveRequest }) {
       {/* Baris Input: Nama Variabel & Boleh Kosong? */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center w-full gap-3">
         <div className="form-control flex-1 w-full">
-          <label className="label" htmlFor={`input-title-${index}`}>
+          <label className="label">
             <span className="label-text text-gray-700 dark:text-gray-300 font-medium">
               Nama Variabel / Key
             </span>
@@ -143,7 +146,7 @@ function InputItem({ input, index, onChange, deleteInput, handleMoveRequest }) {
 
       {/* Input Help/Penjelasan */}
       <div className="form-control w-full">
-        <label className="label" htmlFor={`input-help-${index}`}>
+        <label className="label">
           <span className="label-text text-gray-700 dark:text-gray-300 font-medium">
             Bantuan (Tooltip)
           </span>
@@ -161,7 +164,7 @@ function InputItem({ input, index, onChange, deleteInput, handleMoveRequest }) {
       {/* Pemilihan Tipe Input & Tombol Bantuan */}
       <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
         <div className="form-control flex-1 w-full">
-          <label className="label" htmlFor={`input-type-${index}`}>
+          <label className="label">
             <span className="label-text text-gray-700 dark:text-gray-300 font-medium">
               Tipe Input
             </span>
@@ -228,25 +231,27 @@ function InputItem({ input, index, onChange, deleteInput, handleMoveRequest }) {
 
       {/* Bagian Konfigurasi Tipe 'table' */}
       {input?.tipe === "table" && (
-        <div className="border border-dashed border-gray-300 dark:border-gray-600 p-4 rounded-lg bg-gray-50 dark:bg-gray-700 space-y-4">
-          <h4 className="font-semibold text-gray-800 dark:text-gray-200 text-lg flex items-center gap-2">
-            <Table size={20} /> Konfigurasi Kolom Tabel
-          </h4>
-          <div className="overflow-x-auto custom-scrollbar">
-            <table className="table w-full">
-              <thead>
-                <tr>
-                  {input?.table?.keys &&
-                    input.table.keys.map((key, idx) => (
-                      <th
-                        key={idx}
-                        className="p-2 border-b border-gray-300 dark:border-gray-600"
-                      >
-                        <div className="flex flex-col gap-2 items-center">
+        <div className="card bg-base-100 dark:bg-gray-800 border border-dashed border-gray-300 dark:border-gray-600">
+          <div className="card-body p-4 space-y-4">
+            <div className="flex items-center gap-2">
+              <Table size={20} className="text-primary" />
+              <h2 className="card-title text-lg font-semibold text-gray-800 dark:text-gray-200">
+                Konfigurasi Kolom Tabel
+              </h2>
+            </div>
+
+            <div className="overflow-x-auto custom-scrollbar">
+              <table className="table w-full">
+                <thead>
+                  <tr className="border-b border-gray-300 dark:border-gray-600">
+                    {input?.table?.keys?.map((key, idx) => (
+                      <th key={idx} className="p-2 align-top">
+                        <div className="flex flex-col gap-2 items-center min-w-[150px]">
+                          {/* Column Name Input */}
                           <input
                             type="text"
                             placeholder="Nama Kolom"
-                            className="input input-bordered w-full input-sm bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            className="input input-bordered w-full input-sm bg-white dark:bg-gray-800"
                             value={key || ""}
                             onChange={(e) => {
                               const newKeys = [...input.table.keys];
@@ -260,14 +265,15 @@ function InputItem({ input, index, onChange, deleteInput, handleMoveRequest }) {
                               });
                             }}
                           />
+                          {/* Column Type Selector */}
                           <div className="relative w-full">
-                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
                               {getInputTypeIcon(
                                 input.table.keysType?.[idx] || "text"
                               )}
                             </span>
                             <select
-                              className="select select-bordered w-full select-sm pl-8 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                              className="select select-bordered w-full select-sm pl-9"
                               value={input.table.keysType?.[idx] || "text"}
                               onChange={(e) => {
                                 const newKeysType = input.table.keysType
@@ -297,7 +303,7 @@ function InputItem({ input, index, onChange, deleteInput, handleMoveRequest }) {
                               ))}
                             </select>
                           </div>
-
+                          {/* Delete Column Button */}
                           <button
                             onClick={() => {
                               const newKeys = [...input.table.keys];
@@ -315,40 +321,56 @@ function InputItem({ input, index, onChange, deleteInput, handleMoveRequest }) {
                                 },
                               });
                             }}
-                            className="btn btn-error btn-xs w-full text-white hover:bg-red-600 flex items-center justify-center gap-1"
+                            className="btn btn-error btn-xs w-full"
                           >
                             <X size={14} /> Hapus
                           </button>
-                          {/* Bagian Konfigurasi Tipe 'select' atau 'multipleCheckbox' */}
+                          {/* Special Configuration for Select Type */}
                           {input.table.keysType?.[idx] === "select" && (
-                            <div className="border border-dashed border-gray-300 dark:border-gray-600 p-4 rounded-lg bg-gray-50 dark:bg-gray-700 space-y-4">
-                              <h4 className="font-semibold text-gray-800 dark:text-gray-200 text-lg flex items-center gap-2">
-                                {getInputTypeIcon(input.tipe)} Konfigurasi
-                                Pilihan Data
-                              </h4>
-                              <label className="label-text font-semibold text-gray-700 dark:text-gray-300">
-                                Pilih Opsi Data yang sudah ada atau buat yang
-                                baru:
+                            <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+                              <div className="flex items-center gap-2 mb-3">
+                                {getInputTypeIcon(input.tipe)}
+                                <h4 className="font-semibold">
+                                  Konfigurasi Pilihan Data
+                                </h4>
+                              </div>
+
+                              <label className="label">
+                                <span className="label-text font-semibold">
+                                  Pilih Opsi Data:
+                                </span>
                               </label>
-                              <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
+
+                              <div className="flex flex-col sm:flex-row gap-2 w-full">
                                 {!hasNew && (
-                                  <div className="form-control flex-1 w-full">
-                                    <div className="relative flex items-center w-full">
-                                      <span className="absolute left-3 text-gray-500 dark:text-gray-400">
-                                        <ListPlus size={18} />
-                                      </span>
+                                  <div className="form-control flex-1">
+                                    <div className="relative">
+                                      <ListPlus className="absolute left-3 top-1/2 -translate-y-1/2" />
                                       <select
-                                        value={input.sourceData || ""}
-                                        onChange={(e) =>
+                                        value={
+                                          input.table.sourceDataList?.[idx] ||
+                                          ""
+                                        }
+                                        onChange={(e) => {
+                                          const newSourceDataList = [
+                                            ...(input.table.sourceDataList ||
+                                              []),
+                                          ];
+                                          newSourceDataList[idx] =
+                                            e.target.value;
+
                                           onChange({
                                             ...input,
-                                            sourceData: e.target.value,
-                                          })
-                                        }
-                                        className="select select-bordered w-full pl-10 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                            table: {
+                                              ...input.table,
+                                              sourceDataList: newSourceDataList,
+                                            },
+                                          });
+                                        }}
+                                        className="select select-bordered w-full pl-10"
                                       >
                                         <option disabled value="">
-                                          Pilih daftar opsi dari koleksi...
+                                          Pilih daftar opsi...
                                         </option>
                                         {sourceDataList?.map((sd) => (
                                           <option key={sd._id} value={sd._id}>
@@ -361,37 +383,38 @@ function InputItem({ input, index, onChange, deleteInput, handleMoveRequest }) {
                                 )}
 
                                 <button
-                                  onClick={() => {
+                                  onClick={() =>
                                     document
                                       .getElementById("modalsourcedata")
-                                      ?.showModal(); // Pastikan modalShowTips ada dan cara memanggilnya benar
-                                  }}
-                                  className="btn btn-outline btn-sm sm:btn-md text-purple-500 border-purple-500 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/20 transition-colors duration-200 flex items-center gap-1 mt-2 sm:mt-0"
+                                      ?.showModal()
+                                  }
+                                  className="btn btn-outline btn-sm sm:flex-1"
                                 >
                                   <Plus size={16} /> Buat Baru
                                 </button>
                               </div>
 
+                              {/* Data Preview Section */}
                               {input.sourceData && (
-                                <div className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 shadow-sm space-y-3">
-                                  <div className="font-bold text-lg text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                                    <Eye size={20} /> Pratinjau Opsi Terpilih
+                                <div className="mt-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                                  <div className="flex items-center gap-2 text-lg font-bold">
+                                    <Eye size={20} /> Pratinjau Opsi
                                   </div>
-                                  <div className="italic text-gray-600 dark:text-gray-400 text-sm">
+                                  <p className="text-sm italic text-gray-500 dark:text-gray-400 mt-1">
                                     {sourceDataPreview?.data?.desc ||
                                       "Tidak ada deskripsi."}
-                                  </div>
+                                  </p>
 
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-3">
                                     {sourceDataPreview?.data?.keys?.length >
                                     0 ? (
                                       sourceDataPreview.data.keys.map(
                                         (item, idx) => (
                                           <div
-                                            key={item._id || idx} // Gunakan idx sebagai fallback key
-                                            className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 shadow-xs transition-transform transform hover:scale-105"
+                                            key={item._id || idx}
+                                            className="bg-gray-50 dark:bg-gray-700 rounded p-2 border border-gray-200 dark:border-gray-600 hover:scale-[1.02] transition-transform"
                                           >
-                                            <div className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                                            <div className="font-semibold text-sm">
                                               {item.key}
                                             </div>
                                             <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -401,7 +424,7 @@ function InputItem({ input, index, onChange, deleteInput, handleMoveRequest }) {
                                         )
                                       )
                                     ) : (
-                                      <p className="col-span-full text-center italic text-gray-500 dark:text-gray-400">
+                                      <p className="col-span-full text-center italic">
                                         Tidak ada opsi ditemukan.
                                       </p>
                                     )}
@@ -409,64 +432,55 @@ function InputItem({ input, index, onChange, deleteInput, handleMoveRequest }) {
                                 </div>
                               )}
 
+                              {/* New Data Preview Section */}
                               {hasNew && (
-                                <div className="p-4 border border-dashed border-green-300 dark:border-green-700 rounded-lg bg-green-50 dark:bg-green-900/20 space-y-3">
-                                  <h4 className="font-semibold text-green-700 dark:text-green-300 mb-2 flex items-center gap-2">
+                                <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-dashed border-green-300 dark:border-green-700">
+                                  <div className="flex items-center gap-2 font-semibold text-green-700 dark:text-green-300">
                                     <Eye size={20} /> Pratinjau Opsi Baru
-                                  </h4>
+                                  </div>
 
                                   {sourceDataPreviewErr ? (
-                                    <div
-                                      role="alert"
-                                      className="alert alert-error bg-red-100 dark:bg-red-900/40 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200"
-                                    >
-                                      <AlertCircle
-                                        size={24}
-                                        className="stroke-red-600 dark:stroke-red-300 shrink-0"
-                                      />
+                                    <div className="alert alert-error mt-2">
+                                      <AlertCircle />
                                       <span>
                                         Error:{" "}
                                         {JSON.stringify(sourceDataPreviewErr)}
                                       </span>
                                     </div>
                                   ) : (
-                                    <>
-                                      <div className="text-sm space-y-2 text-gray-800 dark:text-gray-200">
-                                        <div>
-                                          <span className="font-bold flex items-center gap-1">
-                                            <FileText size={16} /> Judul:{" "}
-                                            {input.sourceDataNew?.title || "-"}
-                                          </span>
-                                        </div>
-                                        <div className="text-gray-600 dark:text-gray-400">
-                                          <span className="font-semibold flex items-center gap-1">
-                                            <MessageSquareText size={16} />{" "}
-                                            Deskripsi:
-                                          </span>
-                                          <p className="ml-6">
-                                            {input.sourceDataNew?.desc ||
-                                              "Tidak ada deskripsi."}
-                                          </p>
-                                        </div>
-                                        <div className="mt-2">
-                                          <span className="font-bold flex items-center gap-1">
-                                            <ListPlus size={16} /> Pilihan:
-                                          </span>
-                                          <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 ml-6">
-                                            {input.sourceDataNew?.keys?.length >
-                                            0 ? (
-                                              input.sourceDataNew.keys.map(
-                                                (k, i) => (
-                                                  <li key={i}>{k.value}</li>
-                                                )
-                                              )
-                                            ) : (
-                                              <li>Tidak ada pilihan.</li>
-                                            )}
-                                          </ul>
-                                        </div>
+                                    <div className="mt-2 space-y-2 text-sm">
+                                      <div className="flex items-center gap-1 font-bold">
+                                        <FileText size={16} /> Judul:{" "}
+                                        {input.sourceDataNew?.title || "-"}
                                       </div>
-                                    </>
+                                      <div>
+                                        <div className="flex items-center gap-1 font-semibold">
+                                          <MessageSquareText size={16} />{" "}
+                                          Deskripsi:
+                                        </div>
+                                        <p className="ml-6 text-gray-600 dark:text-gray-400">
+                                          {input.sourceDataNew?.desc ||
+                                            "Tidak ada deskripsi."}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <div className="flex items-center gap-1 font-bold">
+                                          <ListPlus size={16} /> Pilihan:
+                                        </div>
+                                        <ul className="ml-6 list-disc text-gray-700 dark:text-gray-300">
+                                          {input.sourceDataNew?.keys?.length >
+                                          0 ? (
+                                            input.sourceDataNew.keys.map(
+                                              (k, i) => (
+                                                <li key={i}>{k.value}</li>
+                                              )
+                                            )
+                                          ) : (
+                                            <li>Tidak ada pilihan.</li>
+                                          )}
+                                        </ul>
+                                      </div>
+                                    </div>
                                   )}
                                 </div>
                               )}
@@ -475,40 +489,45 @@ function InputItem({ input, index, onChange, deleteInput, handleMoveRequest }) {
                         </div>
                       </th>
                     ))}
-                  <th className="p-2 border-b border-gray-300 dark:border-gray-600 align-top">
-                    <button
-                      onClick={() => {
-                        onChange({
-                          ...input,
-                          table: {
-                            ...input.table,
-                            keys: [...(input?.table?.keys || []), ""],
-                            keysType: [
-                              ...(input?.table?.keysType || []),
-                              "text",
-                            ],
-                          },
-                        });
-                      }}
-                      className="btn btn-sm btn-outline text-blue-500 border-blue-500 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/20 transition-colors duration-200 flex items-center justify-center gap-1"
+
+                    {/* Add Column Button */}
+                    <th className="p-2 align-top">
+                      <button
+                        onClick={() => {
+                          onChange({
+                            ...input,
+                            table: {
+                              ...input.table,
+                              keys: [...(input?.table?.keys || []), ""],
+                              keysType: [
+                                ...(input?.table?.keysType || []),
+                                "text",
+                              ],
+                            },
+                          });
+                        }}
+                        className="btn btn-sm btn-outline btn-primary"
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td
+                      colSpan={(input?.table?.keys?.length || 0) + 1}
+                      className="text-center p-4"
                     >
-                      <Plus size={16} /> Kolom Baru
-                    </button>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {/* Anda bisa menambahkan baris contoh atau petunjuk di sini jika perlu */}
-                <tr>
-                  <td
-                    colSpan={(input?.table?.keys?.length || 0) + 1}
-                    className="text-center italic text-gray-500 dark:text-gray-400 p-4"
-                  >
-                    Isi nama kolom dan tipe data yang diharapkan untuk tabel.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                      <div className="text-gray-500 dark:text-gray-400 italic">
+                        Isi nama kolom dan tipe data yang diharapkan untuk
+                        tabel.
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
