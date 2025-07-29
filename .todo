@@ -29,4 +29,10 @@
 [x] add: tipe select di table
 [x] fix: auto scroll to buggy pas klik malah ke atas
 [x] process page ga bisa diakses oleh member
+[x] add: penambahan tipe input : keterangan dan textarea
+[x] modify: buat tab frontend di request page [my departement, all]
+[x] add: tab navigasi cepat status cepat di flow editor
+[] add: buat level user viewer (yang bisa request dan melihat semua in-progress request)
+[] modify: user level member hanya bisa melihat on-preogress departementnya sendiri
+[] add : tambah fitur allowedSpecificUserToRequest untuk benar2 spesifik user
 [] fix: manajemen opsi sumber data tidak bisa update

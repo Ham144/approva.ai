@@ -82,11 +82,10 @@ router.get("/getOrgById/:_id", async (req, res) => {
 });
 
 router.get("/getAllOrg", async (req, res) => {
-  console.log(req.query);
   const search = req.query.search;
 
   let query = {};
-  if (search) {
+  if (search && search !== "*") {
     query = {
       organizationName: { $regex: "^" + search, $options: "i" },
     };

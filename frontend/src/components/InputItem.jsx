@@ -206,6 +206,8 @@ function InputItem({ input, index, onChange, deleteInput, handleMoveRequest }) {
                 "table",
                 "select",
                 "multipleCheckbox",
+                "textArea",
+                "helper",
               ].map((t) => (
                 <option key={t} value={t}>
                   {t.charAt(0).toUpperCase() +

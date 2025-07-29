@@ -2,7 +2,7 @@ import { getAllAccount } from "@/api/authApi";
 import flowApi from "@/api/flowApi";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ChevronDown, ChevronUp, Search, Sliders, XCircle } from "lucide-react"; // Contoh ikon, Anda bisa gunakan library ikon lain
+import { ChevronDown, ChevronUp, Sliders, XCircle } from "lucide-react"; // Contoh ikon, Anda bisa gunakan library ikon lain
 import { useParams, useSearchParams } from "react-router-dom";
 import flowInstanceApi from "@/api/flowInstanceApi";
 import ProcessActionOption from "@/components/ProcessActionOption";
@@ -319,20 +319,10 @@ export default function ProcessPage() {
               <span className="loading loading-spinner loading-lg"></span>
             </div>
           ) : flowInstanceData?.data.length > 0 ? (
-            <div className="overflow-x-auto shadow-xl rounded-2xl bg-white p-6 border border-gray-100">
-              <table className="table w-full border-separate border-spacing-y-2">
-                {/* Header Tabel yang Lebih Menarik */}
-                <thead className="bg-gray-100 text-gray-700 uppercase tracking-wider text-sm rounded-t-lg">
-                  <tr>
-                    <th className="py-4 px-6 rounded-tl-xl">Judul Request</th>
-                    <th className="py-4 px-6">Jenis Flow</th>
-                    <th className="py-4 px-6">Pemohon</th>
-                    <th className="py-4 px-6">Tanggal</th>
-                    <th className="py-4 px-6">Progress</th>
-                    <th className="py-4 px-6">Proses Saat Ini</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <>
+              {/* tampilan mobile */}
+              <div className="md:hidden">
+                <div className="grid gap-4 md:hidden">
                   {flowInstanceData?.data.map((instance) => {
                     const statusLength =
                       instance?.flowTemplate?.status?.length || 1;
@@ -340,9 +330,14 @@ export default function ProcessPage() {
                     const progress = Math.round(
                       (currentIndex / statusLength) * 100
                     );
+                    const currentApprovers = instance?.flowTemplate?.status?.[
+                      currentIndex
+                    ]?.authorized
+                      ?.map((user) => user.username)
+                      .join(" & ");
 
                     return (
-                      <tr
+                      <div
                         key={instance._id}
                         onClick={() => {
                           setSelectedInstance(instance);
@@ -350,63 +345,202 @@ export default function ProcessPage() {
                             .getElementById("modalprocessaction")
                             .showModal();
                         }}
-                        data-tip="awd"
-                        className="bg-white hover:bg-gray-50 transition duration-150 ease-in-out cursor-pointer shadow-sm rounded-xl"
+                        className="bg-white p-5 rounded-2xl shadow-lg border border-gray-100 cursor-pointer transition-all duration-200 hover:shadow-md"
                       >
-                        {/* Data Baris yang Rapi */}
-                        <td className="max-w-[200px] truncate py-4 px-6 font-medium text-gray-900 rounded-l-xl">
-                          {instance.instanceTitle ||
-                            "Judul Request Tidak Terisi"}
-                        </td>
-                        <td className="text-gray-600 py-4 px-6">
-                          {instance?.flowTemplate?.title || "-"}
-                        </td>
-                        <td className="text-gray-600 py-4 px-6">
-                          {instance?.requestedBy?.username || "-"}
-                        </td>
-                        <td className="text-gray-600 py-4 px-6">
-                          {new Date(instance.createdAt).toLocaleDateString()}
-                        </td>
+                        {/* Card Header with Status Chip */}
+                        <div className="flex justify-between items-start mb-3">
+                          <h3 className="text-lg font-semibold text-gray-800 line-clamp-2">
+                            {instance.instanceTitle || "Untitled Request"}
+                          </h3>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-bold ${
+                              instance?.overallStatus === "completed"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : instance?.overallStatus === "rejected"
+                                ? "bg-rose-100 text-rose-800"
+                                : "bg-blue-100 text-blue-800"
+                            }`}
+                          >
+                            {instance?.overallStatus}
+                          </span>
+                        </div>
 
-                        {/* Visualisasi Progres yang Lebih Jelas */}
-                        <td className="w-[150px] py-4 px-4 text-center">
-                          {instance?.overallStatus !== "completed" && (
-                            <div className="text-xs text-gray-500 font-semibold mb-1">
-                              {currentIndex}/{statusLength}
-                              <progress
-                                className="progress progress-primary w-full h-2 rounded-full mb-2"
-                                value={progress}
-                                max="100"
-                              ></progress>
-                            </div>
-                          )}
-
+                        {/* Metadata Grid */}
+                        <div className="grid grid-cols-2 gap-3 mb-4">
                           <div>
-                            <span
-                              className={`badge ${getStatusBadge(
-                                instance?.overallStatus
-                              )} text-white font-bold text-xs px-3 py-1 rounded-full shadow-sm w-full`}
-                            >
-                              {instance?.overallStatus}
-                            </span>
+                            <p className="text-xs text-gray-500 mb-1">
+                              Jenis Flow
+                            </p>
+                            <p className="font-medium text-sm">
+                              {instance?.flowTemplate?.title || "-"}
+                            </p>
                           </div>
-                        </td>
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">
+                              Pemohon
+                            </p>
+                            <p className="font-medium text-sm">
+                              {instance?.requestedBy?.username || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">
+                              Tanggal
+                            </p>
+                            <p className="font-medium text-sm">
+                              {new Date(instance.createdAt).toLocaleDateString(
+                                "id-ID"
+                              )}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">
+                              Progress
+                            </p>
+                            <p className="font-medium text-sm">
+                              {currentIndex}/{statusLength} ({progress}%)
+                            </p>
+                          </div>
+                        </div>
 
-                        <td className="text-xs text-gray-600 py-4 px-6">
-                          {instance.overallStatus === "completed"
-                            ? "Selesai"
-                            : instance?.flowTemplate?.status?.[
-                                currentIndex
-                              ]?.authorized
-                                ?.map((user) => user.username)
-                                .join(" & ") || "-"}
-                        </td>
-                      </tr>
+                        {/* Progress Bar */}
+                        {instance?.overallStatus !== "completed" && (
+                          <div className="mb-4">
+                            <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full"
+                                style={{ width: `${progress}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Current Approver */}
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 mr-3">
+                            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 text-blue-500"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                />
+                              </svg>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">
+                              Proses Saat Ini
+                            </p>
+                            <p className="font-medium text-sm">
+                              {instance.overallStatus === "completed"
+                                ? "Selesai"
+                                : currentApprovers || "Menunggu persetujuan"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              </div>
+              {/* tampilan web */}
+              <div className="overflow-x-auto max-md:hidden shadow-xl rounded-2xl bg-white p-6 border border-gray-100">
+                <table className="table w-full border-separate border-spacing-y-2">
+                  {/* Header Tabel yang Lebih Menarik */}
+                  <thead className="bg-gray-100 text-gray-700 uppercase tracking-wider text-sm rounded-t-lg">
+                    <tr>
+                      <th className="py-4 px-6 rounded-tl-xl">Judul Request</th>
+                      <th className="py-4 px-6">Jenis Flow</th>
+                      <th className="py-4 px-6">Pemohon</th>
+                      <th className="py-4 px-6">Tanggal</th>
+                      <th className="py-4 px-6">Progress</th>
+                      <th className="py-4 px-6">Proses Saat Ini</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {flowInstanceData?.data.map((instance) => {
+                      const statusLength =
+                        instance?.flowTemplate?.status?.length || 1;
+                      const currentIndex = instance?.currentStatusIndex ?? 0;
+                      const progress = Math.round(
+                        (currentIndex / statusLength) * 100
+                      );
+
+                      return (
+                        <tr
+                          key={instance._id}
+                          onClick={() => {
+                            setSelectedInstance(instance);
+                            document
+                              .getElementById("modalprocessaction")
+                              .showModal();
+                          }}
+                          data-tip="awd"
+                          className="bg-white hover:bg-gray-50 transition duration-150 ease-in-out cursor-pointer shadow-sm rounded-xl"
+                        >
+                          {/* Data Baris yang Rapi */}
+                          <td className="max-w-[200px] truncate py-4 px-6 font-medium text-gray-900 rounded-l-xl">
+                            {instance.instanceTitle ||
+                              "Judul Request Tidak Terisi"}
+                          </td>
+                          <td className="text-gray-600 py-4 px-6">
+                            {instance?.flowTemplate?.title || "-"}
+                          </td>
+                          <td className="text-gray-600 py-4 px-6">
+                            {instance?.requestedBy?.username || "-"}
+                          </td>
+                          <td className="text-gray-600 py-4 px-6">
+                            {new Date(instance.createdAt).toLocaleDateString()}
+                          </td>
+
+                          {/* Visualisasi Progres yang Lebih Jelas */}
+                          <td className="w-[150px] py-4 px-4 text-center">
+                            {instance?.overallStatus !== "completed" && (
+                              <div className="text-xs text-gray-500 font-semibold mb-1">
+                                {currentIndex}/{statusLength}
+                                <progress
+                                  className="progress progress-primary w-full h-2 rounded-full mb-2"
+                                  value={progress}
+                                  max="100"
+                                ></progress>
+                              </div>
+                            )}
+
+                            <div>
+                              <span
+                                className={`badge ${getStatusBadge(
+                                  instance?.overallStatus
+                                )} text-white font-bold text-xs px-3 py-1 rounded-full shadow-sm w-full`}
+                              >
+                                {instance?.overallStatus}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td className="text-xs text-gray-600 py-4 px-6">
+                            {instance.overallStatus === "completed"
+                              ? "Selesai"
+                              : instance?.flowTemplate?.status?.[
+                                  currentIndex
+                                ]?.authorized
+                                  ?.map((user) => user.username)
+                                  .join(" & ") || "-"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           ) : (
             <div className="text-center py-20 bg-base-100 rounded-lg shadow">
               <p className="text-xl font-semibold">Data Tidak Ditemukan</p>

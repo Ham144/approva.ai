@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { loginApp, loginLdap } from "@/api/authApi";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
 import { useUserInfo } from "@/store";
-import { APP_NAME } from "@/api/constant";
+import { APP_NAME, siteKeyCloudflare } from "@/api/constant";
 import { LogIn, Search } from "lucide-react";
 import OrgApi from "@/api/orgApi";
+import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 
 export default function Login({ className, ...props }) {
   const [username, setUsername] = useState(``);
@@ -15,6 +16,7 @@ export default function Login({ className, ...props }) {
   const [selectedOrg, setSelectedOrg] = useState("");
   const [search, setSearch] = useState("");
   const [authMethod, setAuthMethod] = useState("ldap");
+  const [captchaToken, setCaptchaToken] = useState("");
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -32,7 +34,12 @@ export default function Login({ className, ...props }) {
 
   const { mutateAsync: handleLoginLdap, isPending } = useMutation({
     mutationFn: async () => {
-      const res = await loginLdap({ username, password, selectedOrg });
+      const res = await loginLdap({
+        username,
+        password,
+        selectedOrg,
+        captchaToken,
+      });
       return res.data;
     },
     retryDelay: 1000,
@@ -60,7 +67,12 @@ export default function Login({ className, ...props }) {
   const { mutateAsync: handleLoginApp, isPending: loadingAppLogin } =
     useMutation({
       mutationFn: async () => {
-        const res = await loginApp({ username, password, selectedOrg });
+        const res = await loginApp({
+          username,
+          password,
+          selectedOrg,
+          captchaToken,
+        });
         return res.data;
       },
       retryDelay: 1000,
@@ -86,6 +98,10 @@ export default function Login({ className, ...props }) {
     });
 
   function loginGate() {
+    if (!captchaToken) {
+      toast.error("Harap selesaikan CAPTCHA terlebih dahulu.");
+      return;
+    }
     if (authMethod === "app") {
       handleLoginApp();
     } else {
@@ -147,7 +163,7 @@ export default function Login({ className, ...props }) {
                   htmlFor="username"
                   className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1"
                 >
-                  {authMethod === "app" ? "Username" : "sAMAccountName"}
+                  username
                 </label>
                 <input
                   id="username"
@@ -228,6 +244,13 @@ export default function Login({ className, ...props }) {
                   )
                 )}
               </>
+            </div>
+
+            <div className="w-full justify-center flex">
+              <TurnstileCaptcha
+                siteKey={siteKeyCloudflare} // atau bisa hardcode dulu
+                onVerify={(token) => setCaptchaToken(token)}
+              />
             </div>
 
             <button

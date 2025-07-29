@@ -1,6 +1,6 @@
 import { getAllAccount } from "@/api/authApi";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import ModalCreateSourceData from "./ModalCreateSourceData";
 import InputItem from "./InputItem";
 import {
@@ -28,7 +28,7 @@ export default function FlowEditing() {
     enabled: !!flow,
   });
 
-  const { data: departments, isLoading: isLoadingDepartments } = useQuery({
+  const { data: departments } = useQuery({
     queryKey: ["departments"],
     queryFn: DepartmentApi.getAllDepartment,
   });
@@ -95,6 +95,9 @@ export default function FlowEditing() {
   };
 
   function updateInputRequest(index, newInput) {
+    if (newInput.tipe == "helper") {
+      newInput.isNullable = true;
+    }
     setFlow((prevFlow) => {
       const updatedRequests = [...prevFlow.request];
       updatedRequests[index] = newInput;
@@ -122,6 +125,9 @@ export default function FlowEditing() {
   }
 
   const updateRequirement = (statusIndex, reqIndex, newReq) => {
+    if (newReq.tipe == "helper") {
+      newReq.isNullable = true;
+    }
     setFlow((prev) => {
       const updatedStatuses = [...prev.status];
       const updatedReqs = [...updatedStatuses[statusIndex]?.requirements];
@@ -184,17 +190,20 @@ export default function FlowEditing() {
   }, []);
 
   return (
-    <div className="space-y-6 flex flex-col overflow-y-auto h-[95vh]  pr-2 overflow-x-hidden">
+    <div className="space-y-6 flex flex-col overflow-y-auto w-full h-[95vh]  pr-2 overflow-x-hidden">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 space-y-5 transition-all duration-300">
         {/* Bagian Header / Divider yang Dipercantik */}
-        <div className="flex items-center justify-center gap-3 text-lg font-semibold text-gray-700 dark:text-gray-300 relative">
+        <div
+          id="properti"
+          className="flex items-center justify-center gap-3 text-lg font-semibold text-gray-700 dark:text-gray-300 relative"
+        >
           <span className="absolute left-0 right-0 h-px bg-gray-200 dark:bg-gray-700 z-0"></span>
           <span className="bg-white dark:bg-gray-800 px-4 z-10 flex items-center gap-2">
             <Info size={20} className="text-blue-500" /> Properti Alur
           </span>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 w-full">
           {/* Input Judul Alur */}
           <div className="form-control w-full">
             <label htmlFor="flow-title" className="label">
@@ -314,7 +323,10 @@ export default function FlowEditing() {
       {/* REQUEST */}
       <div className="flex flex-col gap-3 ">
         {flow.request?.map((input, requestIdx) => (
-          <div onClick={() => setCurrentEditingInputID(input._id)}>
+          <div
+            id={input._id}
+            onClick={() => setCurrentEditingInputID(input._id)}
+          >
             <InputItem
               key={input._id}
               index={requestIdx}
@@ -349,6 +361,7 @@ export default function FlowEditing() {
       <div className="flex flex-col gap-2 p-6 bg-gradient-to-r from-blue-300 to to-blue-500 rounded-lg">
         {flow.status?.map((stat, i) => (
           <div
+            id={stat?._id}
             key={stat?._id || i}
             className="border  p-4 mb-4 glass rounded-lg"
           >
@@ -456,7 +469,8 @@ export default function FlowEditing() {
             <div className="space-y-4 mt-4 overflow-x-hidden">
               {stat?.requirements?.map((inputReq, inputIdx) => (
                 <div
-                  key={inputIdx}
+                  key={inputReq?._id}
+                  id={inputReq?._id}
                   onClick={() => setCurrentEditingInputID(inputReq._id)}
                   className="bg-gray-100 p-4 rounded-xl shadow-sm border"
                 >

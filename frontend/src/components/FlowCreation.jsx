@@ -86,6 +86,9 @@ export default function FlowCreation() {
   };
 
   function updateInputRequest(index, newInput) {
+    if (newInput.tipe == "helper") {
+      newInput.isNullable = true;
+    }
     setFlow((prevFlow) => {
       const updatedRequests = [...prevFlow.request];
       updatedRequests[index] = newInput;
@@ -113,6 +116,9 @@ export default function FlowCreation() {
   }
 
   const updateRequirement = (statusIndex, reqIndex, newReq) => {
+    if (newReq.tipe == "helper") {
+      newReq.isNullable = true;
+    }
     setFlow((prev) => {
       const updatedStatuses = [...prev.status];
       const updatedReqs = [...updatedStatuses[statusIndex]?.requirements];

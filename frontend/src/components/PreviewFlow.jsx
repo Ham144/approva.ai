@@ -83,6 +83,7 @@ export default function PreviewFlow({
     };
 
     switch (input.tipe) {
+      // TEXT
       case "text":
         return (
           <div
@@ -95,17 +96,11 @@ export default function PreviewFlow({
               type="text"
               {...baseProps}
               placeholder={input.help}
-              className="input input-bordered w-full"
-              style={
+              className={`input input-bordered w-full ${
                 baseProps.disabled
-                  ? {
-                      backgroundColor: "#f3f4f6", // gray-100
-                      color: "#374151", // gray-700
-                      opacity: 1,
-                      cursor: "default",
-                    }
-                  : {}
-              }
+                  ? "bg-gray-100 text-gray-700 opacity-100 cursor-default"
+                  : ""
+              }`}
               value={
                 isRequirementInput
                   ? (statuses[statusIndex]?.requirementsData || {})[
@@ -126,6 +121,76 @@ export default function PreviewFlow({
           </div>
         );
 
+      // TEXTAREA
+      case "textArea":
+        return (
+          <div
+            ref={(el) => (inputRefs.current[input._id] = el)}
+            id={input._id}
+            className="space-y-1"
+          >
+            {renderHelpText(input)}
+            <textarea
+              {...baseProps}
+              placeholder={input.help}
+              className={`textarea textarea-bordered w-full min-h-[120px] resize-y font-sans ${
+                baseProps.disabled
+                  ? "bg-gray-100 text-gray-700 opacity-100 cursor-default"
+                  : ""
+              }`}
+              value={
+                isRequirementInput
+                  ? (statuses[statusIndex]?.requirementsData || {})[
+                      input._id
+                    ] || ""
+                  : requestData[input._id] || ""
+              }
+              onChange={(e) =>
+                isRequirementInput
+                  ? setRequirement(
+                      currentStatusIndex,
+                      input._id,
+                      e.target.value
+                    )
+                  : setRequestData(input._id, e.target.value)
+              }
+            />
+          </div>
+        );
+
+      // HELPER
+      case "helper":
+        return (
+          <div
+            ref={(el) => (inputRefs.current[input._id] = el)}
+            id={input._id}
+            className="
+        my-6 p-6 rounded-lg 
+        border-l-4 border-info border-opacity-50
+        transform transition-all duration-300 ease-in-out
+        hover:border-opacity-100 hover:-translate-y-1 hover:shadow-lg
+        animate-[softbounce_3s_ease-in-out_infinite]
+        motion-reduce:animation-none
+      "
+          >
+            <h2
+              className="
+        font-light text-3xl text-info text-center mb-4
+        transition-transform duration-300 hover:scale-[1.02]
+      "
+            >
+              {input.title}
+            </h2>
+            <p
+              className="
+        text-gray-600 text-justify leading-relaxed tracking-wide
+        transition-all duration-300 hover:tracking-wider
+      "
+            >
+              {input.help}
+            </p>
+          </div>
+        );
       case "number": //✅
         return (
           <NumberInput
@@ -470,10 +535,10 @@ export default function PreviewFlow({
                     currentEditingInputID === input._id
                       ? "bg-yellow-50 border-l-4 border-yellow-500"
                       : "bg-gray-50"
-                  }`}
+                  } ${input.tipe == "helper" && "bg-transparent"}`}
                 >
                   <label className="block mb-2 font-medium text-gray-700">
-                    {input.title}
+                    {input?.tipe != "helper" && input?.title}
                   </label>
                   {renderInput(input, isForApproval)}
                 </div>
@@ -507,15 +572,17 @@ export default function PreviewFlow({
                       return (
                         <div
                           key={input._id}
-                          className={`p-4 rounded-lg transition-all bg-gray-50 ${
+                          className={`p-4 rounded-lg transition-all  ${
                             currentEditingInputID === input._id
-                              ? "bg-yellow-50"
-                              : ""
+                              ? "bg-yellow-50 border-l-4 border-yellow-500"
+                              : "bg-gray-50"
+                          } ${
+                            input.tipe == "helper" && "bg-transparent"
                           } ${borderColor}`}
                         >
-                          <div className="flex items-center justify-between mb-2">
+                          <div className="flex  items-center justify-between mb-2">
                             <label className="block font-medium text-gray-700">
-                              {input.title}
+                              {input.tipe != "helper" && input.title}
                             </label>
                             {input.isNullable && (
                               <span className="text-xs text-gray-400 italic">

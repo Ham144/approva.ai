@@ -23,6 +23,8 @@ export const InputSchema = new mongoose.Schema({
       "number",
       "select",
       "multipleCheckbox",
+      "textArea",
+      "helper",
     ],
   },
   sourceData: {

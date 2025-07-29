@@ -257,7 +257,7 @@ export default function UserManagement() {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
             User Management
           </h1>
-          <div className="flex gap-3">
+          <div className=" flex flex-wrap gap-3">
             <button
               onClick={handleOpenDialog}
               className="btn btn-primary rounded-md text-white flex items-center"

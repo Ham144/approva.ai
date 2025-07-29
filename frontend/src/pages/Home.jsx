@@ -1,14 +1,40 @@
 import React from "react";
-import { Package, History, Crown, CheckCircle } from "lucide-react";
+import {
+  Package,
+  History,
+  Crown,
+  CheckCircle,
+  ChevronDown,
+} from "lucide-react";
 import { APP_DESC } from "@/api/constant";
 import { useNavigate } from "react-router-dom";
 import { useUserInfo } from "@/store";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import flowInstanceApi from "@/api/flowInstanceApi";
+import OrgApi from "@/api/orgApi";
+import { switchOrg } from "@/api/authApi";
+import toast from "react-hot-toast";
 
 const Home = () => {
   const navigate = useNavigate();
   const { userInfo } = useUserInfo();
+
+  const { data: orgList } = useQuery({
+    queryKey: ["orgList"],
+    queryFn: () => OrgApi.getAllOrg("*"),
+    enabled: !!userInfo._id,
+  });
+
+  const { mutateAsync: handleSwitchOrg } = useMutation({
+    mutationKey: ["userInfo"],
+    mutationFn: async (res) => switchOrg(),
+    onSuccess: async () => {
+      window.location.reload();
+    },
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || "Terjadi kesalahan");
+    },
+  });
 
   const quickActions = [
     {
@@ -33,108 +59,200 @@ const Home = () => {
   });
 
   return (
-    <div className={`min-h-screen bg-gray-50 px-4 py-28 `}>
-      <div className="max-w-7xl mx-auto flex flex-col">
-        {/* Header */}
-        <div className="mb-6 text-center ">
-          <h1 className="text-2xl font-bold text-gray-800">
-            Flexible Flow
-            <span className="p-2 badge translate-y-[-8px]">BETA</span>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 px-4 py-12">
+      <div className="max-w-7xl mx-auto">
+        {/* Header with tech badge */}
+        <div className="mb-10 text-center">
+          <div className="inline-flex items-center gap-2 mb-3 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-gray-200">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-xs font-medium text-gray-600">LIVE BETA</span>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Flexible<span className="text-blue-600">Flow</span>
           </h1>
-          <p className="text-sm text-gray-600">{APP_DESC}</p>
+          <p className="text-gray-600 max-w-2xl mx-auto">{APP_DESC}</p>
         </div>
 
-        {/* My Tasks Section */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-4">Tugas Untuk Anda</h2>
+        {/* My Tasks Section - Enhanced Modern Table */}
+        <div className="mb-12">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800">
+                Tugas Untuk Anda
+              </h2>
+              <p className="text-sm text-gray-500">
+                Daftar permintaan yang membutuhkan persetujuan Anda
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+              <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <span className="text-xs font-medium text-blue-800">
+                  {myTasksQuery?.data?.length || 0} Pending
+                </span>
+              </div>
+
+              <div className="relative group w-full md:w-72">
+                <select
+                  onChange={(e) => handleSwitchOrg(e.target.value)}
+                  className="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-xl bg-white/95 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer font-medium text-gray-700 appearance-none"
+                >
+                  {orgList?.data?.map((org) => (
+                    <option key={org._id} value={org._id}>
+                      {org?.organizationName}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none transition-transform duration-300 group-hover:translate-y-0.5">
+                  <ChevronDown className="w-5 h-5 text-gray-500 group-hover:text-blue-600 transition-colors" />
+                </div>
+                <span className="absolute left-4 -top-2.5 px-1.5 text-xs font-medium bg-white text-gray-500 transition-all duration-300 group-focus-within:text-blue-600">
+                  Organization
+                </span>
+              </div>
+            </div>
+          </div>
+
           {isLoading ? (
-            <div className="flex justify-center py-6">
-              <span className="loading loading-ring loading-lg"></span>
+            <div className="grid place-items-center h-48 rounded-xl bg-gray-50">
+              <div className="flex flex-col items-center gap-3">
+                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+                <span className="text-sm text-gray-500">Memuat data...</span>
+              </div>
             </div>
           ) : !myTasksQuery?.data?.length ? (
-            <div className="alert alert-success badge-outline">
-              <CheckCircle className="w-4 h-4" />
-              <span>Tidak ada tugas yang menunggu. Kerja bagus!</span>
+            <div className="p-8 bg-white rounded-xl border border-gray-200 text-center shadow-sm">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-50 rounded-full mb-4">
+                <CheckCircle className="w-8 h-8 text-green-500" />
+              </div>
+              <h3 className="font-medium text-gray-800 mb-1">All caught up!</h3>
+              <p className="text-gray-500 text-sm max-w-md mx-auto">
+                Tidak ada tugas yang menunggu persetujuan Anda saat ini
+              </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="overflow-x-auto">
-                <table className="table table-zebra w-full bg-white rounded-lg shadow">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Judul Permintaan</th>
-                      <th>Status Saat Ini</th>
-                      <th>Direquest oleh</th>
-                      <th>Tanggal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {myTasksQuery.data.map((task, index) => (
-                      <tr
-                        key={task._id}
-                        onClick={() =>
-                          navigate(`/status/fulfillment/${task._id}`)
-                        }
-                        className="cursor-pointer hover:bg-slate-100"
-                      >
-                        <td>{index + 1}</td>
-                        <td>{task.instanceTitle}</td>
-                        <td className="w-1/3">
-                          <span className="badge text-wrap badge-warning ">
-                            {task.currentStatusTitle}
-                          </span>
-                        </td>
-                        <td>{task.requestedByUsername}</td>
-                        <td>
-                          {new Date(task.createdAt).toLocaleString("id-ID", {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              {/* Table Header */}
+              <div className="grid grid-cols-12 bg-gray-50 px-6 py-3 border-b border-gray-200">
+                <div className="col-span-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  #
+                </div>
+                <div className="col-span-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Permintaan
+                </div>
+                <div className="col-span-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </div>
+                <div className="col-span-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Requestor
+                </div>
+                <div className="col-span-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tanggal
+                </div>
+              </div>
+
+              {/* Table Rows */}
+              <div className="divide-y divide-gray-100">
+                {myTasksQuery.data.map((task, index) => (
+                  <div
+                    key={task._id}
+                    onClick={() => navigate(`/status/fulfillment/${task._id}`)}
+                    className="grid grid-cols-12 px-6 py-4 items-center hover:bg-blue-50/30 transition-colors cursor-pointer group"
+                  >
+                    <div className="col-span-1 text-sm font-medium text-gray-500">
+                      {index + 1}
+                    </div>
+                    <div className="col-span-4">
+                      <p className="font-medium text-gray-900 group-hover:text-blue-600 truncate">
+                        {task.instanceTitle || "Untitled Request"}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {task.flowTemplate?.title}
+                      </p>
+                    </div>
+                    <div className="col-span-3">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
+                        {task.currentStatusTitle}
+                      </span>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-sm text-gray-700 truncate">
+                        {task.requestedByUsername}
+                      </p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-500">
+                        {new Date(task.createdAt).toLocaleString("id-ID", {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(task.createdAt).toLocaleString("id-ID", {
+                          timeStyle: "short",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </div>
 
-        {/* Quick Actions */}
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-4">Aksi Cepat</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* pengelola menu : */}
+        {/* Quick Actions - Startup Style */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-800 mb-6">
+            Aksi Cepat
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <button
               onClick={() => navigate("/management/flow")}
-              className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all text-left"
+              className="bg-white p-5 rounded-xl border border-gray-200 hover:border-blue-300 transition-all text-left group hover:shadow-md"
             >
-              <div className="flex items-center gap-4">
-                <div className={`p-2 rounded-full bg-blue-100 text-blue-600`}>
-                  <Crown className="w-6 h-6 text-blue-600" />
+              <div className="flex items-start gap-4">
+                <div
+                  className={`p-3 rounded-lg bg-blue-50 group-hover:bg-blue-100 transition-colors`}
+                >
+                  <Crown className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-medium">Organization Owner Page</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-medium text-gray-900 mb-1">
+                    Organization Owner
+                  </h3>
+                  <p className="text-sm text-gray-600 line-clamp-2">
                     {userInfo?.displayName || userInfo?.username}
                   </p>
+                  <span className="inline-block mt-2 text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded-full">
+                    Owner Only
+                  </span>
                 </div>
               </div>
             </button>
+
             {quickActions.map((action, index) => (
               <button
                 key={index}
                 onClick={() => navigate(action.path)}
-                className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all text-left"
+                className="bg-white p-5 rounded-xl border border-gray-200 hover:border-blue-300 transition-all text-left group hover:shadow-md"
               >
-                <div className="flex items-center gap-4">
-                  <div className={`p-2 rounded-full ${action.color}`}>
+                <div className="flex items-start gap-4">
+                  <div
+                    className={`p-3 rounded-lg ${action.color
+                      .replace("bg-", "bg-")
+                      .replace(
+                        "text-",
+                        "text-"
+                      )} bg-opacity-10 group-hover:bg-opacity-20 transition-colors`}
+                  >
                     {action.icon}
                   </div>
                   <div>
-                    <h3 className="font-medium">{action.title}</h3>
-                    <p className="text-sm text-gray-600">
+                    <h3 className="font-medium text-gray-900 mb-1">
+                      {action.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 line-clamp-2">
                       {action.description}
                     </p>
                   </div>

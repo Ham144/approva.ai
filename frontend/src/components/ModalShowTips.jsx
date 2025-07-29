@@ -10,6 +10,8 @@ import {
   List,
   CheckSquare,
   FileUp,
+  RectangleEllipsis,
+  Ruler,
 } from "lucide-react"; // Assuming you have lucide-react for icons
 
 export default function ModalShowTips() {
@@ -86,6 +88,20 @@ export default function ModalShowTips() {
         "Gunakan tipe table ketika satu pertanyaan membutuhkan banyak data yang berulang dalam bentuk baris. Tiap baris mewakili satu entitas dan kolom mencakup properti yang relevan.",
       example:
         "Contoh: Mendata barang rusak (nama barang, harga, kerusakan, waktu rusak). Lebih praktis dan rapi dengan satu field bertipe table daripada field 'text' berulang kali.",
+    },
+    {
+      name: "textArea", // Your existing type
+      icon: <RectangleEllipsis className="w-6 h-6 text-blue-500" />, // Using PenTool as a generic 'structured data' icon
+      description:
+        "Gunakan tipe textArea jika tipe text tidak cukup lebar untuk menampilkan tulisan yang berparagraf",
+      example: "Contoh:essay, puisi cinta",
+    },
+    {
+      name: "helper", // Your existing type
+      icon: <Ruler className="w-6 h-6 text-blue-500" />, // Using PenTool as a generic 'structured data' icon
+      description:
+        "Gunakan tipe helper hanya untuk memberitahukan sesuatu ditengah pengisian, ini gunanya untuk helper pengisian atau anotasi pengingat bagi si pengisi",
+      example: "Contoh: anotasi, pengingat, informasi tambahan",
     },
   ];
 

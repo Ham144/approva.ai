@@ -6,11 +6,17 @@ import ModalOption from "@/components/ModalOption";
 import { FlowStatusModal } from "@/components/StatusPreviewModal";
 import { useUserInfo } from "@/store";
 
+export const initialFilterRequestPage = {
+  isMyDepartmentOnly: true,
+};
+
 export default function RequestPage() {
   const [searchKey, setSearchKey] = useState("");
   const [selectedFlow, setSelectedFlow] = useState(null);
-  const navigate = useNavigate();
   const { userInfo } = useUserInfo();
+  const [filter, setFilter] = useState(initialFilterRequestPage);
+
+  const navigate = useNavigate();
 
   const { data: flowList } = useQuery({
     queryKey: ["flows", searchKey],
@@ -19,18 +25,29 @@ export default function RequestPage() {
 
   const filteredFlows = useMemo(() => {
     const key = searchKey.toLowerCase();
-    return flowList?.data?.filter(
-      (flow) =>
+
+    return flowList?.data?.filter((flow) => {
+      console.log(flow);
+      // 1. Logika filter 'isMyDepartmentOnly'
+      if (filter.isMyDepartmentOnly) {
+        if (
+          flow.isAllowanceModeRequest &&
+          flow.allowedDepartmentToRequest.some(
+            (dep) => dep._id === userInfo?.department?._id
+          )
+        ) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+
+      return (
         flow.title.toLowerCase().includes(key) ||
         flow.desc.toLowerCase().includes(key)
-    );
-  }, [searchKey, flowList]);
-
-  const openModal = (flow) => {
-    setSelectedFlow(flow);
-    document.getElementById("modalactionrequestlist")?.showModal();
-  };
-
+      );
+    });
+  }, [searchKey, flowList, filter, userInfo]); // Tambahkan userInfo sebagai dependency
   const closeStatusModal = () => {
     setSelectedFlow(null);
   };
@@ -50,7 +67,6 @@ export default function RequestPage() {
           <span className="text-indigo-600">📄</span> Flow List
         </h1>
       </div>
-
       {/* Area Pencarian dengan Ikon */}
       <div className="relative mb-8">
         <input
@@ -79,7 +95,6 @@ export default function RequestPage() {
           </svg>
         </div>
       </div>
-
       {/* Pesan Informatif dengan Gaya Alert */}
       <div
         className="bg-indigo-50 border-l-4 border-indigo-500 text-indigo-800 p-4 rounded-lg mb-8 shadow-sm"
@@ -88,10 +103,42 @@ export default function RequestPage() {
         <p className="font-medium text-sm">Informasi Alur:</p>
         <p className="text-sm mt-1">
           Ini adalah daftar alur permintaan yang tersedia untuk akun Anda.
-          Beberapa alur mungkin tidak dapat diakses untuk akun Anda.
+          Beberapa flow mungkin disembunyikan
         </p>
       </div>
+      <div className="flex mb-4 flex-wrap gap-1">
+        <button
+          onClick={() =>
+            setFilter((prev) => ({
+              ...prev,
+              isMyDepartmentOnly: false,
+            }))
+          }
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+            !filter.isMyDepartmentOnly
+              ? "bg-blue-100 text-blue-700 border border-blue-200 shadow-inner"
+              : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+          }`}
+        >
+          Semua flow
+        </button>
 
+        <button
+          onClick={() =>
+            setFilter((prev) => ({
+              ...prev,
+              isMyDepartmentOnly: true,
+            }))
+          }
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+            filter.isMyDepartmentOnly
+              ? "bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-inner"
+              : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+          }`}
+        >
+          Departemen Saya
+        </button>
+      </div>
       <div className="flex flex-col gap-y-3 pb-10">
         {filteredFlows?.length === 0 ? (
           <div className="md:col-span-2 lg:col-span-2 bg-gray-50 p-10 rounded-xl shadow-inner border border-gray-200 text-center">
@@ -112,35 +159,37 @@ export default function RequestPage() {
             >
               {/* Hover Overlay */}
               <div className="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl z-0"></div>
-
-              {/* Content */}
               <div className="relative z-10 p-6 space-y-4">
-                {/* Header: Title & Info */}
-                <div className="flex justify-between items-start gap-4">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div className="flex-1">
-                    <h2 className="text-xl font-bold text-gray-800 leading-snug">
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-800 leading-snug">
                       {flow.title}
                     </h2>
                     <p className="text-sm text-gray-500 mt-1 italic">
                       {flow.desc}
                     </p>
-                    {/* department */}
-                    <div className="flex mt-1 gap-x-2">
+
+                    {/* Department */}
+                    <div className="flex flex-wrap mt-2 gap-2">
                       {flow?.isAllowanceModeRequest ? (
                         flow.allowedDepartmentToRequest?.map((f) => (
-                          <span className="bg-blue-100 text-blue-700 px-2 rounded-full">
+                          <span
+                            key={f._id}
+                            className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs"
+                          >
                             {f.name}
                           </span>
                         ))
                       ) : (
-                        <span className="bg-blue-100 text-blue-700 px-2 rounded-full">
+                        <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs">
                           All
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-end space-y-2">
+                  <div className="flex flex-col items-start sm:items-end gap-2">
                     <div className="flex items-center text-sm text-gray-600 font-medium">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -169,8 +218,8 @@ export default function RequestPage() {
                   </div>
                 </div>
 
-                {/* Footer: Designer & Actions */}
-                <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                {/* Footer */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-4 border-t border-gray-100 gap-4">
                   <div className="text-xs text-gray-500 italic">
                     Diatur oleh:{" "}
                     {flow?.designedBy?.length === 0
@@ -186,13 +235,13 @@ export default function RequestPage() {
                         ))}
                   </div>
 
-                  <div className="grid gap-2 grid-cols-2">
+                  <div className="grid  grid-cols-1 sm:grid-cols-2 gap-2 w-full sm:w-auto">
                     <button
                       onClick={() => {
                         setSelectedFlow(flow);
                         document.getElementById("statusmodal")?.showModal();
                       }}
-                      className="btn btn-lg rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
+                      className="btn rounded-lg btn-md bg-indigo-600 text-white hover:bg-indigo-700 w-full"
                     >
                       Lihat Alur
                     </button>
@@ -204,7 +253,7 @@ export default function RequestPage() {
                           .getElementById("modalactionrequestlist")
                           ?.showModal();
                       }}
-                      className="btn  rounded-md btn-lg bg-amber-500 text-white hover:bg-amber-600"
+                      className="btn rounded-lg btn-md bg-amber-500 text-white hover:bg-amber-600 w-full"
                     >
                       Aksi
                     </button>
@@ -215,13 +264,11 @@ export default function RequestPage() {
           ))
         )}
       </div>
-
       <FlowStatusModal
         key={"statusmodal"}
         selectedFlow={selectedFlow}
         onClose={closeStatusModal}
       />
-
       <ModalOption
         key={"modalactionrequestlist"}
         selectedFlow={selectedFlow}

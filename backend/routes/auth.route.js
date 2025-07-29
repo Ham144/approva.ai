@@ -206,13 +206,42 @@ const asyncHandler = (fn) => (req, res, next) => {
 router.post(
   "/login/ldap",
   asyncHandler(async (req, res) => {
-    const { username, password, selectedOrg } = req.body;
+    const { username, password, selectedOrg, captchaToken } = req.body;
     if (!username || !password || !selectedOrg) {
       return res.status(400).json({
         success: false,
         message: "perlu melengkapi semua credentials",
       });
     }
+
+    try {
+      const result = await axios.post(
+        "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+        new URLSearchParams({
+          secret: process.env.TURNSTILE_SECRET_KEY,
+          response: captchaToken,
+          remoteip: req.ip,
+        }),
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+
+      if (!result.data.success) {
+        return res
+          .status(403)
+          .json({ success: false, message: "Verifikasi CAPTCHA gagal." });
+      }
+      console.log("berhasil verifikasi turnstile");
+    } catch (error) {
+      console.error("Turnstile error:", error.message);
+      return res
+        .status(500)
+        .json({ success: false, message: "Gagal memverifikasi CAPTCHA." });
+    }
+
     if (username == "SUPERTENANT") {
       return res.status(400).json({
         success: false,
@@ -345,7 +374,12 @@ router.post(
       } else {
         //jika departement sebelumnya ga ada tapi departement yang dimaksud sudah terdaftar maka add
         if (!myPreviousDepartment && departementDB) {
-          departementDB.members.push(userDB._id);
+          const duplicateId = departementDB.members.some(
+            (f) => f._id === userDB._id
+          );
+          if (!duplicateId) {
+            departementDB.members.push(userDB._id);
+          }
         }
       }
 
@@ -360,10 +394,10 @@ router.post(
       const token = await generateTokenJWT(payload);
 
       res.cookie("token", token, {
-        httpOnly: true,
-        secure: false,
-        sameSite: "strict", // Menggunakan 'Lax' lebih fleksibel untuk banyak kasus
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        httpOnly: true, // ✅ Aman
+        secure: false, // ✅ karena http
+        sameSite: "Lax", // ✅ Agar bisa cross-origin
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
       await userDB.save();
@@ -388,13 +422,40 @@ router.post(
 router.post(
   "/login/app",
   asyncHandler(async (req, res) => {
-    const { username, password, selectedOrg } = req.body;
+    const { username, password, selectedOrg, captchaToken } = req.body;
 
     if (!username || !password || !selectedOrg) {
       return res.status(400).json({
         success: false,
         message: "Perlu melengkapi semua credentials",
       });
+    }
+
+    try {
+      const result = await axios.post(
+        "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+        new URLSearchParams({
+          secret: process.env.TURNSTILE_SECRET_KEY,
+          response: captchaToken,
+          remoteip: req.ip,
+        }),
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+
+      if (!result.data.success) {
+        return res
+          .status(403)
+          .json({ success: false, message: "Verifikasi CAPTCHA gagal." });
+      }
+    } catch (error) {
+      console.error("Turnstile error:", error.message);
+      return res
+        .status(500)
+        .json({ success: false, message: "Gagal memverifikasi CAPTCHA." });
     }
 
     const OrgDB = await Org.findById(selectedOrg);
@@ -414,7 +475,7 @@ router.post(
 
     // Ambil user dengan password (jangan .select dulu!)
     let userDB;
-    if (username == " ") {
+    if (username == "SUPERTENANT") {
       userDB = await UserRefrensi.findOne({
         username,
       });
@@ -823,6 +884,21 @@ router.put("/takeOverUser", authenticate, authorize, async (req, res) => {
       error: error.message, // Sertakan pesan error untuk debugging di lingkungan dev
     });
   }
+});
+
+import axios from "axios";
+
+router.post("/switchOrg", authenticate, async (req, res) => {
+  //periksa apakah namanya ada persis di org target
+  const { targetOrg } = req.body;
+
+  const oldCookie =
+    req.cookies.token || req.headers.authorization?.split(" ")[1] || null;
+
+  const oldPayload = jwt.decode(oldCookie, process.env.JWT_SECRET);
+  return res.json({
+    oldPayload,
+  });
 });
 
 router.delete("/deleteAppUser/:id", authenticate, async (req, res) => {

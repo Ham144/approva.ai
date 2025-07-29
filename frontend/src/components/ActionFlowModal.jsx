@@ -8,7 +8,7 @@ export default function ActionFlowModal({ selectedFlow }) {
   const navigate = useNavigate();
 
   function handleEdit() {
-    navigate(`/management/flow/edit/${selectedFlow?._id}`);
+    window.location.href = `/management/flow/edit/${selectedFlow?._id}`;
   }
 
   const queryClient = useQueryClient();

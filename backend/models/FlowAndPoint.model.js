@@ -25,6 +25,12 @@ const flowSchema = new mongoose.Schema(
         ref: "Department",
       },
     ],
+    allowedSpecificUserToRequest: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "UserRefrensi",
+      }
+    ],
     status: [
       {
         title: {

@@ -18,7 +18,11 @@ import bulkRoutes from "./routes/bulk.route.js";
 
 const isProduction = process.env.NODE_ENV === "production";
 const corsOrigin = isProduction
-  ? ["http://192.168.169.22"]
+  ? [
+      "http://e-form.mycsi.net",
+      "http://192.168.169.22",
+      "http://192.168.169.12:5173",
+    ]
   : ["http://192.168.169.12:5173"];
 
 const app = express();
