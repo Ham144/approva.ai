@@ -17,8 +17,10 @@ import departmentRoutes from "./routes/department.route.js";
 import bulkRoutes from "./routes/bulk.route.js";
 
 const isProduction = process.env.NODE_ENV === "production";
+
 const corsOrigin = isProduction
   ? [
+      "https://e-form.mycsi.net",
       "http://e-form.mycsi.net",
       "http://192.168.169.22",
       "http://192.168.169.12:5173",

@@ -32,7 +32,9 @@
 [x] add: penambahan tipe input : keterangan dan textarea
 [x] modify: buat tab frontend di request page [my departement, all]
 [x] add: tab navigasi cepat status cepat di flow editor
-[] add: buat level user viewer (yang bisa request dan melihat semua in-progress request)
-[] modify: user level member hanya bisa melihat on-preogress departementnya sendiri
-[] add : tambah fitur allowedSpecificUserToRequest untuk benar2 spesifik user
+[x] add: tab navigasi cepat status cepat di create editor (lebih deskriptif)
+[x] add: buat level user viewer (yang bisa request dan melihat semua in-progress request)
+[x] modify: user level member hanya bisa melihat on-progress departementnya sendiri
+[x] add : tambah fitur allowedSpecificUserToRequest untuk benar2 spesifik user
+[x] http -> https certbot
 [] fix: manajemen opsi sumber data tidak bisa update

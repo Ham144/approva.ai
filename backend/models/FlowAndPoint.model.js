@@ -19,6 +19,12 @@ const flowSchema = new mongoose.Schema(
       },
     ],
     isAllowanceModeRequest: Boolean, //jika true maka akan cek apakah hanya untuk deparment tertentu. yg coba create request dengan flow template ini terdaftar di allowedDepartmentToRequest
+    mode: {
+      //harusnya ini aja bisa gantikan field diatas tapi tunda dulu
+      type: String,
+      enums: ["public", "private", "department"],
+      required: true,
+    },
     allowedDepartmentToRequest: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -29,7 +35,7 @@ const flowSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "UserRefrensi",
-      }
+      },
     ],
     status: [
       {

@@ -15,8 +15,8 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ["owner", "member", "supertenant"],
-      default: "member",
+      enum: ["member", "viewer", "owner", "supertenant"], //supertenant hanya ada 1 dan di buat langsung dari database tidak ada fitur yang bisa menetapkan disediakan untuk menjadikan user supertenant
+      default: "member", //member setara dengan viewer hanya saja viewer bisa melihat semua proses terlepas dari departmentna
     },
     password: String, //ini untuk authMethod 'app'
     authMethod: {

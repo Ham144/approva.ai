@@ -24,7 +24,18 @@ const flowApi = {
   getAllFlowNameAndDesc: async (searchKey = "") => {
     try {
       const params = searchKey ? { searchKey } : {};
-      const response = await axiosInstance.get(`/api/flow/list`, {
+      const response = await axiosInstance.get(`/api/flow/list/forOwner`, {
+        params,
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+  getAllFlowNameAndDescForRequest: async (searchKey = "") => {
+    try {
+      const params = searchKey ? { searchKey } : {};
+      const response = await axiosInstance.get(`/api/flow/list/forRequest`, {
         params,
       });
       return response.data;

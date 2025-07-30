@@ -2,7 +2,7 @@ import { useResponseCollector } from "@/store";
 import { List, PlusCircle } from "lucide-react";
 import { useNavigate } from "react-router";
 
-export default function ModalOption({ selectedFlow, isforYou }) {
+export default function ModalOption({ selectedFlow }) {
   const navigate = useNavigate();
   const { resetRequestData } = useResponseCollector();
 
@@ -13,18 +13,16 @@ export default function ModalOption({ selectedFlow, isforYou }) {
           {selectedFlow?.title}
         </h3>
         <div className="space-y-3">
-          {isforYou(selectedFlow) && (
-            <button
-              onClick={() => {
-                resetRequestData();
-                navigate(`/request/create/${selectedFlow?._id}`);
-              }}
-              className="w-full flex items-center gap-2 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 rounded text-indigo-700 font-medium"
-            >
-              <PlusCircle size={18} />
-              Mulai Request
-            </button>
-          )}
+          <button
+            onClick={() => {
+              resetRequestData();
+              navigate(`/request/create/${selectedFlow?._id}`);
+            }}
+            className="w-full flex items-center gap-2 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 rounded text-indigo-700 font-medium"
+          >
+            <PlusCircle size={18} />
+            Mulai Request
+          </button>
           <button
             onClick={() =>
               navigate(

@@ -16,6 +16,8 @@ router.post("/createFlow", async (req, res) => {
     status,
     isAllowanceModeRequest,
     allowedDepartmentToRequest,
+    allowedSpecificUserToRequest,
+    mode,
   } = req.body;
 
   if (!title || !desc) {
@@ -167,6 +169,15 @@ router.post("/createFlow", async (req, res) => {
     ) {
       newFlowAndPoint.isAllowanceModeRequest = isAllowanceModeRequest;
 
+      if (
+        allowedDepartmentToRequest?.length > 1 &&
+        allowedSpecificUserToRequest?.length > 1
+      ) {
+        return res
+          .status(400)
+          .json({ error: "Terdapat kejanggalan, terdapat 2 mode bertumpukan" });
+      }
+
       if (allowedDepartmentToRequest && allowedDepartmentToRequest.length > 0) {
         // Validasi bahwa semua isi adalah ObjectId valid
         const validDepartment = await Department.find({
@@ -174,14 +185,46 @@ router.post("/createFlow", async (req, res) => {
         });
 
         if (validDepartment.length !== allowedDepartmentToRequest.length) {
-          return res.status(400).json({ error: "Beberapa userId tidak valid" });
+          return res
+            .status(400)
+            .json({ error: "Beberapa departement id tidak valid" });
         }
 
         newFlowAndPoint.allowedDepartmentToRequest = allowedDepartmentToRequest;
       }
+      if (mode == "department" && allowedDepartmentToRequest?.length == 0) {
+        return res.status(400).json({
+          error:
+            "Jika Mode departement aktiv, setidaknya pilih satu departement",
+        });
+      }
+
+      if (
+        allowedSpecificUserToRequest &&
+        allowedSpecificUserToRequest.length > 0
+      ) {
+        // Validasi bahwa semua isi adalah ObjectId valid
+        const validUsers = await UserRefrensi.find({
+          _id: { $in: allowedSpecificUserToRequest },
+        });
+
+        if (validUsers.length !== allowedSpecificUserToRequest.length) {
+          return res.status(400).json({ error: "Beberapa userId tidak valid" });
+        }
+
+        newFlowAndPoint.allowedSpecificUserToRequest =
+          allowedSpecificUserToRequest;
+      }
+
+      if (mode == "private" && allowedSpecificUserToRequest?.length == 0) {
+        return res.status(400).json({
+          error: "Jika Mode private aktiv, setidaknya pilih satu spesifik user",
+        });
+      }
     }
 
     // Set data final
+    newFlowAndPoint.mode = mode;
     newFlowAndPoint.title = title;
     newFlowAndPoint.desc = desc;
     newFlowAndPoint.request = inputRequest;
@@ -217,7 +260,56 @@ router.post("/createFlow", async (req, res) => {
   }
 });
 
-router.get("/list", async (req, res) => {
+router.get("/list/forOwner", async (req, res) => {
+  const { searchKey } = req.query;
+
+  try {
+    let query = {
+      org: req.user.org, // ✅ Scope tenant
+    };
+
+    if (searchKey && searchKey.trim() !== "") {
+      query.title = { $regex: searchKey, $options: "i" };
+    }
+
+    const rawList = await FlowAndPoint.find(query)
+      .select("title desc isAllowanceModeRequest designedBy mode") // ⚠️ HAPUS allowedDepartmentToRequest dari sini
+      .populate({
+        path: "status",
+        populate: {
+          path: "authorized",
+          model: "UserRefrensi",
+          select: "_id username displayName",
+        },
+      })
+      .populate("designedBy", "username")
+      .populate("allowedDepartmentToRequest", "_id name") // ✅ populate ulang dengan field yg benar
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const flowListFiltered = rawList.map((template) => {
+      if (template.isAllowanceModeRequest === false) {
+        return {
+          ...template,
+          allowedDepartmentToRequest: "all",
+        };
+      }
+      return template;
+    });
+
+    return res.status(200).json({
+      message: "Berhasil mengambil data flow",
+      data: flowListFiltered,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+});
+
+router.get("/list/forRequest", async (req, res) => {
   const { searchKey } = req.query;
 
   try {
@@ -244,14 +336,35 @@ router.get("/list", async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    const flowListFiltered = rawList.map((template) => {
-      if (template.isAllowanceModeRequest === false) {
-        return {
-          ...template,
-          allowedDepartmentToRequest: "all",
-        };
+    const flowListFiltered = rawList.filter((template) => {
+      const userId = req.user?._id?.toString();
+      const department = req.user?.department;
+
+      if (
+        template.mode === "private" ||
+        template.isAllowanceModeRequest === "true"
+      ) {
+        return (
+          Array.isArray(template.allowedSpecificUserToRequest) &&
+          template.allowedSpecificUserToRequest.includes(userId)
+        );
       }
-      return template;
+
+      if (
+        template.mode === "department" ||
+        template.isAllowanceModeRequest == "true"
+      ) {
+        return (
+          Array.isArray(template.allowedDepartmentToRequest) &&
+          template.allowedDepartmentToRequest.includes(department)
+        );
+      }
+
+      if (template.mode === "public" || template.isAllowanceModeRequest) {
+        return true;
+      }
+
+      return false;
     });
 
     return res.status(200).json({
@@ -308,6 +421,7 @@ function isValidObjectIdStrict(id) {
     String(new mongoose.Types.ObjectId(id)) === id
   );
 }
+
 router.put("/update/:id", async (req, res) => {
   const id = req.params.id;
   const {
@@ -317,6 +431,8 @@ router.put("/update/:id", async (req, res) => {
     status,
     isAllowanceModeRequest,
     allowedDepartmentToRequest,
+    allowedSpecificUserToRequest,
+    mode,
   } = req.body;
 
   // Validasi input dasar
@@ -344,27 +460,32 @@ router.put("/update/:id", async (req, res) => {
     if (!existingFlow) {
       return res.status(404).json({ message: "Flow tidak ditemukan." });
     }
+
     //validasi jika isAllowanceModeRequest ada atau tidak
     if (
       isAllowanceModeRequest !== "undefined" &&
       isAllowanceModeRequest !== null &&
       isAllowanceModeRequest
     ) {
-      if (
-        !Array.isArray(allowedDepartmentToRequest) ||
-        allowedDepartmentToRequest.length === 0
-      ) {
+      if (mode == "departement" && allowedDepartmentToRequest.length === 0) {
         return res.status(400).json({
-          message:
-            "jika isAllowanceModeRequest aktif: setidaknya pilih satu divisi",
+          message: "jika mode departement aktif: setidaknya pilih satu divisi",
         });
+      } else {
+        existingFlow.isAllowanceModeRequest = isAllowanceModeRequest;
+        existingFlow.allowedDepartmentToRequest = allowedDepartmentToRequest;
       }
 
-      existingFlow.isAllowanceModeRequest = isAllowanceModeRequest;
-      existingFlow.allowedDepartmentToRequest = allowedDepartmentToRequest;
-    } else {
-      existingFlow.isAllowanceModeRequest = false;
-      existingFlow.allowedDepartmentToRequest = [];
+      if (mode == "private" && allowedSpecificUserToRequest.length === 0) {
+        return res.status(400).json({
+          message:
+            "jika mode private aktif: setidaknya pilih satu specific user",
+        });
+      } else {
+        existingFlow.isAllowanceModeRequest = isAllowanceModeRequest;
+        existingFlow.allowedSpecificUserToRequest =
+          allowedSpecificUserToRequest;
+      }
     }
 
     // Validasi: user saat ini adalah salah satu desainer
@@ -480,6 +601,8 @@ router.put("/update/:id", async (req, res) => {
     }
 
     // Update flow
+
+    existingFlow.mode = mode;
     existingFlow.title = title;
     existingFlow.desc = desc;
     existingFlow.request = sanitizedInputs;

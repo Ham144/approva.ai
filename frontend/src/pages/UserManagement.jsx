@@ -56,6 +56,7 @@ export default function UserManagement() {
       toast.success("User berhasil diperbarui");
       handleCloseDialog();
       setCurrentUser(null);
+      window.location.reload();
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || "Gagal memperbarui user");
@@ -80,6 +81,7 @@ export default function UserManagement() {
       queryClient.invalidateQueries(["users"]);
       toast.success("User berhasil diperbarui");
       handleCloseDialog();
+      window.location.reload();
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || "Gagal memperbarui user");
@@ -184,6 +186,7 @@ export default function UserManagement() {
       setIsEditMode(false);
       setIsOpen(false);
       setOldUser(null);
+      window.location.reload();
     },
     onError: (err) => {
       toast.error(err?.response?.data?.message || "gagal");
@@ -432,38 +435,55 @@ export default function UserManagement() {
                   </div>
                 )}
 
-                {/* Role Selection */}
+                {/* Role Selection - Determines the user's permission level within the system */}
                 <div className="form-control">
                   <label className="label">
                     <span className="label-text">Role</span>
                   </label>
+
+                  {/* Dropdown for selecting user role */}
                   <select
                     value={formData.role}
                     onChange={(e) =>
                       setFormData({ ...formData, role: e.target.value })
                     }
                     className="select select-bordered w-full"
+                    // Disable selection of supertenant when using LDAP auth method
                     disabled={
                       formData.authMethod === "ldap" &&
                       formData.role === "supertenant"
                     }
                   >
+                    {/* "Member" role - Default user, has access to their own department processes */}
                     <option value="member">Member</option>
+
+                    {/* "Viewer" role - Read-only access, can view all processes regardless of department */}
+                    <option value="viewer">Viewer</option>
+
+                    {/* "Owner" role - Admin-level access for the current tenant */}
                     <option value="owner">Owner</option>
+
+                    {/* "Supertenant" role - Highest privilege, only one exists and must be created directly in the DB.
+        Disabled by default to prevent users from selecting it. */}
                     <option disabled value="supertenant">
                       supertenant
                     </option>
+
+                    {/* Conditionally render the "Supertenant" option only if the current user is a supertenant */}
                     {currentUser?.role === "supertenant" && (
                       <option value="supertenant">Supertenant</option>
                     )}
                   </select>
+
+                  {/* Display a short description based on selected role */}
+                  {/* Menampilkan deskripsi singkat berdasarkan peran yang dipilih */}
                   <label className="label">
                     <span className="label-text-alt">
-                      {formData?.role === "supertenant"
-                        ? "Akses penuh ke semua tenant"
-                        : formData?.role === "owner"
-                        ? "Admin untuk tenant saat ini"
-                        : "User biasa dengan akses terbatas"}
+                      {formData?.role === "owner"
+                        ? "Owner adalah admin tenant ini. Memiliki hak penuh untuk mengatur tenant saat ini."
+                        : formData?.role === "viewer"
+                        ? "Viewer dapat melihat seluruh proses di semua departemen, namun tidak bisa mengubah data."
+                        : "Member hanya dapat melihat dan mengakses proses di departemen mereka sendiri."}
                     </span>
                   </label>
                 </div>

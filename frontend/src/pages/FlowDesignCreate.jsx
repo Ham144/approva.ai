@@ -5,14 +5,16 @@ import { useEditor } from "@/store";
 import toast from "react-hot-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import flowApi from "@/api/flowApi";
-import { Trash, StepBack, Globe } from "lucide-react";
+import { Trash, StepBack, Globe, FileCode, ListStart } from "lucide-react";
 import { useNavigate } from "react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { NavigasiCepat } from "@/components/NavigasiCepat";
 
 export default function FlowDesignCreate() {
   const navigate = useNavigate();
   const { flow, setFlow } = useEditor();
   const queryClient = useQueryClient();
+  const [tabNavigation, setTabNavigation] = useState();
 
   const { mutate: submitFlow } = useMutation({
     mutationFn: () => flowApi.createFlowAndPoint(flow),
@@ -50,7 +52,7 @@ export default function FlowDesignCreate() {
 
   return (
     <PengelolaSideBarMenu>
-      <div className="container mx-auto  p-4 md:p-6 lg:p-8 space-y-6 ">
+      <div className="  p-4 md:p-6 lg:p-8 space-y-6 ">
         <div className="flex justify-between flex-wrap items-center">
           <div className="div">
             <h2 className="text-2xl font-bold text-primary">Buat Flow Baru</h2>
@@ -87,7 +89,10 @@ export default function FlowDesignCreate() {
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <FlowCreation />
+          <div className="flex gap-x-2">
+            <NavigasiCepat flow={flow} key={"navigasi"} />
+            <FlowCreation key={"creation"} />
+          </div>
           <div className="max-md:hidden">
             <PreviewFlow jsonFlow={flow} />
           </div>

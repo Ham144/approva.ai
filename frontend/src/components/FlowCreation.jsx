@@ -1,15 +1,25 @@
 import { getAllAccount } from "@/api/authApi";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import ModalCreateSourceData from "./ModalCreateSourceData";
 import InputItem from "./InputItem";
-import { AlignLeft, Heading, Info, Trash, Lock } from "lucide-react";
+import {
+  AlignLeft,
+  BookHeart,
+  Building,
+  Globe,
+  Heading,
+  Info,
+  Search,
+  Trash,
+} from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { useEditor } from "../store";
 import DepartmentApi from "@/api/DepartmentApi";
 
 export default function FlowCreation() {
   const { setCurrentEditingInputID, flow, setFlow } = useEditor();
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { data: userList } = useQuery({
     queryKey: ["users"],
@@ -131,8 +141,6 @@ export default function FlowCreation() {
     });
   };
 
-  console.log(flow);
-
   useEffect(() => {
     function init() {
       setFlow();
@@ -185,90 +193,288 @@ export default function FlowCreation() {
               placeholder="Jelaskan tujuan alur ini secara singkat, misal: Alur ini digunakan untuk persetujuan dokumen-dokumen penting sebelum diarsipkan."
               value={flow?.desc || ""}
               onChange={(e) => setFlow({ ...flow, desc: e.target.value })}
-              rows="3" // Default rows for better initial height
+              rows="3"
             />
           </div>
 
-          {/* Checkbox spesial department/division Request */}
-          <div className="form-control w-full">
-            <label className="label cursor-pointer justify-between pr-0">
-              <div
-                className="tooltip tooltip-right flex items-center gap-2 text-gray-700 dark:text-gray-300"
-                data-tip="Jika Mode ini diaktifkan, maka hanya user yg terdaftar di divisi itu yang bisa memulai request."
+          <div className="space-y-6">
+            {/* Mode Selection */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <button
+                onClick={() => {
+                  setFlow({
+                    ...flow,
+                    isAllowanceModeRequest: false,
+                    allowedDepartmentToRequest: [],
+                    allowedSpecificUserToRequest: [],
+                    mode: "public",
+                  });
+                }}
+                className={`btn btn-outline ${
+                  flow.mode === "public" ? "btn-primary" : ""
+                }`}
               >
-                <span className="label-text font-medium flex items-center gap-2">
-                  <Lock size={18} /> Mode isAllowanceModeRequest
-                </span>
-                <button
-                  className="btn btn-xs btn-ghost btn-circle text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 ml-1"
-                  aria-label="Informasi Alur Privat"
-                >
-                  ?
-                </button>
-              </div>
-
-              <input
-                type="checkbox"
-                checked={flow?.isAllowanceModeRequest || false}
-                className="checkbox checkbox-primary bg-gray-200 dark:bg-gray-600 border-gray-400 dark:border-gray-500"
-                onChange={(e) =>
-                  setFlow({ ...flow, isAllowanceModeRequest: e.target.checked })
-                }
-              />
-            </label>
-          </div>
-
-          {flow.isAllowanceModeRequest && (
-            <div className="form-control mb-6">
-              <label className="label">
-                <span className="label-text text-gray-700 font-medium">
-                  Select Department
-                </span>
-              </label>
-              <div className="flex flex-col gap-2 p-3 border border-gray-200 rounded-lg max-h-48 overflow-y-auto bg-gray-50">
-                {departments?.data?.map((dep) => (
-                  <label
-                    key={dep._id}
-                    className="label cursor-pointer p-2 rounded-md hover:bg-blue-50 transition-colors duration-150"
-                  >
-                    <span className="label-text text-gray-800">{dep.name}</span>
-                    <input
-                      type="checkbox"
-                      checked={flow.allowedDepartmentToRequest?.includes(
-                        dep._id.toString()
-                      )}
-                      onChange={() => {
-                        setFlow((prevFlow) => {
-                          const current = Array.isArray(
-                            prevFlow?.allowedDepartmentToRequest
-                          )
-                            ? prevFlow?.allowedDepartmentToRequest
-                            : [];
-
-                          const depId = dep._id.toString();
-                          const next = current.includes(depId)
-                            ? current.filter((id) => id !== depId)
-                            : [...current, depId];
-
-                          return {
-                            ...prevFlow,
-                            allowedDepartmentToRequest: next,
-                          };
-                        });
-                      }}
-                      className="checkbox checkbox-primary"
-                    />
-                  </label>
-                ))}
-                {/* Optional: No users message */}
-                {departments?.data?.length === 0 && (
-                  <span className="text-center text-gray-500 py-2">
-                    No departments available to add.
-                  </span>
-                )}
-              </div>
+                <Globe />
+                Public Mode
+              </button>
+              <button
+                onClick={() => {
+                  setFlow({
+                    ...flow,
+                    isAllowanceModeRequest: true,
+                    allowedSpecificUserToRequest: [],
+                    mode: "department",
+                  });
+                }}
+                className={`btn text-wrap btn-outline ${
+                  flow.mode === "department" ? "btn-primary" : ""
+                }`}
+              >
+                <Building />
+                Department Lock
+              </button>
+              <button
+                onClick={() => {
+                  setFlow({
+                    ...flow,
+                    isAllowanceModeRequest: true,
+                    allowedDepartmentToRequest: [],
+                    mode: "private",
+                  });
+                }}
+                className={`btn btn-outline ${
+                  flow.mode === "private" ? "btn-primary" : ""
+                }`}
+              >
+                <BookHeart />
+                Private Mode
+              </button>
             </div>
-          )}
+
+            {/* Private Mode Content */}
+            {flow.mode === "private" && (
+              <div className="card bg-base-100 shadow-sm">
+                <div className="card-body">
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-semibold text-lg">
+                        Select Specific Users
+                      </span>
+                    </label>
+                    <div className="alert alert-info mb-4">
+                      <div>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="stroke-current flex-shrink-0 h-6 w-6"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                          />
+                        </svg>
+                        <span>
+                          In private mode, only selected users can view and
+                          initiate requests.
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="relative mb-4">
+                      <input
+                        type="text"
+                        placeholder="Search users..."
+                        className="input input-bordered w-full pl-10"
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    </div>
+
+                    <div className="border rounded-lg overflow-hidden">
+                      <div className="max-h-64 overflow-y-auto">
+                        {userList?.data
+                          ?.filter((user) =>
+                            user.username
+                              .toLowerCase()
+                              .includes(searchTerm.toLowerCase())
+                          )
+                          .map((user) => (
+                            <label
+                              key={user._id}
+                              className="flex items-center justify-between p-3 hover:bg-gray-50 transition-colors border-b last:border-b-0"
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div className="avatar placeholder">
+                                  <div className="bg-neutral-focus text-neutral-content rounded-full w-8">
+                                    <span className="text-xs">
+                                      {user.username.charAt(0).toUpperCase()}
+                                    </span>
+                                  </div>
+                                </div>
+                                <span className="font-medium">
+                                  {user.username}
+                                </span>
+                              </div>
+                              <input
+                                type="checkbox"
+                                checked={flow.allowedSpecificUserToRequest?.includes(
+                                  user._id.toString()
+                                )}
+                                onChange={() => {
+                                  setFlow((prevFlow) => ({
+                                    ...prevFlow,
+                                    allowedSpecificUserToRequest:
+                                      prevFlow?.allowedSpecificUserToRequest?.includes(
+                                        user._id.toString()
+                                      )
+                                        ? prevFlow?.allowedSpecificUserToRequest?.filter(
+                                            (id) => id !== user._id.toString()
+                                          )
+                                        : [
+                                            ...(prevFlow?.allowedSpecificUserToRequest ||
+                                              []),
+                                            user._id.toString(),
+                                          ],
+                                  }));
+                                }}
+                                className="checkbox checkbox-primary"
+                              />
+                            </label>
+                          ))}
+                        {userList?.data?.length === 0 && (
+                          <div className="text-center p-4 text-gray-500">
+                            No users available
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Department Mode Content */}
+            {flow.mode === "department" && (
+              <div className="card bg-base-100 shadow-sm">
+                <div className="card-body">
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-semibold text-lg">
+                        Select Departments
+                      </span>
+                    </label>
+                    <div className="alert alert-info mb-4">
+                      <div>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="stroke-current flex-shrink-0 h-6 w-6"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                          />
+                        </svg>
+                        <span>
+                          In department mode, only users from selected
+                          departments can initiate requests.
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="relative mb-4">
+                      <input
+                        type="text"
+                        placeholder="Search departments..."
+                        className="input input-bordered w-full pl-10"
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 absolute left-3 top-3 text-gray-400"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+
+                    <div className="border rounded-lg overflow-hidden">
+                      <div className="max-h-64 overflow-y-auto">
+                        {departments?.data
+                          ?.filter((dept) =>
+                            dept.name
+                              .toLowerCase()
+                              .includes(searchTerm.toLowerCase())
+                          )
+                          .map((dept) => (
+                            <label
+                              key={dept._id}
+                              className="flex items-center justify-between p-3 hover:bg-gray-50 transition-colors border-b last:border-b-0"
+                            >
+                              <div className="flex items-center space-x-3">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-5 w-5 text-gray-500"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                <span className="font-medium">{dept.name}</span>
+                              </div>
+                              <input
+                                type="checkbox"
+                                checked={flow.allowedDepartmentToRequest?.includes(
+                                  dept._id.toString()
+                                )}
+                                onChange={() => {
+                                  setFlow((prevFlow) => ({
+                                    ...prevFlow,
+                                    allowedDepartmentToRequest:
+                                      prevFlow.allowedDepartmentToRequest?.includes(
+                                        dept._id.toString()
+                                      )
+                                        ? prevFlow.allowedDepartmentToRequest?.filter(
+                                            (id) => id !== dept._id.toString()
+                                          )
+                                        : [
+                                            ...(prevFlow.allowedDepartmentToRequest ||
+                                              []),
+                                            dept._id.toString(),
+                                          ],
+                                  }));
+                                }}
+                                className="checkbox checkbox-primary"
+                              />
+                            </label>
+                          ))}
+                        {departments?.data?.length === 0 && (
+                          <div className="text-center p-4 text-gray-500">
+                            No departments available
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div className="divider">Flow Request</div>

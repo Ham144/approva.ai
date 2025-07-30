@@ -7,6 +7,7 @@ import authenticate from "../middlewares/authenticate.js";
 import Org from "../models/Organization.model.js";
 import authorize from "../middlewares/authorize.js";
 import Department from "../models/Department.model.js";
+import jwt from "jsonwebtoken";
 
 const router = Router();
 
@@ -570,10 +571,10 @@ router.put(
       });
     }
 
-    if (user.authMethod == "supertenant") {
+    if (user.role == "supertenant") {
       return res.status(400).json({
         success: false,
-        message: "User supertenant masih belum bisa diedit seperti user lain.",
+        message: "User supertenant tidak boleh diedit seperti user lain.",
       });
     }
 
@@ -618,7 +619,7 @@ router.put(
       if (!orgDB.owners.includes(user._id)) {
         orgDB.owners.push(user._id);
       }
-    } else if (role === "member") {
+    } else if (role === "member" || role === "viewer") {
       // Hapus dari owners jika ada
       orgDB.owners = orgDB.owners.filter(
         (ownerId) => ownerId.toString() !== user._id.toString()

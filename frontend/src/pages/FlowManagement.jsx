@@ -1,7 +1,14 @@
 import PengelolaSideBarMenu from "@/components/PengelolasSideBarMenu";
 import flowApi from "@/api/flowApi";
 import { useQuery } from "@tanstack/react-query";
-import { AudioWaveform, GitPullRequest, LayoutDashboard } from "lucide-react";
+import {
+  AudioWaveform,
+  Building,
+  GitPullRequest,
+  Globe,
+  Key,
+  LayoutDashboard,
+} from "lucide-react";
 import { useNavigate } from "react-router";
 import ActionFlowModal from "@/components/ActionFlowModal";
 import { useState } from "react";
@@ -42,6 +49,7 @@ export default function FlowManagement() {
                     Didesain Oleh
                   </th>
                   <th className="p-4 sm:p-5 whitespace-nowrap">Department</th>
+                  <th className="p-4 sm:p-5 whitespace-nowrap">Mode</th>
                 </tr>
               </thead>
               <tbody>
@@ -92,7 +100,7 @@ export default function FlowManagement() {
                             </span>
                           )}
                         </div>
-                      </td>{" "}
+                      </td>
                       <td className="p-4 sm:p-5">
                         <div className="flex flex-wrap gap-2">
                           {flow?.isAllowanceModeRequest ? (
@@ -110,6 +118,40 @@ export default function FlowManagement() {
                             </span>
                           )}
                         </div>
+                      </td>
+                      <td className="p-4 sm:p-5">
+                        {flow?.mode ? (
+                          <div className="flex items-center gap-2">
+                            {flow.mode === "public" && (
+                              <>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                  <Globe />
+                                  Public
+                                </span>
+                              </>
+                            )}
+                            {flow.mode === "private" && (
+                              <>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                                  <Key />
+                                  Private
+                                </span>
+                              </>
+                            )}
+                            {flow.mode === "department" && (
+                              <>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                  <Building />
+                                  Department
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 dark:text-gray-500">
+                            -
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))

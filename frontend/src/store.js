@@ -14,6 +14,9 @@ export const useEditor = create((set) => {
     request: [],
     status: [],
     isAllowanceModeRequest: false,
+    allowedDepartmentToRequest: [],
+    allowedSpecificUserToRequest: [],
+    mode: "public",
   };
 
   return {

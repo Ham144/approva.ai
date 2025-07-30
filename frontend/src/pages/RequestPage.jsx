@@ -7,7 +7,7 @@ import { FlowStatusModal } from "@/components/StatusPreviewModal";
 import { useUserInfo } from "@/store";
 
 export const initialFilterRequestPage = {
-  isMyDepartmentOnly: true,
+  forMe: true,
 };
 
 export default function RequestPage() {
@@ -20,44 +20,12 @@ export default function RequestPage() {
 
   const { data: flowList } = useQuery({
     queryKey: ["flows", searchKey],
-    queryFn: () => flowApi.getAllFlowNameAndDesc(searchKey),
+    queryFn: () => flowApi.getAllFlowNameAndDescForRequest(searchKey, filter),
   });
 
-  const filteredFlows = useMemo(() => {
-    const key = searchKey.toLowerCase();
-
-    return flowList?.data?.filter((flow) => {
-      console.log(flow);
-      // 1. Logika filter 'isMyDepartmentOnly'
-      if (filter.isMyDepartmentOnly) {
-        if (
-          flow.isAllowanceModeRequest &&
-          flow.allowedDepartmentToRequest.some(
-            (dep) => dep._id === userInfo?.department?._id
-          )
-        ) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-
-      return (
-        flow.title.toLowerCase().includes(key) ||
-        flow.desc.toLowerCase().includes(key)
-      );
-    });
-  }, [searchKey, flowList, filter, userInfo]); // Tambahkan userInfo sebagai dependency
   const closeStatusModal = () => {
     setSelectedFlow(null);
   };
-
-  const isForYou = (flow) =>
-    !flow?.isAllowanceModeRequest ||
-    (flow?.isAllowanceModeRequest &&
-      flow?.allowedDepartmentToRequest?.some(
-        (dep) => dep?._id === userInfo?.department?._id
-      ));
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
@@ -111,36 +79,20 @@ export default function RequestPage() {
           onClick={() =>
             setFilter((prev) => ({
               ...prev,
-              isMyDepartmentOnly: false,
+              forMe: true,
             }))
           }
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-            !filter.isMyDepartmentOnly
-              ? "bg-blue-100 text-blue-700 border border-blue-200 shadow-inner"
-              : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-          }`}
-        >
-          Semua flow
-        </button>
-
-        <button
-          onClick={() =>
-            setFilter((prev) => ({
-              ...prev,
-              isMyDepartmentOnly: true,
-            }))
-          }
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-            filter.isMyDepartmentOnly
+            filter.forMe
               ? "bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-inner"
               : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
           }`}
         >
-          Departemen Saya
+          Untuk saya
         </button>
       </div>
       <div className="flex flex-col gap-y-3 pb-10">
-        {filteredFlows?.length === 0 ? (
+        {flowList?.data?.length === 0 ? (
           <div className="md:col-span-2 lg:col-span-2 bg-gray-50 p-10 rounded-xl shadow-inner border border-gray-200 text-center">
             <p className="text-xl font-semibold text-gray-500">
               Tidak ada alur yang ditemukan.
@@ -150,12 +102,10 @@ export default function RequestPage() {
             </p>
           </div>
         ) : (
-          filteredFlows?.map((flow) => (
+          flowList?.data?.map((flow) => (
             <div
               key={flow._id}
-              className={`${
-                isForYou(flow) ? "bg-white" : "bg-gray-200"
-              } relative  border border-gray-200 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden group cursor-pointer`}
+              className={`relative  border border-gray-200 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden group cursor-pointer`}
             >
               {/* Hover Overlay */}
               <div className="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl z-0"></div>
@@ -269,11 +219,7 @@ export default function RequestPage() {
         selectedFlow={selectedFlow}
         onClose={closeStatusModal}
       />
-      <ModalOption
-        key={"modalactionrequestlist"}
-        selectedFlow={selectedFlow}
-        isforYou={isForYou}
-      />
+      <ModalOption key={"modalactionrequestlist"} selectedFlow={selectedFlow} />
     </div>
   );
 }
