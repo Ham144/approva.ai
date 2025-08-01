@@ -29,12 +29,15 @@
 [x] add: tipe select di table
 [x] fix: auto scroll to buggy pas klik malah ke atas
 [x] process page ga bisa diakses oleh member
-[x] add: penambahan tipe input : keterangan dan textarea
 [x] modify: buat tab frontend di request page [my departement, all]
+[x] add: penambahan tipe input : keterangan dan textarea
 [x] add: tab navigasi cepat status cepat di flow editor
 [x] add: tab navigasi cepat status cepat di create editor (lebih deskriptif)
-[x] add: buat level user viewer (yang bisa request dan melihat semua in-progress request)
-[x] modify: user level member hanya bisa melihat on-progress departementnya sendiri
+[x] add: buat level baru "viewer" (yang bisa request dan melihat semua in-progress request)
+[x] modify: user level "member" hanya bisa melihat on-progress departementnya sendiri
 [x] add : tambah fitur allowedSpecificUserToRequest untuk benar2 spesifik user
 [x] http -> https certbot
+[] modify: penyempurnaan tipe helper
+[] fix: auto pindah departement jika di LDAP berubah
+[] pindah perusahaan satu kli klik
 [] fix: manajemen opsi sumber data tidak bisa update

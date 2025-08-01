@@ -6,7 +6,7 @@ import {
   CheckCircle,
   ChevronDown,
 } from "lucide-react";
-import { APP_DESC } from "@/api/constant";
+import { APP_DESC, APP_NAME } from "@/api/constant";
 import { useNavigate } from "react-router-dom";
 import { useUserInfo } from "@/store";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -67,9 +67,7 @@ const Home = () => {
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             <span className="text-xs font-medium text-gray-600">LIVE BETA</span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Flexible<span className="text-blue-600">Flow</span>
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{APP_NAME}</h1>
           <p className="text-gray-600 max-w-2xl mx-auto">{APP_DESC}</p>
         </div>
 

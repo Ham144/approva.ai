@@ -9,7 +9,7 @@ export const BASE_URL = NODE_ENV == "production" ? PROD_URL : DEV_URL;
 
 export const siteKeyCloudflare = "0x4AAAAAABm0ajGlobtbdIIR";
 
-export const APP_NAME = "Flex Flow CSI";
+export const APP_NAME = "E-Form mycsi";
 export const APP_DESC =
   "Sistem Workflow tracking status dan form approval yang flexible by CSI";
 export const NAMAPERUSAHAAN = "PT. Catur Sukses Internasional";

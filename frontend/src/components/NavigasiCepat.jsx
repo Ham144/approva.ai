@@ -9,7 +9,7 @@ export const NavigasiCepat = ({ flow }) => {
       <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3 py-1.5 rounded-md border border-gray-200">
         Navigasi Cepat
       </div>
-      <div className="sticky top-4 space-y-1 max-h-80 overflow-y-auto">
+      <div className="sticky top-4 space-y-1 max-h-screen overflow-y-auto">
         {/* Header */}
 
         {/* Properti Flow */}

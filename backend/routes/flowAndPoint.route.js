@@ -322,7 +322,9 @@ router.get("/list/forRequest", async (req, res) => {
     }
 
     const rawList = await FlowAndPoint.find(query)
-      .select("title desc isAllowanceModeRequest designedBy") // ⚠️ HAPUS allowedDepartmentToRequest dari sini
+      .select(
+        "title desc isAllowanceModeRequest designedBy mode allowedDepartmentToRequest allowedSpecificUserToRequest"
+      ) // ⚠️ HAPUS allowedDepartmentToRequest dari sini
       .populate({
         path: "status",
         populate: {
@@ -338,32 +340,31 @@ router.get("/list/forRequest", async (req, res) => {
 
     const flowListFiltered = rawList.filter((template) => {
       const userId = req.user?._id?.toString();
-      const department = req.user?.department;
+      const department = req.user?.department?.toString?.();
 
-      if (
-        template.mode === "private" ||
-        template.isAllowanceModeRequest === "true"
-      ) {
+      if (template.mode === "private") {
         return (
           Array.isArray(template.allowedSpecificUserToRequest) &&
           template.allowedSpecificUserToRequest.includes(userId)
         );
       }
 
-      if (
-        template.mode === "department" ||
-        template.isAllowanceModeRequest == "true"
-      ) {
+      if (template.mode === "department") {
+        const userDeptId = department?.toString?.();
         return (
           Array.isArray(template.allowedDepartmentToRequest) &&
-          template.allowedDepartmentToRequest.includes(department)
+          template.allowedDepartmentToRequest.some(
+            (dept) => dept?._id?.toString?.() === userDeptId
+          )
         );
       }
 
-      if (template.mode === "public" || template.isAllowanceModeRequest) {
+      // Sisanya, default ke public
+      if (template.mode === "public") {
         return true;
       }
 
+      // Opsional: fallback jika tidak ada mode
       return false;
     });
 
@@ -658,6 +659,7 @@ router.post("/duplicate/:_id", async (req, res) => {
       isAllowanceModeRequest: existingFlow.isAllowanceModeRequest,
       allowedDepartmentToRequest: existingFlow.allowedDepartmentToRequest,
       org: req.user.org,
+      mode: existingFlow?.mode,
     });
 
     return res.json({
