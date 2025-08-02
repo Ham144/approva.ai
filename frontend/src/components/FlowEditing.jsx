@@ -15,6 +15,7 @@ import {
   Building,
   BookHeart,
   Search,
+  Copy,
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { useEditor } from "../store";
@@ -181,6 +182,25 @@ export default function FlowEditing() {
     ];
 
     setFlow({ ...flow, request: requestArr });
+  };
+
+  const handleDuplicateStatus = (idx) => {
+    const newStatusList = [...flow.status];
+
+    const requirementCopy = newStatusList[idx].requirements.map((req) => ({
+      ...req,
+      _id: uuidv4(),
+    }));
+
+    const newStatus = {
+      _id: uuidv4(),
+      title: newStatusList[idx].title,
+      desc: newStatusList[idx].desc,
+      authorized: newStatusList[idx].authorized,
+      requirements: requirementCopy,
+    };
+    newStatusList.splice(idx + 1, 0, newStatus);
+    setFlow({ ...flow, status: newStatusList });
   };
 
   useEffect(() => {
@@ -520,58 +540,6 @@ export default function FlowEditing() {
               </div>
             )}
           </div>
-
-          {flow.isAllowanceModeRequest && (
-            <div className="form-control mb-6">
-              <label className="label">
-                <span className="label-text text-gray-700 font-medium">
-                  Select Department
-                </span>
-              </label>
-              <div className="flex flex-col gap-2 p-3 border border-gray-200 rounded-lg max-h-48 overflow-y-auto bg-gray-50">
-                {departments?.data?.map((dep) => (
-                  <label
-                    key={dep._id}
-                    className="label cursor-pointer p-2 rounded-md hover:bg-blue-50 transition-colors duration-150"
-                  >
-                    <span className="label-text text-gray-800">{dep.name}</span>
-                    <input
-                      type="checkbox"
-                      checked={flow.allowedDepartmentToRequest?.includes(
-                        dep._id.toString()
-                      )}
-                      onChange={() => {
-                        setFlow((prevFlow) => {
-                          const current = Array.isArray(
-                            prevFlow?.allowedDepartmentToRequest
-                          )
-                            ? prevFlow?.allowedDepartmentToRequest
-                            : [];
-
-                          const depId = dep._id.toString();
-                          const next = current.includes(depId)
-                            ? current.filter((id) => id !== depId)
-                            : [...current, depId];
-
-                          return {
-                            ...prevFlow,
-                            allowedDepartmentToRequest: next,
-                          };
-                        });
-                      }}
-                      className="checkbox checkbox-primary"
-                    />
-                  </label>
-                ))}
-                {/* Optional: No users message */}
-                {departments?.data?.length === 0 && (
-                  <span className="text-center text-gray-500 py-2">
-                    No departments available to add.
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       </div>
       <div className="divider">Flow Request</div>
@@ -613,7 +581,7 @@ export default function FlowEditing() {
         + Tambah Input
       </button>
       <div className="divider">Flow Status</div>
-      <div className="flex flex-col gap-2 p-6 bg-gradient-to-r from-blue-300 to to-blue-500 rounded-lg">
+      <div className="flex flex-col gap-2 p-6 bg-gradient-to-r bg-indigo-300 rounded-md unded-lg">
         {flow.status?.map((stat, i) => (
           <div
             id={stat?._id}
@@ -622,7 +590,8 @@ export default function FlowEditing() {
           >
             <div className="flex justify-between">
               <h2 className="font-bold">{stat.title || `Status #${i + 1}`}</h2>
-              <div className="flex gap-x-2">
+              <div className="flex gap-2">
+                {/* Delete Button */}
                 <button
                   onClick={() => {
                     const isConfirm = window.confirm(
@@ -636,15 +605,46 @@ export default function FlowEditing() {
                       });
                     }
                   }}
-                  className="btn hover:bg-red-400 rounded-lg"
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors hover:text-red-700"
+                  title="Delete process"
                 >
-                  <Trash size={30} />
+                  <Trash className="w-5 h-5" />
                 </button>
-                <button className="btn" onClick={() => handleMoveStatusDown(i)}>
+
+                {/* Move Down Button - Fixed */}
+                <button
+                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors hover:text-blue-600"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent event bubbling
+                    handleMoveStatusDown(i);
+                  }}
+                  title="Move down"
+                >
                   <ArrowDownFromLine className="w-5 h-5" />
                 </button>
-                <button className="btn" onClick={() => handleMoveStatusUp(i)}>
+
+                {/* Move Up Button - Fixed */}
+                <button
+                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors hover:text-blue-600"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent event bubbling
+                    handleMoveStatusUp(i);
+                  }}
+                  title="Move up"
+                >
                   <ArrowUpFromLine className="w-5 h-5" />
+                </button>
+
+                {/* Duplicate Button */}
+                <button
+                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors hover:text-green-600"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent event bubbling
+                    handleDuplicateStatus(i);
+                  }}
+                  title="Duplicate"
+                >
+                  <Copy className="w-5 h-5" />
                 </button>
               </div>
             </div>

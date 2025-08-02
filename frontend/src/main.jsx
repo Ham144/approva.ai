@@ -26,6 +26,7 @@ import RequestEditPage from "./pages/RequestEditPage";
 import OnlyPreview from "./pages/OnlyPreview";
 import SuperTenantPage from "./pages/SuperTenantPage";
 import DepartmentManagement from "./pages/DepartmentManagement";
+import LibraryManagement from "./pages/LibraryManagement";
 // import RegisterPage from "./pages/RegisterPage";
 
 const router = createBrowserRouter(
@@ -79,6 +80,10 @@ const router = createBrowserRouter(
         <Route
           path="/management/flow/create/design"
           element={<FlowDesignCreate />}
+        />
+        <Route
+          path="/management/LibraryManagement"
+          element={<LibraryManagement />}
         />
         <Route path="/all_account" element={<AllAccounts />} />
       </Route>

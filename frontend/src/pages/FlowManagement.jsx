@@ -4,23 +4,36 @@ import { useQuery } from "@tanstack/react-query";
 import {
   AudioWaveform,
   Building,
-  GitPullRequest,
   Globe,
   Key,
   LayoutDashboard,
+  Search,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import ActionFlowModal from "@/components/ActionFlowModal";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 export default function FlowManagement() {
   const navigate = useNavigate();
   const [selectedFlow, setSelectedFlow] = useState();
+  const [search, setSearch] = useState("");
+  const [filteredFlow, setFilteredFlow] = useState([]);
 
   const { data: flowDataList } = useQuery({
     queryKey: ["flows"],
     queryFn: async () => await flowApi.getAllFlowNameAndDesc(),
   });
+  useEffect(() => {
+    if (search) {
+      const filtered = flowDataList?.data?.filter((flow) =>
+        flow.title?.toLowerCase().includes(search?.toLowerCase())
+      );
+      setFilteredFlow(filtered ?? []);
+    } else {
+      setFilteredFlow(flowDataList?.data ?? []);
+    }
+  }, [search, flowDataList]);
 
   return (
     <PengelolaSideBarMenu>
@@ -39,6 +52,31 @@ export default function FlowManagement() {
         {/* Kontainer Utama untuk Tabel dan Tombol - ini yang akan menyatu */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border border-gray-200 dark:border-gray-700">
           {/* Tabel */}
+
+          <div className="flex px-4 justify-between items-center">
+            <div className="relative mt-3 w-96 mb-4">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari flow berdasarkan nama atau deskripsi"
+                className="w-full px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800"
+              />
+              <Search className="absolute top-3 right-3 w-5 h-5 text-gray-500 dark:text-gray-400" />
+            </div>
+            <button
+              onClick={() => navigate("/management/flow/create/design")}
+              className="
+              btn bg-blue-600 hover:bg-blue-700 text-white font-semibold
+              shadow-lg transition-all duration-300 ease-in-out
+              flex items-center gap-2 px-6 py-3 rounded-lg
+              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+            >
+              <AudioWaveform className="w-5 h-5" />
+              Buat Flow Baru
+            </button>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="table w-full text-left">
               <thead>
@@ -53,8 +91,8 @@ export default function FlowManagement() {
                 </tr>
               </thead>
               <tbody>
-                {flowDataList?.data?.length > 0 ? (
-                  flowDataList.data.map((flow, index) => (
+                {filteredFlow?.length > 0 ? (
+                  filteredFlow.map((flow, index) => (
                     <tr
                       key={flow._id || index}
                       className={`
@@ -168,21 +206,6 @@ export default function FlowManagement() {
                 )}
               </tbody>
             </table>
-          </div>
-
-          {/* Tombol "Flow Baru" - menyatu dengan tabel */}
-          <div className="p-4 sm:p-5 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-700 flex justify-end">
-            <button
-              onClick={() => navigate("/management/flow/create/design")}
-              className="
-              btn bg-blue-600 hover:bg-blue-700 text-white font-semibold
-              shadow-lg transition-all duration-300 ease-in-out
-              flex items-center gap-2 px-6 py-3 rounded-lg
-              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-            >
-              <AudioWaveform className="w-5 h-5" />
-              Buat Flow Baru
-            </button>
           </div>
         </div>
         <ActionFlowModal key={"action-flow"} selectedFlow={selectedFlow} />

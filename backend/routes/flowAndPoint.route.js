@@ -5,6 +5,7 @@ import FlowInstance from "../models/FlowInstance.model.js";
 import UserRefrensi from "../models/User.model.js";
 import mongoose from "mongoose";
 import Department from "../models/Department.model.js";
+import authorize from "../middlewares/authorize.js";
 
 const router = Router();
 
@@ -260,7 +261,7 @@ router.post("/createFlow", async (req, res) => {
   }
 });
 
-router.get("/list/forOwner", async (req, res) => {
+router.get("/list/forOwner", authorize, async (req, res) => {
   const { searchKey } = req.query;
 
   try {
@@ -371,6 +372,38 @@ router.get("/list/forRequest", async (req, res) => {
     return res.status(200).json({
       message: "Berhasil mengambil data flow",
       data: flowListFiltered,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+});
+
+router.get("/list/forLibrary", authorize, async (req, res) => {
+  try {
+    const flowList = await FlowAndPoint.find({
+      org: { $ne: req.user.org },
+    })
+      //tanpa scope org
+      .select("title desc isAllowanceModeRequest designedBy mode") // ⚠️ HAPUS allowedDepartmentToRequest dari sini
+      .populate({
+        path: "status",
+        populate: {
+          path: "authorized",
+          model: "UserRefrensi",
+          select: "_id username displayName",
+        },
+      })
+      .populate("designedBy", "username")
+      .populate("allowedDepartmentToRequest", "_id name") // ✅ populate ulang dengan field yg benar
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      message: "Berhasil mengambil data flow",
+      data: flowList,
     });
   } catch (error) {
     return res.status(500).json({

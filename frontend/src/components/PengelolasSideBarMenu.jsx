@@ -10,12 +10,18 @@ import {
   Crown,
   Plus,
   Hotel,
+  ShoppingBag,
 } from "lucide-react";
 import { useUserInfo } from "@/store";
 
 export default function PengelolaSideBarMenu({ children }) {
   const menuItems = [
     { name: "Flow Manager", path: "/management/flow", icon: GitPullRequest },
+    {
+      name: "Library",
+      path: "/management/LibraryManagement",
+      icon: ShoppingBag,
+    },
     {
       name: "Flexibse Source Data Options",
       path: "/management/sourceData/options",

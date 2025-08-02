@@ -164,31 +164,19 @@ export default function PreviewFlow({
           <div
             ref={(el) => (inputRefs.current[input._id] = el)}
             id={input._id}
-            className="
-        my-6 p-6 rounded-lg 
-        border-l-4 border-info border-opacity-50
-        transform transition-all duration-300 ease-in-out
-        hover:border-opacity-100 hover:-translate-y-1 hover:shadow-lg
-        animate-[softbounce_3s_ease-in-out_infinite]
-        motion-reduce:animation-none
-      "
+            className="bg-white p-6 rounded-lg border border-gray-200 my-4"
           >
-            <h2
-              className="
-        font-light text-3xl text-info text-center mb-4
-        transition-transform duration-300 hover:scale-[1.02]
-      "
-            >
-              {input.title}
-            </h2>
-            <p
-              className="
-        text-gray-600 text-justify leading-relaxed tracking-wide
-        transition-all duration-300 hover:tracking-wider
-      "
+            {input.title && (
+              <h2 className="text-black font-medium text-lg mb-3">
+                {input.title}
+              </h2>
+            )}
+            <div
+              className="text-black whitespace-pre-wrap font-sans leading-normal"
+              style={{ wordBreak: "break-word" }}
             >
               {input.help}
-            </p>
+            </div>
           </div>
         );
       case "number": //✅

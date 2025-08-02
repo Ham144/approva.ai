@@ -37,7 +37,12 @@
 [x] modify: user level "member" hanya bisa melihat on-progress departementnya sendiri
 [x] add : tambah fitur allowedSpecificUserToRequest untuk benar2 spesifik user
 [x] http -> https certbot
-[] modify: penyempurnaan tipe helper
-[] fix: auto pindah departement jika di LDAP berubah
+[x] modify: penyempurnaan tipe helper
+[x] modify: search bar di list management flow
+[x] modify: button "Buat Flow Baru" pindah ke atas
+[x] add : copy status
+[x] add : library template
+[] add: Rollback 1 langkah (nama fitur: redo) (rollback mundur approval sebelumnya / target approval lainnya)
 [] pindah perusahaan satu kli klik
-[] fix: manajemen opsi sumber data tidak bisa update
+[] fix: auto pindah departement jika di LDAP berubah
+[]Copy flow antar organisasi & copy template (approval)

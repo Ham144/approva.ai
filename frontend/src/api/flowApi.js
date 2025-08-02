@@ -55,6 +55,10 @@ const flowApi = {
     const res = await axiosInstance.post(`/api/flow/duplicate/${id}`);
     return res.data;
   },
+  getAllFlowForLibrary: async () => {
+    const res = await axiosInstance.get(`/api/flow/list/forLibrary`);
+    return res.data;
+  },
   deleteFlow: async (id) => {
     const res = await axiosInstance.delete(`/api/flow/delete/${id}`);
     return res.data;
