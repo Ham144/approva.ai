@@ -15,6 +15,13 @@ import fileRoutes from "./routes/file.route.js";
 import authorize from "./middlewares/authorize.js";
 import departmentRoutes from "./routes/department.route.js";
 import bulkRoutes from "./routes/bulk.route.js";
+import fs from 'fs'
+
+//initilize /uploads dir because its needed
+const uploadPath = path.join(process.cwd(), 'uploads')
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath, { recursive: true })
+}
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -64,3 +71,4 @@ app.use("/api/bulk", authenticate, authorize, bulkRoutes);
 
 const port = process.env.PORT;
 app.listen(port, () => console.log("Server Berjalan di port "));
+
