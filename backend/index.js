@@ -30,12 +30,9 @@ const isProduction = process.env.NODE_ENV === "production";
 
 const corsOrigin = isProduction
   ? [
-      "https://e-form.mycsi.net",
-      "http://e-form.mycsi.net",
-      "http://192.168.169.12:5173",
-      process.env.FRONT_END
-    ]
-  : ["http://192.168.169.12:5173"];
+    process.env.FRONT_END
+  ]
+  : ["http://192.168.169.12:3000", "http://192.168.169.12:5173"];
 
 const app = express();
 
