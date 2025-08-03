@@ -49,6 +49,13 @@ app.use(
 
 // Serve static files from uploads directory
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+// Untuk serve file statis dari frontend/dist
+app.use(express.static(path.join(__dirname, "..", "frontend", "dist")));
+
+// Untuk SPA fallback (route selain API, dsb.)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "frontend", "dist", "index.html"));
+});
 
 //database
 connectDB();
@@ -71,4 +78,5 @@ app.use("/api/bulk", authenticate, authorize, bulkRoutes);
 
 const port = process.env.PORT;
 app.listen(port, () => console.log("Server Berjalan di port "));
+
 
