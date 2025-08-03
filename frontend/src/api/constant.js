@@ -5,9 +5,12 @@ if (import.meta.env.VITE_BACKEND_URL) {
   PROD_URL = import.meta.env.VITE_BACKEND_URL
 } else { PROD_URL = "https://e-form.mycsi.net" }
 
-export const NODE_ENV = "development";
-// export const NODE_ENV = "production";
+// export let NODE_ENV = "development";
+export const NODE_ENV = "production";
 
+if (import.meta.env.VITE_DEMO) {
+  NODE_ENV = "production"
+}
 export const BASE_URL = NODE_ENV == "production" ? PROD_URL : DEV_URL;
 
 export let siteKeyCloudflare = import.meta.env.VITE_TURNSTILE_SITE_KEY ?? "0x4AAAAAABm0ajGlobtbdIIR";
