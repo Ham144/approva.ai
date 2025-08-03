@@ -1,6 +1,6 @@
 const DEV_URL = "http://192.168.169.12:3000";
 // const PROD_URL = "http://192.168.169.22:3000";
-const PROD_URL = "https://e-form.mycsi.net";
+const PROD_URL = import.meta.env.VITE_BACKEND_URL || "https://e-form.mycsi.net"
 
 // export const NODE_ENV = "development";
 export const NODE_ENV = "production";
