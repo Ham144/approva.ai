@@ -16,7 +16,7 @@ import authorize from "./middlewares/authorize.js";
 import departmentRoutes from "./routes/department.route.js";
 import bulkRoutes from "./routes/bulk.route.js";
 import fs from 'fs'
-import path from "path"
+
 
 const __dirname = path.resolve()
 
@@ -32,8 +32,8 @@ const corsOrigin = isProduction
   ? [
       "https://e-form.mycsi.net",
       "http://e-form.mycsi.net",
-      "http://192.168.169.22",
       "http://192.168.169.12:5173",
+      process.env.FRONT_END
     ]
   : ["http://192.168.169.12:5173"];
 
@@ -81,6 +81,7 @@ app.use("/api/bulk", authenticate, authorize, bulkRoutes);
 
 const port = process.env.PORT;
 app.listen(port, () => console.log("Server Berjalan di port "));
+
 
 
 
