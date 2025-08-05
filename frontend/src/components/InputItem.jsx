@@ -66,9 +66,9 @@ function InputItem({ input, index, onChange, deleteInput, handleMoveRequest }) {
 			return res;
 		},
 		enabled:
-			input?.tipe === "select" ||
-			input?.tipe === "multipleCheckbox" ||
-			input?.tipe === "table",
+			input.tipe === "select" ||
+			input.tipe === "multipleCheckbox" ||
+			input.tipe === "table",
 	});
 
 	const { data: sourceDataPreview, error: sourceDataPreviewErr } = useQuery({
@@ -178,10 +178,7 @@ function InputItem({ input, index, onChange, deleteInput, handleMoveRequest }) {
 							value={input?.tipe || "text"} // Default ke 'text' jika belum ada
 							onChange={(e) => {
 								const newTipe = e.target.value;
-								if (
-									input?.tipe === "multipleCheckbox" &&
-									newTipe === "select"
-								) {
+								if (input.tipe === "multipleCheckbox" && newTipe === "select") {
 									onChange({
 										...input,
 										tipe: newTipe,

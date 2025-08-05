@@ -57,7 +57,7 @@ export default function PreviewFlow({
 		if (!jsonFlow) return;
 		const init = {};
 		flatInputs
-			.filter((i) => i?.tipe === "table")
+			.filter((i) => i.tipe === "table")
 			.forEach((i) => {
 				const keysLength = Array.isArray(i.table?.keys)
 					? i.table.keys.length
@@ -82,7 +82,7 @@ export default function PreviewFlow({
 			disabled: isOnlyPreview || isDisabled,
 		};
 
-		switch (input?.tipe) {
+		switch (input.tipe) {
 			// TEXT
 			case "text":
 				return (
@@ -249,7 +249,7 @@ export default function PreviewFlow({
 						{isDisabled ? (
 							// Tampilkan file yang sudah diisi dalam mode preview
 							<>
-								{input?.tipe === "image" &&
+								{input.tipe === "image" &&
 									(requestData[input._id] ||
 										(statuses[statusIndex]?.requirementsData || {})[
 											input._id
@@ -266,7 +266,7 @@ export default function PreviewFlow({
 											className="object-contain rounded-md mx-auto p-2 max-h-60"
 										/>
 									)}
-								{input?.tipe === "pdf" &&
+								{input.tipe === "pdf" &&
 									(requestData[input._id] ||
 										(statuses[statusIndex]?.requirementsData || {})[
 											input._id
@@ -296,7 +296,7 @@ export default function PreviewFlow({
 							<>
 								<input
 									type="file"
-									accept={input?.tipe === "image" ? "image/*" : ".pdf"}
+									accept={input.tipe === "image" ? "image/*" : ".pdf"}
 									{...baseProps}
 									className="file-input file-input-bordered w-full file-input-primary"
 									onChange={async (e) => {
@@ -337,7 +337,7 @@ export default function PreviewFlow({
 								)}
 
 								{/* Info file untuk tipe pdf */}
-								{input?.tipe === "pdf" &&
+								{input.tipe === "pdf" &&
 									requestData[input._id] &&
 									typeof requestData[input._id] === "string" && (
 										<p className="text-sm text-gray-600 mt-2">
@@ -523,7 +523,7 @@ export default function PreviewFlow({
 										currentEditingInputID === input._id
 											? "bg-yellow-50 border-l-4 border-yellow-500"
 											: "bg-gray-50"
-									} ${input?.tipe == "helper" && "bg-transparent"}`}
+									} ${input.tipe == "helper" && "bg-transparent"}`}
 								>
 									<label className="block mb-2 font-medium text-gray-700">
 										{input?.tipe != "helper" && input?.title}
