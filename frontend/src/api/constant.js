@@ -5,15 +5,14 @@ if (import.meta.env.VITE_BACKEND_URL) {
   PROD_URL = import.meta.env.VITE_BACKEND_URL;
 }
 
-// export let NODE_ENV = "development";
-export const NODE_ENV = "production";
+// Cek apakah environment ini demo
+const isDemo = !!import.meta.env.VITE_DEMO;
 
-if (import.meta.env.VITE_DEMO) {
-  NODE_ENV = "production";
-}
+// Set NODE_ENV berdasarkan kondisi
+const NODE_ENV = isDemo ? "production" : "production"; // kalau staging perlu beda, bisa ubah sini
 
-export const BASE_URL = NODE_ENV == "production" ? PROD_URL : DEV_URL;
-
+// Final BASE_URL
+export const BASE_URL = NODE_ENV === "production" ? PROD_URL : DEV_URL;
 export let siteKeyCloudflare =
   import.meta.env.VITE_TURNSTILE_SITE_KEY ?? "0x4AAAAAABm0ajGlobtbdIIR";
 
