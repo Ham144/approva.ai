@@ -145,7 +145,7 @@ export default function Login({ className, ...props }) {
 										if (import.meta.env.VITE_DEMO) {
 											setAuthMethod("app");
 											setUsername("admin");
-											setPassword("admin");
+											setPassword("Supertenant144");
 											setSearch("*");
 										} else {
 											setAuthMethod("app");
