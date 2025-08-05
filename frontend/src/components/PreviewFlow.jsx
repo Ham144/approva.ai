@@ -547,7 +547,7 @@ export default function PreviewFlow({
                     {stat.title}
                   </h4>
                   <div className="space-y-5">
-                    {stat.requirements.map((input) => {
+                    {stat?.requirements?.map((input) => {
                       const verdict = statuses[i]?.verdict;
                       const borderColor =
                         verdict === "approved"
@@ -565,12 +565,12 @@ export default function PreviewFlow({
                               ? "bg-yellow-50 border-l-4 border-yellow-500"
                               : "bg-gray-50"
                           } ${
-                            input.tipe == "helper" && "bg-transparent"
+                            input?.tipe == "helper" && "bg-transparent"
                           } ${borderColor}`}
                         >
                           <div className="flex  items-center justify-between mb-2">
                             <label className="block font-medium text-gray-700">
-                              {input.tipe != "helper" && input.title}
+                              {input?.tipe != "helper" && input?.title}
                             </label>
                             {input.isNullable && (
                               <span className="text-xs text-gray-400 italic">

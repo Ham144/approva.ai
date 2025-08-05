@@ -38,6 +38,12 @@ router.post("/request/new", async (req, res) => {
       allowedDepartmentToRequest: { $in: [myDepartment._id] },
     }).lean();
 
+    const isUserPrivateInclude = await FlowAndPoint.findOne({
+      _id: flowTemplateId,
+      org: req.user.org,
+      allowedSpecificUserToRequest: { $in: [userId] },
+    });
+
     const template = await FlowAndPoint.findOne({
       _id: flowTemplateId,
       org: req.user.org,
@@ -50,12 +56,28 @@ router.post("/request/new", async (req, res) => {
       return res.status(400).json({ message: "Flow template tidak ditemukan" });
     }
     //validasi apakah si user boleh untuk buat request
-    if (template.isAllowanceModeRequest && !isDeparmentInclude) {
-      return res.status(400).json({
-        message: "department anda tidak terdaftar untuk membuat request ini",
-      });
+    if (template.isAllowanceModeRequest) {
+      if (template.mode === "private") {
+        if (!isUserPrivateInclude) {
+          return res
+            .status(400)
+            .json({
+              message:
+                "Flow template ini private dan anda tidak memiliki autorisasi untuk melakukan request ini",
+            });
+        }
+      }
+      if (template.mode == "department") {
+        if (!isDeparmentInclude) {
+          return res
+            .status(400)
+            .json({
+              message:
+                "Departmement anda tidak terdaftar untuk melakukan request ini",
+            });
+        }
+      }
     }
-
     // 3. PENYELESAIAN MASALAH UTAMA: Gunakan loop `for...of` untuk validasi
     // Loop `for...of` akan 'menunggu' (pause) pada setiap `await` di dalamnya.
     // Kita juga langsung menggunakan hasil populate, tidak perlu query ke DB lagi.

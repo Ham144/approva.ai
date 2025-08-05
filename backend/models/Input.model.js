@@ -1,10 +1,6 @@
 import mongoose from "mongoose";
 
 export const InputSchema = new mongoose.Schema({
-  // _id: {
-  //   type: String,
-  //   required: true,
-  // },
   title: {
     type: String,
     required: true,
@@ -37,11 +33,6 @@ export const InputSchema = new mongoose.Schema({
     sourceDataList: [mongoose.Schema.Types.ObjectId],
   },
   isNullable: Boolean,
-  org: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Org",
-    required: true,
-  },
 });
 
 const Input = mongoose.model("Input", InputSchema);

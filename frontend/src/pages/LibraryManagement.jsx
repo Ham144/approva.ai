@@ -1,6 +1,6 @@
 import { Search, Copy, Users, Lock, Unlock } from "lucide-react";
 import flowApi from "@/api/flowApi";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import PengelolaSideBarMenu from "@/components/PengelolasSideBarMenu";
 import toast from "react-hot-toast";
@@ -14,6 +14,19 @@ export default function LibraryManagement() {
     queryFn: () => flowApi.getAllFlowForLibrary(),
   });
 
+  const queryClient = useQueryClient();
+  const { mutateAsync: cloneFlow, isPending: cloning } = useMutation({
+    mutationKey: ["flow"],
+    mutationFn: async (id) => await flowApi.cloneFromOtherOrg(id),
+    onSuccess: () => {
+      toast.success("Flow berhasil di clone ke organisasi anda");
+      queryClient.invalidateQueries(["flow", "template"]);
+    },
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || "Gagal Cloning Flow");
+    },
+  });
+
   useEffect(() => {
     if (flowData?.data) {
       const filtered = flowData.data.filter(
@@ -24,12 +37,6 @@ export default function LibraryManagement() {
       setFilteredFlow(filtered);
     }
   }, [search, flowData]);
-
-  const handleCloneFlow = (flowId) => {
-    // Implement your clone logic here
-    console.log("Cloning flow:", flowId);
-    toast("Masih dalam tahap pengembagnana");
-  };
 
   const getAccessBadge = (flow) => {
     if (flow.mode === "private") {
@@ -138,10 +145,17 @@ export default function LibraryManagement() {
 
                 <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
                   <button
-                    onClick={() => handleCloneFlow(flow._id)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      cloneFlow(flow._id);
+                    }}
                     className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-xs hover:shadow-sm"
                   >
-                    <Copy className="w-4 h-4" />
+                    {cloning ? (
+                      <span className="loading loading-ring loading-lg"></span>
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
                     Clone Template
                   </button>
                 </div>

@@ -112,7 +112,6 @@ export async function sendApprovalRequestEmail(
         </p>
   
         <p>Terima kasih atas kerjasama Anda.</p>
-        <p>— CSI</p>
       </div>
     `;
 

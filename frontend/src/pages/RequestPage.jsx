@@ -1,10 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
 import flowApi from "@/api/flowApi";
 import ModalOption from "@/components/ModalOption";
 import { FlowStatusModal } from "@/components/StatusPreviewModal";
-import { useUserInfo } from "@/store";
 
 export const initialFilterRequestPage = {
   forMe: true,
@@ -13,10 +11,7 @@ export const initialFilterRequestPage = {
 export default function RequestPage() {
   const [searchKey, setSearchKey] = useState("");
   const [selectedFlow, setSelectedFlow] = useState(null);
-  const { userInfo } = useUserInfo();
   const [filter, setFilter] = useState(initialFilterRequestPage);
-
-  const navigate = useNavigate();
 
   const { data: flowList } = useQuery({
     queryKey: ["flows", searchKey],
@@ -29,12 +24,6 @@ export default function RequestPage() {
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-      {/* Header Halaman */}
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
-          <span className="text-indigo-600">📄</span> Flow List
-        </h1>
-      </div>
       {/* Area Pencarian dengan Ikon */}
       <div className="relative mb-8">
         <input
@@ -46,7 +35,6 @@ export default function RequestPage() {
         />
         {/* Tambahkan ikon pencarian (misal: dari Heroicons) */}
         <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
-          {/* <MagnifyingGlassIcon className="h-6 w-6" /> */}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-6 w-6"

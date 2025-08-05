@@ -14,6 +14,7 @@ import flowInstanceApi from "@/api/flowInstanceApi";
 import OrgApi from "@/api/orgApi";
 import { switchOrg } from "@/api/authApi";
 import toast from "react-hot-toast";
+import { Boxes } from "@/components/ui/background-boxes";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -59,8 +60,10 @@ const Home = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 px-4 py-12">
-      <div className="max-w-7xl mx-auto">
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-gray-25 to-gray-50 px-4 py-8 sm:px-6 lg:px-8">
+      {/* Background only */}
+      <Boxes className="pointer-events-none" />
+      <div className="max-w-7xl mx-auto max-w-screen overflow-hidden z-10">
         {/* Header with tech badge */}
         <div className="mb-10 text-center">
           <div className="inline-flex items-center gap-2 mb-3 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-gray-200">

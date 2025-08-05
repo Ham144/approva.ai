@@ -12,11 +12,6 @@ router.post("/create", async (req, res) => {
   }
 
   try {
-    if (!Array.isArray(members) || members.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Members harus array dan tidak boleh kosong" });
-    }
     if (!name) {
       return res.status(400).json({ message: "Nama department wajib diisi" });
     }

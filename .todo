@@ -42,7 +42,10 @@
 [x] modify: button "Buat Flow Baru" pindah ke atas
 [x] add : copy status
 [x] add : library template
+[x] beautify the home page
+[x] fix: process page ketendang
+[x] Copy flow antar organisasi & copy template approval
+[x] fix : mode private ga muncul
 [] add: Rollback 1 langkah (nama fitur: redo) (rollback mundur approval sebelumnya / target approval lainnya)
 [] pindah perusahaan satu kli klik
 [] fix: auto pindah departement jika di LDAP berubah
-[]Copy flow antar organisasi & copy template (approval)

@@ -341,12 +341,14 @@ router.get("/list/forRequest", async (req, res) => {
 
     const flowListFiltered = rawList.filter((template) => {
       const userId = req.user?._id?.toString();
-      const department = req.user?.department?.toString?.();
+      const department = req.user?.department?.toString();
 
       if (template.mode === "private") {
         return (
           Array.isArray(template.allowedSpecificUserToRequest) &&
-          template.allowedSpecificUserToRequest.includes(userId)
+          template.allowedSpecificUserToRequest
+            .map((id) => id.toString())
+            .includes(userId)
         );
       }
 
@@ -387,14 +389,12 @@ router.get("/list/forLibrary", authorize, async (req, res) => {
       org: { $ne: req.user.org },
     })
       //tanpa scope org
-      .select("title desc isAllowanceModeRequest designedBy mode") // ⚠️ HAPUS allowedDepartmentToRequest dari sini
+      .select("title desc isAllowanceModeRequest  mode") // ⚠️ HAPUS allowedDepartmentToRequest dari sini
+      .populate({
+        path: "request",
+      })
       .populate({
         path: "status",
-        populate: {
-          path: "authorized",
-          model: "UserRefrensi",
-          select: "_id username displayName",
-        },
       })
       .populate("designedBy", "username")
       .populate("allowedDepartmentToRequest", "_id name") // ✅ populate ulang dengan field yg benar
@@ -726,6 +726,109 @@ router.delete("/delete/:id", async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+    return res.status(500).json({ message: "Terjadi kesalahan server" });
+  }
+});
+
+router.post("/clone-from-other-org/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const existingFlow = await FlowAndPoint.findOne({ _id: id })
+      .select(
+        "title desc isAllowanceModeRequest allowedDepartmentToRequest mode designedBy request status org"
+      )
+      .populate({
+        path: "status.requirements",
+        model: "Input",
+      })
+      .populate({
+        path: "request",
+        populate: [{ path: "sourceData", model: "SourceData" }],
+      })
+      .populate("org", "organizationName");
+
+    if (!existingFlow) {
+      return res.status(404).json({ message: "Flow tidak ditemukan." });
+    }
+
+    const requests = await Promise.all(
+      existingFlow.request.map(async (request) => {
+        const newInput = await Input.create({
+          title: request.title,
+          help: request.help,
+          tipe: request.tipe,
+          isNullable: request.isNullable,
+          sourceData: request.sourceData,
+          table: request.table
+            ? {
+                keys: request.table.keys || [],
+                keysType: request.table.keysType || [],
+                sourceDataList: request.table.sourceDataList || [],
+              }
+            : {},
+          org: req.user.org,
+        });
+        return newInput._id;
+      })
+    );
+
+    const statuses = await Promise.all(
+      existingFlow.status.map(async (status) => {
+        const requirementsIds = await Promise.all(
+          status.requirements.map(async (requirement) => {
+            const newRequirement = await Input.create({
+              title: requirement.title,
+              help: requirement.help,
+              tipe: requirement.tipe,
+              isNullable: requirement.isNullable,
+              sourceData: requirement.sourceData,
+              table: requirement.table
+                ? {
+                    keys: requirement.table.keys || [],
+                    keysType: requirement.table.keysType || [],
+                    sourceDataList: requirement.table.sourceDataList || [],
+                  }
+                : {},
+              org: req.user.org,
+            });
+            return newRequirement._id;
+          })
+        );
+
+        return {
+          title: status.title,
+          desc: status.desc,
+          authorized: [], // kosongkan saat cloning
+          requirements: requirementsIds,
+        };
+      })
+    );
+
+    await FlowAndPoint.create({
+      title:
+        existingFlow.title +
+        " (cloned template from " +
+        existingFlow.org.organizationName +
+        ")",
+      desc: existingFlow.desc,
+      request: requests,
+      status: statuses,
+      designedBy: existingFlow.designedBy,
+      isAllowanceModeRequest: false,
+      allowedDepartmentToRequest: [],
+      allowedSpecificUserToRequest: [],
+      org: req.user.org,
+      mode: "public",
+    });
+
+    return res.json({
+      message:
+        "Flow berhasil di-clone ke organisasi anda dari " +
+        existingFlow.org.organizationName,
+    });
+  } catch (error) {
+    console.error("Clone flow error:", error);
     return res.status(500).json({ message: "Terjadi kesalahan server" });
   }
 });

@@ -7,10 +7,6 @@ import toast, { Toaster } from "react-hot-toast";
 export default function ActionFlowModal({ selectedFlow }) {
   const navigate = useNavigate();
 
-  function handleEdit() {
-    window.location.href = `/management/flow/edit/${selectedFlow?._id}`;
-  }
-
   const queryClient = useQueryClient();
 
   const { mutateAsync: handleDeleteMutation, isPending: deleting } =
@@ -62,14 +58,16 @@ export default function ActionFlowModal({ selectedFlow }) {
         {/* Action Buttons */}
         <div className="flex flex-col gap-4">
           {/* Edit Flow Button */}
-          <button
+          <a
+            href={`/management/flow/edit/${selectedFlow?._id}`}
+            target="_blank"
+            rel="noopener noreferrer"
             className="btn btn-primary w-full text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 hover:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-lg flex-wrap"
-            disabled={!selectedFlow?._id}
-            onClick={handleEdit}
+            {...(!selectedFlow?._id && { onClick: (e) => e.preventDefault() })}
           >
             <PencilLine size={20} />
             Edit Flow
-          </button>
+          </a>
 
           {/* Delete Flow Button */}
           <button

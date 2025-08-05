@@ -59,6 +59,12 @@ const flowApi = {
     const res = await axiosInstance.get(`/api/flow/list/forLibrary`);
     return res.data;
   },
+  cloneFromOtherOrg: async (id) => {
+    const res = await axiosInstance.post(
+      `/api/flow/clone-from-other-org/${id}`
+    );
+    return res.data;
+  },
   deleteFlow: async (id) => {
     const res = await axiosInstance.delete(`/api/flow/delete/${id}`);
     return res.data;

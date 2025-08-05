@@ -59,10 +59,7 @@ router.post("/createSourceData", async (req, res) => {
 
 router.get("/getAllSourceData/:search?", async (req, res) => {
   const search = req.params.search;
-  const query = {
-    org: req.user.org, // ✅ scope ke tenant
-  };
-
+  const query = {};
   if (search && search !== "undefined") {
     query.title = { $regex: search, $options: "i" };
   }
@@ -120,7 +117,6 @@ router.post("/getSourceDataByIdPost", async (req, res) => {
   try {
     const flexSourceData = await FlexSourceData.findOne({
       _id: id,
-      org: req.user.org,
     });
 
     if (!flexSourceData) {

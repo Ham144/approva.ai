@@ -15,30 +15,27 @@ import fileRoutes from "./routes/file.route.js";
 import authorize from "./middlewares/authorize.js";
 import departmentRoutes from "./routes/department.route.js";
 import bulkRoutes from "./routes/bulk.route.js";
-import fs from 'fs'
+import fs from "fs";
 
-
-const __dirname = path.resolve()
+const __dirname = path.resolve();
 
 //initilize /uploads dir because its needed
-const uploadPath = path.join(process.cwd(), 'uploads')
+const uploadPath = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadPath)) {
-  fs.mkdirSync(uploadPath, { recursive: true })
+  fs.mkdirSync(uploadPath, { recursive: true });
 }
 
 const isProduction = process.env.NODE_ENV === "production";
 
 const corsOrigin = isProduction
-  ? [
-    process.env.FRONT_END
-  ]
+  ? [process.env.FRONT_END]
   : ["http://192.168.169.12:3000", "http://192.168.169.12:5173"];
 
 const app = express();
 
 //midlerwares
-app.use(express.json({ limit: "20mb" }));
-app.use(express.urlencoded({ extended: true, limit: "20mb" }));
+app.use(express.json({ limit: "100mb" }));
+app.use(express.urlencoded({ extended: true, limit: "100mb" }));
 app.use(cookieParser());
 app.use(
   cors({
@@ -71,7 +68,6 @@ app.use("/api/file", authenticate, fileRoutes);
 app.use("/api/department", authenticate, departmentRoutes);
 app.use("/api/bulk", authenticate, authorize, bulkRoutes);
 
-
 // Untuk SPA fallback (route selain API, dsb.): letakkan terakhir untuk tidak menangkap /api
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "frontend", "dist", "index.html"));
@@ -79,8 +75,3 @@ app.get("*", (req, res) => {
 
 const port = process.env.PORT;
 app.listen(port, () => console.log("Server Berjalan di port "));
-
-
-
-
-

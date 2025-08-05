@@ -41,7 +41,7 @@ export default function ProcessPage() {
   //untuk filter kategori request
   const { data: flowList } = useQuery({
     queryKey: ["flows"],
-    queryFn: () => flowApi.getAllFlowNameAndDesc(),
+    queryFn: () => flowApi.getAllFlowNameAndDescForRequest(),
     enabled: !instanceId,
   });
 

@@ -187,7 +187,7 @@ export default function FlowEditing() {
   const handleDuplicateStatus = (idx) => {
     const newStatusList = [...flow.status];
 
-    const requirementCopy = newStatusList[idx].requirements.map((req) => ({
+    const requirementCopy = newStatusList[idx].requirements?.map((req) => ({
       ...req,
       _id: uuidv4(),
     }));
@@ -366,7 +366,7 @@ export default function FlowEditing() {
                               .toLowerCase()
                               .includes(searchTerm.toLowerCase())
                           )
-                          .map((user) => (
+                          ?.map((user) => (
                             <label
                               key={user._id}
                               className="flex items-center justify-between p-3 hover:bg-gray-50 transition-colors border-b last:border-b-0"
@@ -482,7 +482,7 @@ export default function FlowEditing() {
                               .toLowerCase()
                               .includes(searchTerm.toLowerCase())
                           )
-                          .map((dept) => (
+                          ?.map((dept) => (
                             <label
                               key={dept._id}
                               className="flex items-center justify-between p-3 hover:bg-gray-50 transition-colors border-b last:border-b-0"

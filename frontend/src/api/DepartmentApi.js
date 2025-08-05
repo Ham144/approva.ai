@@ -14,8 +14,12 @@ const DepartmentApi = {
     return res.data;
   },
   edit: async (id, data) => {
-    const res = await axiosInstance.put(`/api/department/edit/${id}`, data);
-    return res.data;
+    try {
+      const res = await axiosInstance.put(`/api/department/edit/${id}`, data);
+      return res.data;
+    } catch (error) {
+      throw error;
+    }
   },
   delete: async (id) => {
     const res = axiosInstance.delete(`/api/department/delete/${id}`);

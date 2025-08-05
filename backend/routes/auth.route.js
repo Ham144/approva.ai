@@ -437,7 +437,7 @@ router.post(
         "https://challenges.cloudflare.com/turnstile/v0/siteverify",
         new URLSearchParams({
           secret: process.env.TURNSTILE_SECRET_KEY,
-          response: captchaToken
+          response: captchaToken,
         }),
         {
           headers: {
