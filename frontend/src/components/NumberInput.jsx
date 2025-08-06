@@ -21,45 +21,59 @@ const NumberInput = ({
     <div
       ref={(el) => (inputRefs.current[input._id] = el)}
       id={input._id}
-      className="space-y-1 "
+      className="w-full" // Mengatur lebar penuh
     >
+      {/* Render teks bantuan */}
       {renderHelpText(input)}
-      <div className="flex items-center gap-2 justify-center">
+
+      <div className="flex items-stretch gap-0 mt-1 shadow-sm rounded-md overflow-hidden">
+        {/* Tombol Kurang (-) */}
         <button
-          className="btn btn-circle btn-sm btn-outline"
+          className="btn btn-square btn-outline border-r-0 rounded-r-none text-xl font-bold hover:bg-gray-100 transition-colors duration-200"
           disabled={isOnlyPreview}
-          // onClick={() => setRequestData(input._id, requestData[input._id] - 1)}
-          onClick={() =>
+          onClick={() => {
+            const rawValue = isRequirementInput
+              ? statuses[statusIndex]?.requirementsData?.[input._id] || "0"
+              : requestData?.[input._id] || "0";
+            const numericValue = Number(rawValue.toString().replace(/\./g, ""));
+            const newValue = numericValue - 1;
+
             isRequirementInput
-              ? setRequirement(
-                  currentStatusIndex,
-                  input._id,
-                  statuses[statusIndex]?.requirementsData[input._id] - 1
-                )
-              : setRequestData(input._id, requestData[input._id] - 1)
-          }
+              ? setRequirement(currentStatusIndex, input._id, newValue)
+              : setRequestData(input._id, newValue);
+          }}
         >
           -
         </button>
+
+        {/* Input Nilai */}
         <input
-          type="number"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           {...baseProps}
-          value={
+          value={(() => {
+            const rawValue = isRequirementInput
+              ? statuses[statusIndex]?.requirementsData?.[input._id] || ""
+              : requestData?.[input._id] || "";
+            const numericValue = Number(rawValue.toString().replace(/\./g, ""));
+            if (!isNaN(numericValue) && rawValue !== "") {
+              return numericValue.toLocaleString("id-ID");
+            }
+            return rawValue;
+          })()}
+          onChange={(e) => {
+            const cleaned = e.target.value.replace(/\./g, "");
             isRequirementInput
-              ? (statuses[statusIndex]?.requirementsData || {})[input._id] || ""
-              : requestData[input._id] || ""
-          }
-          onChange={(e) =>
-            isRequirementInput
-              ? setRequirement(currentStatusIndex, input._id, e.target.value)
-              : setRequestData(input._id, e.target.value)
-          }
-          className="input input-bordered w-24 text-center focus:ring-2 focus:ring-blue-500"
+              ? setRequirement(currentStatusIndex, input._id, cleaned)
+              : setRequestData(input._id, cleaned);
+          }}
+          className="input input-bordered w-full text-center rounded-none font-bold text-gray-800 transition-colors duration-200"
           style={
             isOnlyPreview
               ? {
-                  backgroundColor: "#f3f4f6", // gray-100
-                  color: "#374151", // gray-700
+                  backgroundColor: "#f3f4f6",
+                  color: "#374151",
                   opacity: 1,
                   cursor: "default",
                 }
@@ -67,19 +81,21 @@ const NumberInput = ({
           }
         />
 
+        {/* Tombol Tambah (+) */}
         <button
-          className="btn btn-circle btn-sm btn-outline"
+          className="btn btn-square btn-outline border-l-0 rounded-l-none text-xl font-bold hover:bg-gray-100 transition-colors duration-200"
           disabled={isOnlyPreview}
-          // onClick={() => setRequestData(input._id, requestData[input._id] + 1)}
-          onClick={() =>
+          onClick={() => {
+            const rawValue = isRequirementInput
+              ? statuses[statusIndex]?.requirementsData?.[input._id] || "0"
+              : requestData?.[input._id] || "0";
+            const numericValue = Number(rawValue.toString().replace(/\./g, ""));
+            const newValue = numericValue + 1;
+
             isRequirementInput
-              ? setRequirement(
-                  currentStatusIndex,
-                  input._id,
-                  statuses[statusIndex]?.requirementsData[input._id] + 1
-                )
-              : setRequestData(input._id, requestData[input._id] - 1)
-          }
+              ? setRequirement(currentStatusIndex, input._id, newValue)
+              : setRequestData(input._id, newValue);
+          }}
         >
           +
         </button>

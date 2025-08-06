@@ -7,8 +7,21 @@ import {
   sendSkippedUserNotification,
 } from "../utils/emailService.js";
 import Department from "../models/Department.model.js";
+import generateGlobalIndex from "../utils/generateGlobalIndex.js";
 
 const router = Router();
+
+export async function checkDuplidateGlobalIndex(globalIndex) {
+  const duplicatedGlobalIndex = await FlowInstance.findOne({
+    globalIndex: globalIndex,
+  }).lean();
+
+  if (duplicatedGlobalIndex) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
 //flow instance untuk start flow baru dengan template yang dipilih
 router.post("/request/new", async (req, res) => {
@@ -25,6 +38,7 @@ router.post("/request/new", async (req, res) => {
 
   try {
     const userId = req.user._id;
+    const globalIndex = await generateGlobalIndex(req, "globalIndex");
 
     //cari department saya
     const myDepartment = await Department.findOne({
@@ -59,22 +73,18 @@ router.post("/request/new", async (req, res) => {
     if (template.isAllowanceModeRequest) {
       if (template.mode === "private") {
         if (!isUserPrivateInclude) {
-          return res
-            .status(400)
-            .json({
-              message:
-                "Flow template ini private dan anda tidak memiliki autorisasi untuk melakukan request ini",
-            });
+          return res.status(400).json({
+            message:
+              "Flow template ini private dan anda tidak memiliki autorisasi untuk melakukan request ini",
+          });
         }
       }
       if (template.mode == "department") {
         if (!isDeparmentInclude) {
-          return res
-            .status(400)
-            .json({
-              message:
-                "Departmement anda tidak terdaftar untuk melakukan request ini",
-            });
+          return res.status(400).json({
+            message:
+              "Departmement anda tidak terdaftar untuk melakukan request ini",
+          });
         }
       }
     }
@@ -118,6 +128,7 @@ router.post("/request/new", async (req, res) => {
       statuses: statusesFromTemplate, // Tambahkan status yang sudah diinisialisasi
       currentStatusIndex: 0, // Mulai dari index 0
       org: req.user.org,
+      globalIndex: globalIndex,
     });
 
     // --- Start Email Notification Logic for First Approver ---
@@ -151,6 +162,7 @@ router.post("/request/new", async (req, res) => {
     if (error.code === 11000) {
       return res.status(409).json({
         message: `Instance dengan judul '${instanceTitle}' sudah ada.`,
+        error: error,
       });
     }
     console.log("Error saat membuat flow instance:", error);
@@ -199,6 +211,7 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
     isMyDepartmentOnly,
     limit,
     skip,
+    search,
   } = req.query;
 
   try {
@@ -272,6 +285,7 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
         ],
       })
       .select("-requestData")
+      .select("globalIndex")
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .skip(parseInt(skip));

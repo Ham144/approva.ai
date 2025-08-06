@@ -46,6 +46,12 @@
 [x] fix: process page ketendang
 [x] Copy flow antar organisasi & copy template approval
 [x] fix : mode private ga muncul
+[x] bug di wl cijerah tidak nongol eform khusus wl divisinya
+[x] tanda pembatas bilangan di tipe berikut : text , number, table .numebr (contoh : 1.000)
+[x] nomor urut hasil create form global
+[x] reset password
+[x] search form global di prosess
+[x] pagination
 [] add: Rollback 1 langkah (nama fitur: redo) (rollback mundur approval sebelumnya / target approval lainnya)
 [] pindah perusahaan satu kli klik
 [] fix: auto pindah departement jika di LDAP berubah

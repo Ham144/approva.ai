@@ -94,6 +94,11 @@ const TableInput = ({
     }
   };
 
+  const formatThousand = (val) => {
+    const num = Number(val?.toString().replace(/\./g, ""));
+    return !isNaN(num) && val !== "" ? num.toLocaleString("id-ID") : val;
+  };
+
   return (
     <div
       ref={(el) => (inputRefs.current[input._id] = el)}
@@ -178,6 +183,25 @@ const TableInput = ({
                               onChange={(v) => handleChange(rIdx, cIdx, v)}
                             />
                           </div>
+                        ) : colType === "number" ? (
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            className="input input-bordered w-full max-w-xs text-right"
+                            value={(() => {
+                              const num = Number(
+                                val?.toString().replace(/\./g, "")
+                              );
+                              return !isNaN(num) && val !== ""
+                                ? num.toLocaleString("id-ID")
+                                : val;
+                            })()}
+                            onChange={(e) => {
+                              const raw = e.target.value.replace(/\./g, "");
+                              handleChange(rIdx, cIdx, raw);
+                            }}
+                          />
                         ) : (
                           <input
                             type={colType === "date" ? "date" : colType}

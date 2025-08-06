@@ -924,6 +924,56 @@ router.delete("/deleteAppUser/:id", authenticate, async (req, res) => {
     });
   }
 });
+router.put("/resetPassword", authenticate, async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    //validasi awal user apakah old password benar  
+    const userDB = await UserRefrensi.findOne({
+      _id: req.user._id,
+      org: req.user.org,
+    })
+      .select("password")
+      .lean();
+    
+    const isPasswordValid = await bcrypt.compare(oldPassword, userDB.password);
+    if(!isPasswordValid){
+      return res.status(400).json({ message: "Password lama salah." });
+    }
+    
+    // Validasi
+    if (!newPassword) {
+      return res.status(400).json({ message: "Password baru diperlukan." });
+    }
+
+    const hasUpperCase = /[A-Z]/.test(newPassword);
+    const hasNumber = /\d/.test(newPassword);
+    const isLongEnough = newPassword.length >= 6;
+
+    if (!isLongEnough) {
+      return res.status(400).json({ message: "Password harus lebih dari 6 karakter." });
+    }
+    if (!hasUpperCase) {
+      return res.status(400).json({ message: "Password harus memiliki huruf besar." });
+    }
+    if (!hasNumber) {
+      return res.status(400).json({ message: "Password harus memiliki angka." });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password berdasarkan ID user dari token
+    const userId = req.user._id;
+    await UserRefrensi.findByIdAndUpdate(userId, { password: hashedPassword });
+
+    res.json({ message: "Password berhasil direset." });
+  } catch (error) {
+    console.error("Gagal reset password:", error);
+    res.status(500).json({ error: "Terjadi kesalahan server." });
+  }
+});
+
 
 // web
 router.delete(

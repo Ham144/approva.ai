@@ -6,703 +6,711 @@ import TableInput from "./TableInput";
 import SelectInput from "./SelectInput";
 import MultipleCheckboxInput from "./MultipleCheckboxInput";
 import {
-	CheckCircle,
-	XCircle,
-	Clock,
-	MessageSquareText,
-	User2,
+  CheckCircle,
+  XCircle,
+  Clock,
+  MessageSquareText,
+  User2,
 } from "lucide-react";
 import FileApi from "@/api/fileApi";
 
 export const renderHelpText = (input) => (
-	<div className="mb-1 flex items-center gap-2">
-		<p className="text-xs text-gray-500">{input.help}</p>
-		{input.isNullable ? (
-			<span className="text-xs text-gray-400 italic">(Opsional)</span>
-		) : (
-			<span className="text-xs text-red-500 font-semibold">*</span>
-		)}
-	</div>
+  <div className="mb-1 flex items-center gap-2">
+    <p className="text-xs text-gray-500">{input.help}</p>
+    {input.isNullable ? (
+      <span className="text-xs text-gray-400 italic">(Opsional)</span>
+    ) : (
+      <span className="text-xs text-red-500 font-semibold">*</span>
+    )}
+  </div>
 );
 
 export default function PreviewFlow({
-	jsonFlow,
-	isOnlyPreview,
-	isForRequest,
-	isForApproval,
+  jsonFlow,
+  isOnlyPreview,
+  isForRequest,
+  isForApproval,
 }) {
-	const [tableData, setTableData] = useState({});
-	const [isJsonMode, setIsJsonMode] = useState(false);
-	const { currentEditingInputID } = useEditor();
-	const inputRefs = useRef({});
+  const [tableData, setTableData] = useState({});
+  const [isJsonMode, setIsJsonMode] = useState(false);
+  const { currentEditingInputID } = useEditor();
+  const inputRefs = useRef({});
 
-	const {
-		instanceTitle,
-		setInstanceTitle,
-		requestData,
-		setRequestData,
-		statuses,
-		currentStatusIndex,
-		setRequirement,
-	} = useResponseCollector();
+  const {
+    instanceTitle,
+    setInstanceTitle,
+    requestData,
+    setRequestData,
+    statuses,
+    currentStatusIndex,
+    setRequirement,
+  } = useResponseCollector();
 
-	const flatInputs = jsonFlow
-		? [
-				...(jsonFlow?.request || []),
-				...(jsonFlow?.status || []).flatMap((s) => s.requirements),
-		  ]
-		: [];
+  const flatInputs = jsonFlow
+    ? [
+        ...(jsonFlow?.request || []),
+        ...(jsonFlow?.status || []).flatMap((s) => s.requirements),
+      ]
+    : [];
 
-	useEffect(() => {
-		if (!jsonFlow) return;
-		const init = {};
-		flatInputs
-			.filter((i) => i.tipe === "table")
-			.forEach((i) => {
-				const keysLength = Array.isArray(i.table?.keys)
-					? i.table.keys.length
-					: 0;
-				init[i._id] = [{ values: Array(keysLength).fill("") }];
-			});
-		setTableData(init);
-	}, [jsonFlow]);
+  useEffect(() => {
+    if (!jsonFlow) return;
+    const init = {};
+    flatInputs
+      .filter((i) => i.tipe === "table")
+      .forEach((i) => {
+        const keysLength = Array.isArray(i.table?.keys)
+          ? i.table.keys.length
+          : 0;
+        init[i._id] = [{ values: Array(keysLength).fill("") }];
+      });
+    setTableData(init);
+  }, [jsonFlow]);
 
-	useEffect(() => {
-		if (currentEditingInputID && inputRefs.current[currentEditingInputID]) {
-			inputRefs.current[currentEditingInputID].scrollIntoView({
-				behavior: "smooth",
-				block: "center",
-			});
-		}
-	}, [currentEditingInputID]);
+  useEffect(() => {
+    if (currentEditingInputID && inputRefs.current[currentEditingInputID]) {
+      inputRefs.current[currentEditingInputID].scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [currentEditingInputID]);
 
-	//isDisabled untuk membedakan request dan status
-	const renderInput = (input, isDisabled, isRequirementInput, statusIndex) => {
-		const baseProps = {
-			disabled: isOnlyPreview || isDisabled,
-		};
+  //isDisabled untuk membedakan request dan status
+  const renderInput = (input, isDisabled, isRequirementInput, statusIndex) => {
+    const baseProps = {
+      disabled: isOnlyPreview || isDisabled,
+    };
 
-		switch (input.tipe) {
-			// TEXT
-			case "text":
-				return (
-					<div
-						ref={(el) => (inputRefs.current[input._id] = el)}
-						id={input._id}
-						className="space-y-1"
-					>
-						{renderHelpText(input)}
-						<input
-							type="text"
-							{...baseProps}
-							placeholder={input.help}
-							className={`input input-bordered w-full ${
-								baseProps.disabled
-									? "bg-gray-100 text-gray-700 opacity-100 cursor-default"
-									: ""
-							}`}
-							value={
-								isRequirementInput
-									? (statuses[statusIndex]?.requirementsData || {})[
-											input._id
-									  ] || ""
-									: requestData[input._id] || ""
-							}
-							onChange={(e) =>
-								isRequirementInput
-									? setRequirement(
-											currentStatusIndex,
-											input._id,
-											e.target.value
-									  )
-									: setRequestData(input._id, e.target.value)
-							}
-						/>
-					</div>
-				);
+    switch (input.tipe) {
+      // TEXT
+      case "text":
+        const rawValue = isRequirementInput
+          ? (statuses[statusIndex]?.requirementsData || {})[input._id] || ""
+          : requestData[input._id] || "";
 
-			// TEXTAREA
-			case "textArea":
-				return (
-					<div
-						ref={(el) => (inputRefs.current[input._id] = el)}
-						id={input._id}
-						className="space-y-1"
-					>
-						{renderHelpText(input)}
-						<textarea
-							{...baseProps}
-							placeholder={input.help}
-							className={`textarea textarea-bordered w-full min-h-[120px] resize-y font-sans ${
-								baseProps.disabled
-									? "bg-gray-100 text-gray-700 opacity-100 cursor-default"
-									: ""
-							}`}
-							value={
-								isRequirementInput
-									? (statuses[statusIndex]?.requirementsData || {})[
-											input._id
-									  ] || ""
-									: requestData[input._id] || ""
-							}
-							onChange={(e) =>
-								isRequirementInput
-									? setRequirement(
-											currentStatusIndex,
-											input._id,
-											e.target.value
-									  )
-									: setRequestData(input._id, e.target.value)
-							}
-						/>
-					</div>
-				);
+        // Coba parse jadi number, lalu format, tapi hanya untuk tampilan
+        const displayValue = (() => {
+          const numericValue = Number(rawValue.toString().replace(/\./g, ""));
+          if (!isNaN(numericValue) && rawValue !== "") {
+            return numericValue.toLocaleString("id-ID"); // contoh: 1000 => 1.000
+          }
+          return rawValue;
+        })();
 
-			// HELPER
-			case "helper":
-				return (
-					<div
-						ref={(el) => (inputRefs.current[input._id] = el)}
-						id={input._id}
-						className="bg-white p-6 rounded-lg border border-gray-200 my-4"
-					>
-						{input.title && (
-							<h2 className="text-black font-medium text-lg mb-3">
-								{input.title}
-							</h2>
-						)}
-						<div
-							className="text-black whitespace-pre-wrap font-sans leading-normal"
-							style={{ wordBreak: "break-word" }}
-						>
-							{input.help}
-						</div>
-					</div>
-				);
-			case "number": //✅
-				return (
-					<NumberInput
-						key={input._id}
-						input={input}
-						isOnlyPreview={isOnlyPreview}
-						inputRefs={inputRefs}
-						baseProps={baseProps}
-						statusIndex={statusIndex}
-						isRequirementInput={isRequirementInput}
-					/>
-				);
+        return (
+          <div
+            ref={(el) => (inputRefs.current[input._id] = el)}
+            id={input._id}
+            className="space-y-1"
+          >
+            {renderHelpText(input)}
+            <input
+              type="text"
+              {...baseProps}
+              placeholder={input.help}
+              className={`input input-bordered w-full ${
+                baseProps.disabled
+                  ? "bg-gray-100 text-gray-700 opacity-100 cursor-default"
+                  : ""
+              }`}
+              value={displayValue}
+              onChange={(e) => {
+                // Hapus titik agar data yang disimpan tetap bersih
+                const cleanedValue = e.target.value.replace(/\./g, "");
 
-			case "date":
-				return (
-					<div
-						ref={(el) => (inputRefs.current[input._id] = el)}
-						id={input._id}
-						className="space-y-1"
-					>
-						{renderHelpText(input)}
-						<input
-							type="date"
-							{...baseProps}
-							className="input input-bordered w-full"
-							style={
-								baseProps.disabled
-									? {
-											backgroundColor: "#f3f4f6", // gray-100
-											color: "#374151", // gray-700
-											opacity: 1,
-											cursor: "default",
-									  }
-									: {}
-							}
-							value={
-								isRequirementInput
-									? (statuses[statusIndex]?.requirementsData || {})[
-											input._id
-									  ] || ""
-									: requestData[input._id] || ""
-							}
-							onChange={(e) =>
-								isRequirementInput
-									? setRequirement(
-											currentStatusIndex,
-											input._id,
-											e.target.value
-									  )
-									: setRequestData(input._id, e.target.value)
-							}
-						/>
-					</div>
-				);
+                if (isRequirementInput) {
+                  setRequirement(currentStatusIndex, input._id, cleanedValue);
+                } else {
+                  setRequestData(input._id, cleanedValue);
+                }
+              }}
+            />
+          </div>
+        );
 
-			case "pdf":
-			case "image":
-				const isDisabled = baseProps?.disabled;
+      // TEXTAREA
+      case "textArea":
+        return (
+          <div
+            ref={(el) => (inputRefs.current[input._id] = el)}
+            id={input._id}
+            className="space-y-1"
+          >
+            {renderHelpText(input)}
+            <textarea
+              {...baseProps}
+              placeholder={input.help}
+              className={`textarea textarea-bordered w-full min-h-[120px] resize-y font-sans ${
+                baseProps.disabled
+                  ? "bg-gray-100 text-gray-700 opacity-100 cursor-default"
+                  : ""
+              }`}
+              value={
+                isRequirementInput
+                  ? (statuses[statusIndex]?.requirementsData || {})[
+                      input._id
+                    ] || ""
+                  : requestData[input._id] || ""
+              }
+              onChange={(e) =>
+                isRequirementInput
+                  ? setRequirement(
+                      currentStatusIndex,
+                      input._id,
+                      e.target.value
+                    )
+                  : setRequestData(input._id, e.target.value)
+              }
+            />
+          </div>
+        );
 
-				return (
-					<div
-						ref={(el) => (inputRefs.current[input._id] = el)}
-						id={input._id}
-						className="bg-gray-50 p-4 rounded-lg border border-gray-200"
-					>
-						<p className="text-sm text-gray-600 mb-3">{input.help}</p>
+      // HELPER
+      case "helper":
+        return (
+          <div
+            ref={(el) => (inputRefs.current[input._id] = el)}
+            id={input._id}
+            className="bg-white p-6 rounded-lg border border-gray-200 my-4"
+          >
+            {input.title && (
+              <h2 className="text-black font-medium text-lg mb-3">
+                {input.title}
+              </h2>
+            )}
+            <div
+              className="text-black whitespace-pre-wrap font-sans leading-normal"
+              style={{ wordBreak: "break-word" }}
+            >
+              {input.help}
+            </div>
+          </div>
+        );
+      case "number": //✅
+        return (
+          <NumberInput
+            key={input._id}
+            input={input}
+            isOnlyPreview={isOnlyPreview}
+            inputRefs={inputRefs}
+            baseProps={baseProps}
+            statusIndex={statusIndex}
+            isRequirementInput={isRequirementInput}
+          />
+        );
 
-						{isDisabled ? (
-							// Tampilkan file yang sudah diisi dalam mode preview
-							<>
-								{input.tipe === "image" &&
-									(requestData[input._id] ||
-										(statuses[statusIndex]?.requirementsData || {})[
-											input._id
-										]) && (
-										<img
-											src={
-												requestData[input._id] ||
-												(statuses[statusIndex]?.requirementsData || {})[
-													input._id
-												] ||
-												""
-											}
-											alt="Preview"
-											className="object-contain rounded-md mx-auto p-2 max-h-60"
-										/>
-									)}
-								{input.tipe === "pdf" &&
-									(requestData[input._id] ||
-										(statuses[statusIndex]?.requirementsData || {})[
-											input._id
-										]) && (
-										<p className="text-sm text-gray-600">
-											File dipilih:{" "}
-											<strong>
-												{requestData[input._id] ||
-													(statuses[statusIndex]?.requirementsData || {})[
-														input._id
-													] ||
-													""}
-											</strong>
-										</p>
-									)}
+      case "date":
+        return (
+          <div
+            ref={(el) => (inputRefs.current[input._id] = el)}
+            id={input._id}
+            className="space-y-1"
+          >
+            {renderHelpText(input)}
+            <input
+              type="date"
+              {...baseProps}
+              className="input input-bordered w-full"
+              style={
+                baseProps.disabled
+                  ? {
+                      backgroundColor: "#f3f4f6", // gray-100
+                      color: "#374151", // gray-700
+                      opacity: 1,
+                      cursor: "default",
+                    }
+                  : {}
+              }
+              value={
+                isRequirementInput
+                  ? (statuses[statusIndex]?.requirementsData || {})[
+                      input._id
+                    ] || ""
+                  : requestData[input._id] || ""
+              }
+              onChange={(e) =>
+                isRequirementInput
+                  ? setRequirement(
+                      currentStatusIndex,
+                      input._id,
+                      e.target.value
+                    )
+                  : setRequestData(input._id, e.target.value)
+              }
+            />
+          </div>
+        );
 
-								{!(
-									requestData[input._id] ||
-									(statuses[statusIndex]?.requirementsData || {})[input._id]
-								) && (
-									<p className="text-sm text-gray-400 italic">
-										Belum ada file.
-									</p>
-								)}
-							</>
-						) : (
-							<>
-								<input
-									type="file"
-									accept={input.tipe === "image" ? "image/*" : ".pdf"}
-									{...baseProps}
-									className="file-input file-input-bordered w-full file-input-primary"
-									onChange={async (e) => {
-										const file = e.target.files?.[0];
-										if (!file) {
-											setRequestData(input._id, null);
-											return;
-										}
+      case "pdf":
+      case "image":
+        const isDisabled = baseProps?.disabled;
 
-										const formData = new FormData();
-										formData.append("file", file);
-										formData.append("tipe", input.tipe); // opsional
+        return (
+          <div
+            ref={(el) => (inputRefs.current[input._id] = el)}
+            id={input._id}
+            className="bg-gray-50 p-4 rounded-lg border border-gray-200"
+          >
+            <p className="text-sm text-gray-600 mb-3">{input.help}</p>
 
-										try {
-											const res = await FileApi.uploadImage(formData); // ✅ pakai await
-											console.log(res);
-											const fileUrl = res.url; // ✅ langsung ambil dari response
+            {isDisabled ? (
+              // Tampilkan file yang sudah diisi dalam mode preview
+              <>
+                {input.tipe === "image" &&
+                  (requestData[input._id] ||
+                    (statuses[statusIndex]?.requirementsData || {})[
+                      input._id
+                    ]) && (
+                    <img
+                      src={
+                        requestData[input._id] ||
+                        (statuses[statusIndex]?.requirementsData || {})[
+                          input._id
+                        ] ||
+                        ""
+                      }
+                      alt="Preview"
+                      className="object-contain rounded-md mx-auto p-2 max-h-60"
+                    />
+                  )}
+                {input.tipe === "pdf" &&
+                  (requestData[input._id] ||
+                    (statuses[statusIndex]?.requirementsData || {})[
+                      input._id
+                    ]) && (
+                    <p className="text-sm text-gray-600">
+                      File dipilih:{" "}
+                      <strong>
+                        {requestData[input._id] ||
+                          (statuses[statusIndex]?.requirementsData || {})[
+                            input._id
+                          ] ||
+                          ""}
+                      </strong>
+                    </p>
+                  )}
 
-											if (isRequirementInput) {
-												setRequirement(currentStatusIndex, input._id, fileUrl);
-											} else {
-												setRequestData(input._id, fileUrl);
-											}
-										} catch (err) {
-											toast.error("Gagal upload file.");
-											console.error(err);
-										}
-									}}
-								/>
+                {!(
+                  requestData[input._id] ||
+                  (statuses[statusIndex]?.requirementsData || {})[input._id]
+                ) && (
+                  <p className="text-sm text-gray-400 italic">
+                    Belum ada file.
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <input
+                  type="file"
+                  accept={input.tipe === "image" ? "image/*" : ".pdf"}
+                  {...baseProps}
+                  className="file-input file-input-bordered w-full file-input-primary"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) {
+                      setRequestData(input._id, null);
+                      return;
+                    }
 
-								{/* Preview untuk tipe image */}
-								{input.tipe === "image" && requestData[input._id] && (
-									<img
-										src={requestData[input._id]}
-										alt="Preview"
-										className="object-contain rounded-md mx-auto p-2 max-h-60 mt-4"
-									/>
-								)}
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    formData.append("tipe", input.tipe); // opsional
 
-								{/* Info file untuk tipe pdf */}
-								{input.tipe === "pdf" &&
-									requestData[input._id] &&
-									typeof requestData[input._id] === "string" && (
-										<p className="text-sm text-gray-600 mt-2">
-											File dipilih: <strong>{requestData[input._id]}</strong>
-										</p>
-									)}
-							</>
-						)}
-					</div>
-				);
+                    try {
+                      const res = await FileApi.uploadImage(formData); // ✅ pakai await
+                      console.log(res);
+                      const fileUrl = res.url; // ✅ langsung ambil dari response
 
-			case "signature":
-				return (
-					<SignatureInput
-						key={input._id}
-						input={input}
-						isOnlyPreview={isOnlyPreview}
-						inputRefs={inputRefs}
-						baseProps={baseProps}
-						isRequirementInput={isRequirementInput}
-					/>
-				);
+                      if (isRequirementInput) {
+                        setRequirement(currentStatusIndex, input._id, fileUrl);
+                      } else {
+                        setRequestData(input._id, fileUrl);
+                      }
+                    } catch (err) {
+                      toast.error("Gagal upload file.");
+                      console.error(err);
+                    }
+                  }}
+                />
 
-			case "select":
-				return (
-					<div
-						ref={(el) => (inputRefs.current[input._id] = el)}
-						id={input._id}
-						className="space-y-1"
-					>
-						{renderHelpText(input)}
-						<SelectInput
-							input={input}
-							baseProps={baseProps}
-							isRequirementInput={isRequirementInput}
-							statusIndex={statusIndex}
-						/>
-					</div>
-				);
+                {/* Preview untuk tipe image */}
+                {input.tipe === "image" && requestData[input._id] && (
+                  <img
+                    src={requestData[input._id]}
+                    alt="Preview"
+                    className="object-contain rounded-md mx-auto p-2 max-h-60 mt-4"
+                  />
+                )}
 
-			case "multipleCheckbox":
-				return (
-					<div
-						ref={(el) => (inputRefs.current[input._id] = el)}
-						id={input._id}
-						className="space-y-2"
-					>
-						{renderHelpText(input)}
-						<MultipleCheckboxInput
-							input={input}
-							baseProps={baseProps}
-							isRequirementInput={isRequirementInput}
-							statusIndex={statusIndex}
-						/>
-					</div>
-				);
+                {/* Info file untuk tipe pdf */}
+                {input.tipe === "pdf" &&
+                  requestData[input._id] &&
+                  typeof requestData[input._id] === "string" && (
+                    <p className="text-sm text-gray-600 mt-2">
+                      File dipilih: <strong>{requestData[input._id]}</strong>
+                    </p>
+                  )}
+              </>
+            )}
+          </div>
+        );
 
-			case "table":
-				return (
-					<TableInput
-						key={input._id}
-						input={input}
-						inputRefs={inputRefs}
-						initialRows={tableData[input._id] || []}
-						baseProps={baseProps}
-						isRequirementInput={isRequirementInput}
-						statusIndex={statusIndex}
-					/>
-				);
+      case "signature":
+        return (
+          <SignatureInput
+            key={input._id}
+            input={input}
+            isOnlyPreview={isOnlyPreview}
+            inputRefs={inputRefs}
+            baseProps={baseProps}
+            isRequirementInput={isRequirementInput}
+          />
+        );
 
-			default:
-				return (
-					<div className="alert alert-warning">
-						<span>Tipe input tidak dikenali: Terjadi kesalahan</span>
-					</div>
-				);
-		}
-	};
+      case "select":
+        return (
+          <div
+            ref={(el) => (inputRefs.current[input._id] = el)}
+            id={input._id}
+            className="space-y-1"
+          >
+            {renderHelpText(input)}
+            <SelectInput
+              input={input}
+              baseProps={baseProps}
+              isRequirementInput={isRequirementInput}
+              statusIndex={statusIndex}
+            />
+          </div>
+        );
 
-	if (!jsonFlow)
-		return <div className="loading loading-spinner loading-lg"></div>;
+      case "multipleCheckbox":
+        return (
+          <div
+            ref={(el) => (inputRefs.current[input._id] = el)}
+            id={input._id}
+            className="space-y-2"
+          >
+            {renderHelpText(input)}
+            <MultipleCheckboxInput
+              input={input}
+              baseProps={baseProps}
+              isRequirementInput={isRequirementInput}
+              statusIndex={statusIndex}
+            />
+          </div>
+        );
 
-	if (!jsonFlow) return <span></span>;
+      case "table":
+        return (
+          <TableInput
+            key={input._id}
+            input={input}
+            inputRefs={inputRefs}
+            initialRows={tableData[input._id] || []}
+            baseProps={baseProps}
+            isRequirementInput={isRequirementInput}
+            statusIndex={statusIndex}
+          />
+        );
 
-	const HeaderEditor = () => {
-		return (
-			<div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm">
-				<div className="flex gap-2  ">
-					<button
-						className={`btn ${isJsonMode ? "btn-primary" : "btn-ghost"}`}
-						onClick={() => setIsJsonMode(true)}
-					>
-						<svg
-							className="w-5 h-5 mr-2"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth="2"
-								d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-							/>
-						</svg>
-						Tampil JSON
-					</button>
-					<button
-						className={`btn ${!isJsonMode ? "btn-primary" : "btn-ghost"}`}
-						onClick={() => setIsJsonMode(false)}
-					>
-						<svg
-							className="w-5 h-5 mr-2"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth="2"
-								d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-							/>
-						</svg>
-						Tampil Form
-					</button>
-				</div>
-			</div>
-		);
-	};
+      default:
+        return (
+          <div className="alert alert-warning">
+            <span>Tipe input tidak dikenali: Terjadi kesalahan</span>
+          </div>
+        );
+    }
+  };
 
-	if (isJsonMode) {
-		return (
-			<div className="space-y-6">
-				<HeaderEditor />
-				<div className="bg-white p-6 rounded-lg shadow-sm pb-20">
-					<pre className="bg-gray-50 p-4 text-sm overflow-auto rounded-lg border border-gray-200 max-h-[80vh]">
-						{JSON.stringify(jsonFlow, null, 2)}
-					</pre>
-				</div>
-			</div>
-		);
-	} else {
-		return (
-			<div className="space-y-6 w-full ">
-				{!isForApproval && !isForRequest && <HeaderEditor />}
-				<div className="space-y-6 flex flex-col overflow-y-auto max-h-[90vh] pr-2  pb-20">
-					<div className="bg-white p-6 rounded-lg shadow-sm">
-						<h1 className="text-2xl font-bold text-gray-800">
-							{jsonFlow?.title}
-						</h1>
-						<p className="text-gray-600 mt-2">{jsonFlow?.desc}</p>
-					</div>
+  if (!jsonFlow)
+    return <div className="loading loading-spinner loading-lg"></div>;
 
-					<div className="bg-white  p-6 rounded-lg shadow-sm">
-						{(isForRequest || isForApproval) && (
-							<input
-								type="text"
-								placeholder="Masukkan identifikasi request. misal judul request"
-								className="input input-bordered w-full"
-								disabled={isForApproval}
-								style={
-									isForApproval
-										? {
-												backgroundColor: "#f3f4f6", // gray-100
-												color: "#374151", // gray-700
-												opacity: 1,
-												cursor: "default",
-										  }
-										: {}
-								}
-								value={instanceTitle}
-								onChange={(e) => setInstanceTitle(e.target.value)}
-							/>
-						)}
+  if (!jsonFlow) return <span></span>;
 
-						<div className="divider"> Form Request</div>
-						<div className="space-y-5">
-							{jsonFlow?.request?.map((input) => (
-								<div
-									key={input._id}
-									className={`p-4 rounded-lg transition-all  ${
-										currentEditingInputID === input._id
-											? "bg-yellow-50 border-l-4 border-yellow-500"
-											: "bg-gray-50"
-									} ${input.tipe == "helper" && "bg-transparent"}`}
-								>
-									<label className="block mb-2 font-medium text-gray-700">
-										{input?.tipe != "helper" && input?.title}
-									</label>
-									{renderInput(input, isForApproval)}
-								</div>
-							))}
-						</div>
-					</div>
+  const HeaderEditor = () => {
+    return (
+      <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm">
+        <div className="flex gap-2  ">
+          <button
+            className={`btn ${isJsonMode ? "btn-primary" : "btn-ghost"}`}
+            onClick={() => setIsJsonMode(true)}
+          >
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            Tampil JSON
+          </button>
+          <button
+            className={`btn ${!isJsonMode ? "btn-primary" : "btn-ghost"}`}
+            onClick={() => setIsJsonMode(false)}
+          >
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
+            </svg>
+            Tampil Form
+          </button>
+        </div>
+      </div>
+    );
+  };
 
-					{/* Status */}
-					{!isForRequest && (
-						<>
-							<div className="divider">Responses Flow</div>
-							{jsonFlow?.status?.map((stat, i) => (
-								<div
-									key={stat.title}
-									className={`bg-white p-6 shadow-lg rounded-md border flex-1 `}
-								>
-									<h4 className="font-semibold text-lg mb-4 text-gray-800">
-										{stat.title}
-									</h4>
-									<div className="space-y-5">
-										{stat?.requirements?.map((input) => {
-											const verdict = statuses[i]?.verdict;
-											const borderColor =
-												verdict === "approved"
-													? "border-l-4 border-green-500"
-													: verdict === "rejected"
-													? "border-l-4 border-red-500"
-													: currentStatusIndex == i &&
-													  "border-l-4 border-yellow-500";
+  if (isJsonMode) {
+    return (
+      <div className="space-y-6">
+        <HeaderEditor />
+        <div className="bg-white p-6 rounded-lg shadow-sm pb-20">
+          <pre className="bg-gray-50 p-4 text-sm overflow-auto rounded-lg border border-gray-200 max-h-[80vh]">
+            {JSON.stringify(jsonFlow, null, 2)}
+          </pre>
+        </div>
+      </div>
+    );
+  } else {
+    return (
+      <div className="space-y-6 w-full ">
+        {!isForApproval && !isForRequest && <HeaderEditor />}
+        <div className="space-y-6 flex flex-col overflow-y-auto max-h-[90vh] pr-2  pb-20">
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <h1 className="text-2xl font-bold text-gray-800">
+              {jsonFlow?.title}
+            </h1>
+            <p className="text-gray-600 mt-2">{jsonFlow?.desc}</p>
+          </div>
 
-											return (
-												<div
-													key={input._id}
-													className={`p-4 rounded-lg transition-all  ${
-														currentEditingInputID === input._id
-															? "bg-yellow-50 border-l-4 border-yellow-500"
-															: "bg-gray-50"
-													} ${
-														input?.tipe == "helper" && "bg-transparent"
-													} ${borderColor}`}
-												>
-													<div className="flex  items-center justify-between mb-2">
-														<label className="block font-medium text-gray-700">
-															{input?.tipe != "helper" && input?.title}
-														</label>
-														{input.isNullable && (
-															<span className="text-xs text-gray-400 italic">
-																(Opsional)
-															</span>
-														)}
-													</div>
+          <div className="bg-white  p-6 rounded-lg shadow-sm">
+            {(isForRequest || isForApproval) && (
+              <input
+                type="text"
+                placeholder="Masukkan identifikasi request. misal judul request"
+                className="input input-bordered w-full"
+                disabled={isForApproval}
+                style={
+                  isForApproval
+                    ? {
+                        backgroundColor: "#f3f4f6", // gray-100
+                        color: "#374151", // gray-700
+                        opacity: 1,
+                        cursor: "default",
+                      }
+                    : {}
+                }
+                value={instanceTitle}
+                onChange={(e) => setInstanceTitle(e.target.value)}
+              />
+            )}
 
-													{renderInput(
-														input,
-														currentStatusIndex !== i,
-														true,
-														i
-													)}
-												</div>
-											);
-										})}
-									</div>
+            <div className="divider"> Form Request</div>
+            <div className="space-y-5">
+              {jsonFlow?.request?.map((input) => (
+                <div
+                  key={input._id}
+                  className={`p-4 rounded-lg transition-all  ${
+                    currentEditingInputID === input._id
+                      ? "bg-yellow-50 border-l-4 border-yellow-500"
+                      : "bg-gray-50"
+                  } ${input.tipe == "helper" && "bg-transparent"}`}
+                >
+                  <label className="block mb-2 font-medium text-gray-700">
+                    {input?.tipe != "helper" && input?.title}
+                  </label>
+                  {renderInput(input, isForApproval)}
+                </div>
+              ))}
+            </div>
+          </div>
 
-									<div
-										className={`
+          {/* Status */}
+          {!isForRequest && (
+            <>
+              <div className="divider">Responses Flow</div>
+              {jsonFlow?.status?.map((stat, i) => (
+                <div
+                  key={stat.title}
+                  className={`bg-white p-6 shadow-lg rounded-md border flex-1 `}
+                >
+                  <h4 className="font-semibold text-lg mb-4 text-gray-800">
+                    {stat.title}
+                  </h4>
+                  <div className="space-y-5">
+                    {stat?.requirements?.map((input) => {
+                      const verdict = statuses[i]?.verdict;
+                      const borderColor =
+                        verdict === "approved"
+                          ? "border-l-4 border-green-500"
+                          : verdict === "rejected"
+                          ? "border-l-4 border-red-500"
+                          : currentStatusIndex == i &&
+                            "border-l-4 border-yellow-500";
+
+                      return (
+                        <div
+                          key={input._id}
+                          className={`p-4 rounded-lg transition-all  ${
+                            currentEditingInputID === input._id
+                              ? "bg-yellow-50 border-l-4 border-yellow-500"
+                              : "bg-gray-50"
+                          } ${
+                            input?.tipe == "helper" && "bg-transparent"
+                          } ${borderColor}`}
+                        >
+                          <div className="flex  items-center justify-between mb-2">
+                            <label className="block font-medium text-gray-700">
+                              {input?.tipe != "helper" && input?.title}
+                            </label>
+                            {input.isNullable && (
+                              <span className="text-xs text-gray-400 italic">
+                                (Opsional)
+                              </span>
+                            )}
+                          </div>
+
+                          {renderInput(
+                            input,
+                            currentStatusIndex !== i,
+                            true,
+                            i
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div
+                    className={`
     flex flex-col md:flex-row md:items-center justify-between
     mt-4 p-4 rounded-xl shadow-md border
     transition-all duration-300 ease-in-out
     ${
-			statuses[i]?.verdict === "approved"
-				? "bg-green-50 border-green-200 text-green-800"
-				: statuses[i]?.verdict === "rejected"
-				? "bg-red-50 border-red-200 text-red-800"
-				: "bg-white border-gray-200 text-gray-800"
-		}
+      statuses[i]?.verdict === "approved"
+        ? "bg-green-50 border-green-200 text-green-800"
+        : statuses[i]?.verdict === "rejected"
+        ? "bg-red-50 border-red-200 text-red-800"
+        : "bg-white border-gray-200 text-gray-800"
+    }
   `}
-									>
-										{/* Verdict & Status Indicator - Selalu tampil */}
-										<div className="flex items-center gap-3 font-extrabold text-xl mb-3 md:mb-0 md:w-1/3">
-											{/* Mengganti teks "Status: " dengan ikon yang lebih visual */}
-											{statuses[i]?.verdict === "approved" && (
-												<CheckCircle className="w-7 h-7 text-green-600 flex-shrink-0" />
-											)}
-											{statuses[i]?.verdict === "rejected" && (
-												<XCircle className="w-7 h-7 text-red-600 flex-shrink-0" />
-											)}
-											{/* Jika status bukan approved/rejected, anggap itu pending atau lainnya */}
-											{statuses[i]?.verdict !== "approved" &&
-												statuses[i]?.verdict !== "rejected" && (
-													<Clock className="w-7 h-7 text-blue-600 flex-shrink-0" /> // Ikon untuk pending
-												)}
-											<span className="capitalize">
-												Status: {statuses[i]?.verdict || "Pending"}
-											</span>
-										</div>
+                  >
+                    {/* Verdict & Status Indicator - Selalu tampil */}
+                    <div className="flex items-center gap-3 font-extrabold text-xl mb-3 md:mb-0 md:w-1/3">
+                      {/* Mengganti teks "Status: " dengan ikon yang lebih visual */}
+                      {statuses[i]?.verdict === "approved" && (
+                        <CheckCircle className="w-7 h-7 text-green-600 flex-shrink-0" />
+                      )}
+                      {statuses[i]?.verdict === "rejected" && (
+                        <XCircle className="w-7 h-7 text-red-600 flex-shrink-0" />
+                      )}
+                      {/* Jika status bukan approved/rejected, anggap itu pending atau lainnya */}
+                      {statuses[i]?.verdict !== "approved" &&
+                        statuses[i]?.verdict !== "rejected" && (
+                          <Clock className="w-7 h-7 text-blue-600 flex-shrink-0" /> // Ikon untuk pending
+                        )}
+                      <span className="capitalize">
+                        Status: {statuses[i]?.verdict || "Pending"}
+                      </span>
+                    </div>
 
-										{statuses[i]?.verdict !== "pending" && (
-											<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full md:w-2/3 md:ml-auto md:border-l md:border-current md:pl-6 pt-4 md:pt-0">
-												{/* Alasan Ditolak (hanya untuk rejected) */}
-												{statuses[i]?.verdict === "rejected" && (
-													<div className="flex items-start gap-2 text-sm">
-														<MessageSquareText className="w-5 h-5 mt-0.5 text-red-600 flex-shrink-0" />
-														<div className="flex flex-col">
-															<span className="font-semibold text-red-700">
-																Alasan Ditolak:
-															</span>
-															<p className="font-normal whitespace-pre-wrap text-red-800">
-																{statuses[i]?.rejectedReason ||
-																	"Tidak ada alasan spesifik."}
-															</p>
-														</div>
-													</div>
-												)}
+                    {statuses[i]?.verdict !== "pending" && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full md:w-2/3 md:ml-auto md:border-l md:border-current md:pl-6 pt-4 md:pt-0">
+                        {/* Alasan Ditolak (hanya untuk rejected) */}
+                        {statuses[i]?.verdict === "rejected" && (
+                          <div className="flex items-start gap-2 text-sm">
+                            <MessageSquareText className="w-5 h-5 mt-0.5 text-red-600 flex-shrink-0" />
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-red-700">
+                                Alasan Ditolak:
+                              </span>
+                              <p className="font-normal whitespace-pre-wrap text-red-800">
+                                {statuses[i]?.rejectedReason ||
+                                  "Tidak ada alasan spesifik."}
+                              </p>
+                            </div>
+                          </div>
+                        )}
 
-												{/* Info Completed By */}
-												{/* Menampilkan jika status sudah completed (approved/rejected) */}
-												{statuses[i]?.completedBy?.username && (
-													<div className="flex items-start gap-2 text-sm">
-														<User2 className="w-5 h-5 mt-0.5 text-gray-600 flex-shrink-0" />
-														<div className="flex flex-col">
-															<span className="font-semibold text-gray-700">
-																{statuses[i]?.verdict === "approved"
-																	? "Disetujui oleh"
-																	: "Ditolak oleh"}
-																:
-															</span>
-															<p className="font-normal text-gray-800">
-																{statuses[i]?.completedBy?.displayName ||
-																	statuses[i]?.completedBy?.username ||
-																	"-"}
-															</p>
-														</div>
-													</div>
-												)}
+                        {/* Info Completed By */}
+                        {/* Menampilkan jika status sudah completed (approved/rejected) */}
+                        {statuses[i]?.completedBy?.username && (
+                          <div className="flex items-start gap-2 text-sm">
+                            <User2 className="w-5 h-5 mt-0.5 text-gray-600 flex-shrink-0" />
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-gray-700">
+                                {statuses[i]?.verdict === "approved"
+                                  ? "Disetujui oleh"
+                                  : "Ditolak oleh"}
+                                :
+                              </span>
+                              <p className="font-normal text-gray-800">
+                                {statuses[i]?.completedBy?.displayName ||
+                                  statuses[i]?.completedBy?.username ||
+                                  "-"}
+                              </p>
+                            </div>
+                          </div>
+                        )}
 
-												{/* Info Completed At */}
-												{/* Menampilkan jika status sudah completed (approved/rejected) */}
-												{statuses[i]?.completedAt && (
-													<div className="flex items-start gap-2 text-sm">
-														<Clock className="w-5 h-5 mt-0.5 text-gray-600 flex-shrink-0" />
-														<div className="flex flex-col">
-															<span className="font-semibold text-gray-700">
-																Waktu:
-															</span>
-															<p className="font-normal text-gray-800">
-																{new Date(
-																	statuses[i]?.completedAt
-																).toLocaleString("id-ID", {
-																	day: "numeric",
-																	month: "long",
-																	year: "numeric",
-																	hour: "2-digit",
-																	minute: "2-digit",
-																}) || "-"}
-															</p>
-														</div>
-													</div>
-												)}
+                        {/* Info Completed At */}
+                        {/* Menampilkan jika status sudah completed (approved/rejected) */}
+                        {statuses[i]?.completedAt && (
+                          <div className="flex items-start gap-2 text-sm">
+                            <Clock className="w-5 h-5 mt-0.5 text-gray-600 flex-shrink-0" />
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-gray-700">
+                                Waktu:
+                              </span>
+                              <p className="font-normal text-gray-800">
+                                {new Date(
+                                  statuses[i]?.completedAt
+                                ).toLocaleString("id-ID", {
+                                  day: "numeric",
+                                  month: "long",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }) || "-"}
+                              </p>
+                            </div>
+                          </div>
+                        )}
 
-												{statuses[i]?.verdict !== "pending" &&
-													!statuses[i]?.rejectedReason &&
-													!statuses[i]?.completedBy?.username &&
-													!statuses[i]?.completedAt && (
-														<div className="col-span-full text-center text-gray-500 text-sm italic py-2">
-															Informasi detail tidak tersedia untuk status ini.
-														</div>
-													)}
-											</div>
-										)}
-									</div>
-								</div>
-							))}
-						</>
-					)}
-				</div>
-			</div>
-		);
-	}
+                        {statuses[i]?.verdict !== "pending" &&
+                          !statuses[i]?.rejectedReason &&
+                          !statuses[i]?.completedBy?.username &&
+                          !statuses[i]?.completedAt && (
+                            <div className="col-span-full text-center text-gray-500 text-sm italic py-2">
+                              Informasi detail tidak tersedia untuk status ini.
+                            </div>
+                          )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 }

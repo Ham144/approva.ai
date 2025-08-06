@@ -64,8 +64,8 @@ export default function ProcessPage() {
       const queryString = new URLSearchParams(queryObj).toString();
       return await flowInstanceApi.getFlowInstanceList({
         query: queryString,
-        page,
         limit,
+        skip: (page - 1) * limit,
       });
     },
     refetchOnWindowFocus: false,
@@ -418,6 +418,14 @@ export default function ProcessPage() {
                               {currentIndex}/{statusLength} ({progress}%)
                             </p>
                           </div>
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">
+                              Global Index
+                            </p>
+                            <p className="font-medium text-sm">
+                              {instance?.globalIndex}
+                            </p>
+                          </div>
                         </div>
 
                         {/* Progress Bar */}
@@ -475,6 +483,7 @@ export default function ProcessPage() {
                   <thead className="bg-gray-100 text-gray-700 uppercase tracking-wider text-sm rounded-t-lg">
                     <tr>
                       <th className="py-4 px-6 rounded-tl-xl">Judul Request</th>
+                      <th className="py-4 px-6 rounded-tl-xl">Global Index</th>
                       <th className="py-4 px-6">Jenis Flow</th>
                       <th className="py-4 px-6">Pemohon</th>
                       <th className="py-4 px-6">Tanggal</th>
@@ -507,6 +516,9 @@ export default function ProcessPage() {
                           <td className="max-w-[200px] truncate py-4 px-6 font-medium text-gray-900 rounded-l-xl">
                             {instance.instanceTitle ||
                               "Judul Request Tidak Terisi"}
+                          </td>
+                          <td className="max-w-[200px] truncate py-4 px-6 font-medium text-gray-900 rounded-l-xl">
+                            {instance?.globalIndex}
                           </td>
                           <td className="text-gray-600 py-4 px-6">
                             {instance?.flowTemplate?.title || "-"}
@@ -583,9 +595,10 @@ export default function ProcessPage() {
         </button>
         <button
           className="btn"
+          disabled={page >= totalPage}
           onClick={() => {
             setPage((prev) => {
-              if (prev + 1 == totalPage) {
+              if (prev + 1 > totalPage) {
                 return prev;
               }
               return prev + 1;

@@ -94,6 +94,10 @@ const flowInstanceSchema = new mongoose.Schema(
       ref: "Org",
       required: true,
     },
+    globalIndex: {
+      type: String,
+      required: true,
+    },
   },
   { timestamps: true } // createdAt dan updatedAt untuk setiap permintaan
 );

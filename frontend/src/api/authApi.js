@@ -60,8 +60,13 @@ export const switchOrg = async (body) => {
   return res.data;
 };
 
+export const resetPassword = async (body) => {
+  const res = await axiosInstance.put(`/api/auth/resetPassword`, body);
+  return res.data;
+};
+
 export const deleteAppUser = async (id) => {
-  const response = await axiosInstance.delete(`/api/auth/deleteAppUser/${id}`);
+  const response = await axiosInstance.post(`/api/auth/deleteAppUser/${id}`);
   return response.data;
 };
 
