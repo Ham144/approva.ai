@@ -76,19 +76,19 @@ const flowInstanceSchema = new mongoose.Schema(
       ],
       default: "draft",
     },
-    isPrivateRequest: {
-      //ini untuk menentukan request ini tampil kesemua nya di process page atau hanya sebagian orang
-      type: Boolean,
-      default: false,
-    },
-    whoCanSee: [
-      //not used
-      //ini untuk mode isPrivateRequest active
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "UserRefrensi",
-      },
-    ],
+    // isPrivateRequest: {
+    //   //ini untuk menentukan request ini tampil kesemua nya di process page atau hanya sebagian orang
+    //   type: Boolean,
+    //   default: false,
+    // },
+    // whoCanSee: [
+    //   //not used
+    //   //ini untuk mode isPrivateRequest active
+    //   {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "UserRefrensi",
+    //   },
+    // ],
     org: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Org",

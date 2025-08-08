@@ -209,71 +209,83 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
     requestDate,
     isMyRequestOnly,
     isMyDepartmentOnly,
-    limit,
-    skip,
+    limit = 10,
+    page = 1,
     search,
   } = req.query;
 
   try {
-    let query = {
+    // 1) Cari semua template di mana user adalah salah satu authorized
+    const authorizedTemplateIds = await FlowAndPoint.find({
       org: req.user.org,
-    };
+      "status.authorized": req.user._id,
+    }).distinct("_id");
+
+    // 2) Bangun query dasar (tanpa org, kita tambahkan nanti di finalQuery)
+    let baseConditions = {};
+
     if (instanceId) {
-      query._id = instanceId;
+      baseConditions._id = instanceId;
     } else {
       if (flowTemplateCategory) {
-        query.flowTemplate = new mongoose.Types.ObjectId(flowTemplateCategory);
+        baseConditions.flowTemplate = new mongoose.Types.ObjectId(
+          flowTemplateCategory
+        );
       }
-
       if (overallStatus) {
-        query.overallStatus = overallStatus;
+        baseConditions.overallStatus = overallStatus;
       }
       if (requestedBy) {
-        query.requestedBy = requestedBy;
+        baseConditions.requestedBy = requestedBy;
       }
       if (requestDate) {
-        // Cari berdasarkan tanggal (createdAt) harian
         const start = new Date(requestDate);
         start.setHours(0, 0, 0, 0);
         const end = new Date(requestDate);
         end.setHours(23, 59, 59, 999);
-        query.createdAt = { $gte: start, $lte: end };
+        baseConditions.createdAt = { $gte: start, $lte: end };
       }
-
-      if (isMyDepartmentOnly == "true") {
-        const myDepartment = await Department.findOne({
+      if (isMyDepartmentOnly === "true") {
+        const myDept = await Department.findOne({
           org: req.user.org,
-          members: { $in: [req.user._id] },
+          members: req.user._id,
         });
-        console.log(myDepartment);
-        if (myDepartment) {
-          query = {
-            ...query,
-            flowTemplate: {
-              $in: await FlowAndPoint.find({
-                allowedDepartmentToRequest: myDepartment._id,
-              }).distinct("_id"),
-            },
-          };
+        if (myDept) {
+          const templates = await FlowAndPoint.find({
+            org: req.user.org,
+            allowedDepartmentToRequest: myDept._id,
+          }).distinct("_id");
+          baseConditions.flowTemplate = { $in: templates };
         }
       }
     }
 
-    if (isMyRequestOnly == "true") {
-      //ingat ini perlu sandingkan dengan string
-      query.requestedBy = req.user._id;
+    if (isMyRequestOnly === "true") {
+      baseConditions.requestedBy = req.user._id;
     }
 
-    // Total semua dokumen yang cocok dengan query
-    const totalData = await FlowInstance.countDocuments(query);
+    if (search) {
+      baseConditions.$or = [
+        { instanceTitle: { $regex: search, $options: "i" } },
+        { globalIndex: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // 3) Gabungkan jadi finalQuery: harus dari org yang sama, dan (salah satu kondisi OR user authorized)
+    const finalQuery = {
+      org: req.user.org,
+      $or: [baseConditions, { flowTemplate: { $in: authorizedTemplateIds } }],
+    };
+
+    // 4) Hitung total & ambil data
+    const totalData = await FlowInstance.countDocuments(finalQuery);
     const totalPage = Math.ceil(totalData / limit);
 
-    // Ambil data paginated
-    const flowInstanceList = await FlowInstance.find(query)
-      .populate("requestedBy", "username") // Tetap di sini, ini terpisah
+    const flowInstanceList = await FlowInstance.find(finalQuery)
+      .populate("requestedBy", "username")
       .populate({
         path: "flowTemplate",
-        select: "title desc", // Masukkan field yang ingin diambil di sini juga
+        select: "title desc",
         populate: [
           { path: "request", model: "Input" },
           { path: "status.requirements", model: "Input" },
@@ -284,17 +296,16 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
           },
         ],
       })
-      .select("-requestData")
-      .select("globalIndex")
+      .select("-requestData") // ✅ hanya eksklusi, tidak konflik
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
-      .skip(parseInt(skip));
+      .skip((parseInt(page) - 1) * parseInt(limit));
 
     return res
       .status(200)
       .json({ data: flowInstanceList, totalPage, totalData });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res.status(400).json({ message: "Terjadi kesalahan server" });
   }
 });
@@ -785,8 +796,11 @@ router.get("/my-tasks", async (req, res) => {
           _id: 1,
           instanceTitle: 1,
           createdAt: 1,
+          debugTitle: 1,
           currentStatusTitle: "$currentStatusObject.title",
           requestedByUsername: "$requestedByInfo.username",
+          flowTemplateTitle: "$flowTemplateDetails.title",
+          globalIndex: 1, // << langsung ambil dari FlowInstance
         },
       },
     ]);

@@ -473,6 +473,12 @@ export default function PreviewFlow({
             Tampil Form
           </button>
         </div>
+        {jsonFlow?.globalIndex && (
+          <div className="flex gap-2 items-center">
+            <span className="font-bold">Flow Global Index:</span>
+            <div className="badge badge-accent">{jsonFlow?.globalIndex}</div>
+          </div>
+        )}
       </div>
     );
   };
@@ -499,7 +505,6 @@ export default function PreviewFlow({
             </h1>
             <p className="text-gray-600 mt-2">{jsonFlow?.desc}</p>
           </div>
-
           <div className="bg-white  p-6 rounded-lg shadow-sm">
             {(isForRequest || isForApproval) && (
               <input
@@ -541,7 +546,6 @@ export default function PreviewFlow({
               ))}
             </div>
           </div>
-
           {/* Status */}
           {!isForRequest && (
             <>

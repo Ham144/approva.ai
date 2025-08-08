@@ -15,6 +15,9 @@ const initialFilterState = {
   requestedBy: "all",
   requestDate: "", // Gunakan string kosong untuk input tanggal yang kosong
   isMyRequestOnly: false,
+  page: 1,
+  limit: 25,
+  search: "",
 };
 
 export default function ProcessPage() {
@@ -29,10 +32,8 @@ export default function ProcessPage() {
   const overallStatusquery = searchParams.get("overallStatus");
   const flowTemplateCategoryquery = searchParams.get("flowTemplateCategory");
   const isMyRequestOnlyQuery = searchParams.get("isMyRequestOnlyQuery");
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
 
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -64,8 +65,6 @@ export default function ProcessPage() {
       const queryString = new URLSearchParams(queryObj).toString();
       return await flowInstanceApi.getFlowInstanceList({
         query: queryString,
-        limit,
-        skip: (page - 1) * limit,
       });
     },
     refetchOnWindowFocus: false,
@@ -265,71 +264,91 @@ export default function ProcessPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            disabled={userInfo?.role == "member"}
-            onClick={() =>
-              setFilter((prev) => ({
-                ...prev,
-                isMyRequestOnly: false,
-                isMyDepartmentOnly: false,
-              }))
-            }
-            className={`px-4 disabled:bg-red-200  py-2 rounded-full text-sm font-medium transition-all ${
-              !filter?.isMyRequestOnly && !filter?.isMyDepartmentOnly
-                ? "bg-blue-100 text-blue-700 border border-blue-200 shadow-inner"
-                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-            }`}
-          >
-            Semua Request
-          </button>
+        <div className="flex flex-wrap justify-between gap-2">
+          <div className="flex gap-x-4 items-center">
+            <button
+              disabled={userInfo?.role == "member"}
+              onClick={() =>
+                setFilter((prev) => ({
+                  ...prev,
+                  isMyRequestOnly: false,
+                  isMyDepartmentOnly: false,
+                }))
+              }
+              className={`px-4 disabled:bg-red-200  py-2 rounded-full text-sm font-medium transition-all ${
+                !filter?.isMyRequestOnly && !filter?.isMyDepartmentOnly
+                  ? "bg-blue-100 text-blue-700 border border-blue-200 shadow-inner"
+                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              Semua Request
+            </button>
 
-          <button
-            onClick={() =>
-              setFilter((prev) => ({
-                ...prev,
-                isMyRequestOnly: false,
-                isMyDepartmentOnly: true,
-              }))
-            }
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              filter?.isMyDepartmentOnly
-                ? "bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-inner"
-                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-            }`}
-          >
-            Departemen Saya
-          </button>
+            <button
+              onClick={() =>
+                setFilter((prev) => ({
+                  ...prev,
+                  isMyRequestOnly: false,
+                  isMyDepartmentOnly: true,
+                }))
+              }
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                filter?.isMyDepartmentOnly
+                  ? "bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-inner"
+                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              Departemen Saya
+            </button>
 
-          <button
-            onClick={() =>
+            <button
+              onClick={() =>
+                setFilter((prev) => ({
+                  ...prev,
+                  isMyRequestOnly: true,
+                  isMyDepartmentOnly: false,
+                }))
+              }
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                filter?.isMyRequestOnly
+                  ? "bg-green-100 text-green-700 border border-green-200 shadow-inner"
+                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              Request Saya
+            </button>
+          </div>
+
+          <input
+            type="text"
+            placeholder="search"
+            className="input w-full max-w-xs"
+            value={filter?.search}
+            onChange={(e) => {
               setFilter((prev) => ({
                 ...prev,
-                isMyRequestOnly: true,
-                isMyDepartmentOnly: false,
-              }))
-            }
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              filter?.isMyRequestOnly
-                ? "bg-green-100 text-green-700 border border-green-200 shadow-inner"
-                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-            }`}
-          >
-            Request Saya
-          </button>
+                search: e.target.value,
+              }));
+            }}
+          />
         </div>
 
         {/* --- Area Konten / Hasil --- */}
         <div className="space-y-4 overflow-y-auto pb-20 ">
-          <h3 className="text-lg font-semibold items-center gap-x-3">
-            Ditemukan: {totalData ?? 0} Proses
+          <div className="flex gap-x-4 items-center">
+            <h3 className="text-lg font-semibold items-center gap-x-3">
+              Ditemukan: {totalData ?? 0} Proses
+            </h3>
+            <h3 className="text-lg font-semibold items-center gap-x-3">
+              Menampilkan: {flowInstanceData?.data.length ?? 0} Proses
+            </h3>
             <div
               className="badge badge-sm mx-3 rounded cursor-pointer"
               onClick={() => resetFilters()}
             >
               Reset Filter
             </div>
-          </h3>
+          </div>
 
           {isLoadingInstance ? (
             <div className="flex justify-center items-center py-20">
@@ -582,27 +601,25 @@ export default function ProcessPage() {
       </div>
       <div className="grid grid-cols-2 absolute  bottom-20">
         <button
-          disabled={page == 1}
+          disabled={filter?.page == 1}
           className="btn"
-          onClick={() =>
-            setPage((prev) => {
-              if (prev == 1) return 1;
-              return prev - 1;
-            })
-          }
+          onClick={() => {
+            setFilter((prev) => ({
+              ...prev,
+              page: prev.page > 1 ? prev.page - 1 : prev.page,
+            }));
+          }}
         >
           Prev
         </button>
         <button
           className="btn"
-          disabled={page >= totalPage}
+          disabled={filter?.page >= totalPage}
           onClick={() => {
-            setPage((prev) => {
-              if (prev + 1 > totalPage) {
-                return prev;
-              }
-              return prev + 1;
-            });
+            setFilter((prev) => ({
+              ...prev,
+              page: prev.page < totalPage ? prev.page + 1 : prev.page,
+            }));
           }}
         >
           Next

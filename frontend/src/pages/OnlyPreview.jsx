@@ -41,7 +41,7 @@ export default function OnlyPreview() {
 
   let flowTemplate = flowInstanceData?.data.flowTemplate;
 
-  const [openSystemInfo, setOpenSystemInfo] = useState(false);
+  const [openSystemInfo, setOpenSystemInfo] = useState(true);
   if (isIsntanceAndTempalteLoading) {
     return (
       <div className="min-h-screen mx-auto flex justify-center items-center ">
@@ -86,6 +86,11 @@ export default function OnlyPreview() {
 
             {openSystemInfo && (
               <div className="px-4 pb-4 text-sm text-gray-700 dark:text-gray-300 grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
+                <p className="font-medium">Global Index:</p>
+                <p className="break-all">
+                  {flowInstanceData.data.globalIndex || "-"}
+                </p>
+
                 <p className="font-medium">Requested By:</p>
                 <p className="break-all">
                   {flowInstanceData.data.requestedBy?.username}

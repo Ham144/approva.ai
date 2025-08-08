@@ -66,7 +66,7 @@ export const resetPassword = async (body) => {
 };
 
 export const deleteAppUser = async (id) => {
-  const response = await axiosInstance.post(`/api/auth/deleteAppUser/${id}`);
+  const response = await axiosInstance.delete(`/api/auth/deleteAppUser/${id}`);
   return response.data;
 };
 

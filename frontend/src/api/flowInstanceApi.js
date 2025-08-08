@@ -26,10 +26,10 @@ const flowInstanceApi = {
     return res.data;
   },
   // getFlowInstanceList menerima query string hasil serialisasi filter, hasilnya array data
-  getFlowInstanceList: async ({ query, page = 1, limit = 10 }) => {
+  getFlowInstanceList: async ({ query }) => {
     try {
       const res = await axiosInstance.get(
-        `/api/flowInstance/getFlowInstanceList?${query}&page=${page}&limit=${limit}`
+        `/api/flowInstance/getFlowInstanceList?${query}`
       );
       return res.data;
     } catch (error) {

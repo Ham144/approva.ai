@@ -6,6 +6,7 @@ import LdapClient from "ldapjs-client";
 import authenticate from "../middlewares/authenticate.js";
 import Org from "../models/Organization.model.js";
 import authorize from "../middlewares/authorize.js";
+import axios from "axios"
 import Department from "../models/Department.model.js";
 import jwt from "jsonwebtoken";
 
@@ -207,13 +208,15 @@ const asyncHandler = (fn) => (req, res, next) => {
 router.post(
   "/login/ldap",
   asyncHandler(async (req, res) => {
-    const { username, password, selectedOrg, captchaToken } = req.body;
-    if (!username || !password || !selectedOrg) {
+    const { username: usernameRaw, password, selectedOrg, captchaToken } = req.body;
+    if (!usernameRaw || !password || !selectedOrg) {
       return res.status(400).json({
         success: false,
         message: "perlu melengkapi semua credentials",
       });
     }
+    
+    const username = usernameRaw.toLowerCase();
 
     try {
       const result = await axios.post(
@@ -229,6 +232,7 @@ router.post(
           },
         }
       );
+      
 
       if (!result.data.success) {
         return res
@@ -242,6 +246,7 @@ router.post(
         .status(500)
         .json({ success: false, message: "Gagal memverifikasi CAPTCHA." });
     }
+
 
     if (username == "SUPERTENANT") {
       return res.status(400).json({
@@ -886,7 +891,6 @@ router.put("/takeOverUser", authenticate, authorize, async (req, res) => {
   }
 });
 
-import axios from "axios";
 
 router.post("/switchOrg", authenticate, async (req, res) => {
   //periksa apakah namanya ada persis di org target

@@ -52,6 +52,14 @@
 [x] reset password
 [x] search form global di prosess
 [x] pagination
+[x] search [by instance titel, by globalIndex]
+[x] proses filter kompleks [by : kategori, by status, by pemohon, by time, by status approval, by department, by my request, by user level]
+[x] tampilin globalIndex di preview
+[x] tampilin tabel tugas lebih lengkap di home
+[x] tampilin tiap approver ditiap status di previewOnly dan saat approve
+[x] add :tambahin globalIndex di home
+[x] fix search tidak bekerja untuk level member
+[x] fix: cegah user masukkan huruf besar di username
 [] add: Rollback 1 langkah (nama fitur: redo) (rollback mundur approval sebelumnya / target approval lainnya)
 [] pindah perusahaan satu kli klik
 [] fix: auto pindah departement jika di LDAP berubah

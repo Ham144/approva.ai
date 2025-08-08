@@ -137,52 +137,35 @@ const Home = () => {
               {/* Table Header */}
               <div className="grid grid-cols-12 bg-gray-50 px-6 py-3 border-b border-gray-200">
                 <div className="col-span-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  #
-                </div>
-                <div className="col-span-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Permintaan
+                  Tanggal
                 </div>
                 <div className="col-span-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Permintaan
+                </div>
+                <div className="col-span-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </div>
                 <div className="col-span-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Requestor
                 </div>
                 <div className="col-span-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tanggal
+                  Global Index
+                </div>
+                <div className="col-span-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Template
                 </div>
               </div>
 
               {/* Table Rows */}
               <div className="divide-y divide-gray-100">
-                {myTasksQuery.data.map((task, index) => (
+                {myTasksQuery.data.map((task) => (
                   <div
                     key={task._id}
                     onClick={() => navigate(`/status/fulfillment/${task._id}`)}
                     className="grid grid-cols-12 px-6 py-4 items-center hover:bg-blue-50/30 transition-colors cursor-pointer group"
                   >
-                    <div className="col-span-1 text-sm font-medium text-gray-500">
-                      {index + 1}
-                    </div>
-                    <div className="col-span-4">
-                      <p className="font-medium text-gray-900 group-hover:text-blue-600 truncate">
-                        {task.instanceTitle || "Untitled Request"}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {task.flowTemplate?.title}
-                      </p>
-                    </div>
-                    <div className="col-span-3">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
-                        {task.currentStatusTitle}
-                      </span>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-sm text-gray-700 truncate">
-                        {task.requestedByUsername}
-                      </p>
-                    </div>
-                    <div className="col-span-2">
+                    {/* Tanggal */}
+                    <div className="col-span-1">
                       <p className="text-xs text-gray-500">
                         {new Date(task.createdAt).toLocaleString("id-ID", {
                           day: "numeric",
@@ -193,6 +176,44 @@ const Home = () => {
                         {new Date(task.createdAt).toLocaleString("id-ID", {
                           timeStyle: "short",
                         })}
+                      </p>
+                    </div>
+
+                    {/* Permintaan */}
+                    <div className="col-span-3">
+                      <p className="font-medium text-gray-900 group-hover:text-blue-600 truncate">
+                        {task.instanceTitle || "Untitled Request"}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate flex-wrap text-wrap">
+                        {task.flowTemplate?.title}
+                      </p>
+                    </div>
+
+                    {/* Status */}
+                    <div className="col-span-2">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200 ">
+                        {task.currentStatusTitle}
+                      </span>
+                    </div>
+
+                    {/* Requestor */}
+                    <div className="col-span-2">
+                      <p className="text-sm text-gray-700 truncate">
+                        {task.requestedByUsername}
+                      </p>
+                    </div>
+
+                    {/* Global Index */}
+                    <div className="col-span-2">
+                      <p className="text-sm text-gray-700">
+                        {task.globalIndex}
+                      </p>
+                    </div>
+
+                    {/* Template */}
+                    <div className="col-span-2">
+                      <p className="text-sm text-gray-700 truncate">
+                        {task.flowTemplateTitle}
                       </p>
                     </div>
                   </div>
