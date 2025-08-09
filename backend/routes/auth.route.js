@@ -6,7 +6,7 @@ import LdapClient from "ldapjs-client";
 import authenticate from "../middlewares/authenticate.js";
 import Org from "../models/Organization.model.js";
 import authorize from "../middlewares/authorize.js";
-import axios from "axios"
+import axios from "axios";
 import Department from "../models/Department.model.js";
 import jwt from "jsonwebtoken";
 
@@ -208,14 +208,19 @@ const asyncHandler = (fn) => (req, res, next) => {
 router.post(
   "/login/ldap",
   asyncHandler(async (req, res) => {
-    const { username: usernameRaw, password, selectedOrg, captchaToken } = req.body;
+    const {
+      username: usernameRaw,
+      password,
+      selectedOrg,
+      captchaToken,
+    } = req.body;
     if (!usernameRaw || !password || !selectedOrg) {
       return res.status(400).json({
         success: false,
         message: "perlu melengkapi semua credentials",
       });
     }
-    
+
     const username = usernameRaw.toLowerCase();
 
     try {
@@ -232,7 +237,6 @@ router.post(
           },
         }
       );
-      
 
       if (!result.data.success) {
         return res
@@ -246,7 +250,6 @@ router.post(
         .status(500)
         .json({ success: false, message: "Gagal memverifikasi CAPTCHA." });
     }
-
 
     if (username == "SUPERTENANT") {
       return res.status(400).json({
@@ -891,7 +894,6 @@ router.put("/takeOverUser", authenticate, authorize, async (req, res) => {
   }
 });
 
-
 router.post("/switchOrg", authenticate, async (req, res) => {
   //periksa apakah namanya ada persis di org target
   const { targetOrg } = req.body;
@@ -932,19 +934,19 @@ router.put("/resetPassword", authenticate, async (req, res) => {
   try {
     const { oldPassword, newPassword } = req.body;
 
-    //validasi awal user apakah old password benar  
+    //validasi awal user apakah old password benar
     const userDB = await UserRefrensi.findOne({
       _id: req.user._id,
       org: req.user.org,
     })
       .select("password")
       .lean();
-    
+
     const isPasswordValid = await bcrypt.compare(oldPassword, userDB.password);
-    if(!isPasswordValid){
+    if (!isPasswordValid) {
       return res.status(400).json({ message: "Password lama salah." });
     }
-    
+
     // Validasi
     if (!newPassword) {
       return res.status(400).json({ message: "Password baru diperlukan." });
@@ -955,13 +957,19 @@ router.put("/resetPassword", authenticate, async (req, res) => {
     const isLongEnough = newPassword.length >= 6;
 
     if (!isLongEnough) {
-      return res.status(400).json({ message: "Password harus lebih dari 6 karakter." });
+      return res
+        .status(400)
+        .json({ message: "Password harus lebih dari 6 karakter." });
     }
     if (!hasUpperCase) {
-      return res.status(400).json({ message: "Password harus memiliki huruf besar." });
+      return res
+        .status(400)
+        .json({ message: "Password harus memiliki huruf besar." });
     }
     if (!hasNumber) {
-      return res.status(400).json({ message: "Password harus memiliki angka." });
+      return res
+        .status(400)
+        .json({ message: "Password harus memiliki angka." });
     }
 
     // Hash password
@@ -977,7 +985,6 @@ router.put("/resetPassword", authenticate, async (req, res) => {
     res.status(500).json({ error: "Terjadi kesalahan server." });
   }
 });
-
 
 // web
 router.delete(

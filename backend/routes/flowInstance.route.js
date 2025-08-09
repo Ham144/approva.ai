@@ -274,12 +274,14 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
     // 3) Gabungkan jadi finalQuery: harus dari org yang sama, dan (salah satu kondisi OR user authorized)
     const finalQuery = {
       org: req.user.org,
-      $or: [baseConditions, { flowTemplate: { $in: authorizedTemplateIds } }],
+      $and: [baseConditions, { flowTemplate: { $in: authorizedTemplateIds } }],
     };
 
     // 4) Hitung total & ambil data
     const totalData = await FlowInstance.countDocuments(finalQuery);
     const totalPage = Math.ceil(totalData / limit);
+
+    console.log(totalData);
 
     const flowInstanceList = await FlowInstance.find(finalQuery)
       .populate("requestedBy", "username")
@@ -310,7 +312,7 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
   }
 });
 
-//ini lengkap dapatin tempalte nya beserta instance flow nya
+//ini lengkap dapatin template nya beserta instance flow nya
 router.get("/flowInstanceById/:id", async (req, res) => {
   const id = req.params.id;
   if (!id) {
