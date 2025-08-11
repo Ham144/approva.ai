@@ -6,7 +6,6 @@ const flowInstanceSchema = new mongoose.Schema(
     instanceTitle: {
       type: String,
       required: true,
-      unique: true,
     },
     flowTemplate: {
       type: mongoose.Schema.Types.ObjectId,

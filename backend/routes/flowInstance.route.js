@@ -228,9 +228,9 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
       baseConditions._id = instanceId;
     } else {
       if (flowTemplateCategory) {
-        baseConditions.flowTemplate = new mongoose.Types.ObjectId(
-          flowTemplateCategory
-        );
+        baseConditions.flowTemplate = { 
+          $in: [new mongoose.Types.ObjectId(flowTemplateCategory)] 
+        };
       }
       if (overallStatus) {
         baseConditions.overallStatus = overallStatus;
@@ -245,11 +245,12 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
         end.setHours(23, 59, 59, 999);
         baseConditions.createdAt = { $gte: start, $lte: end };
       }
-      if (isMyDepartmentOnly === "true") {
+      if (isMyDepartmentOnly === "true") { //
         const myDept = await Department.findOne({
           org: req.user.org,
           members: req.user._id,
         });
+
         if (myDept) {
           const templates = await FlowAndPoint.find({
             org: req.user.org,
@@ -260,28 +261,65 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
       }
     }
 
+    let finalQuery= {}
     if (isMyRequestOnly === "true") {
-      baseConditions.requestedBy = req.user._id;
+      baseConditions.requestedBy = new mongoose.Types.ObjectId(req.user._id);
     }
-
+    
     if (search) {
-      baseConditions.$or = [
-        { instanceTitle: { $regex: search, $options: "i" } },
-        { globalIndex: { $regex: search, $options: "i" } },
-      ];
+      const searchConditions = {
+        $or: [
+          { instanceTitle: { $regex: `^${search}$`, $options: "i" } },
+          { globalIndex: { $regex: search, $options: "i" } }
+        ]
+      };
+    
+      // Kalau cuma request saya
+      if (isMyRequestOnly === "true") {
+        finalQuery = {
+          org: req.user.org,
+          $and: [
+            baseConditions,
+            searchConditions
+          ]
+        };
+      } else {
+        finalQuery = {
+          org: req.user.org,
+          $and: [
+            {
+              $or: [
+                baseConditions,
+                { flowTemplate: { $in: authorizedTemplateIds } }
+              ]
+            },
+            searchConditions
+          ]
+        };
+      }
+    } else {
+      if (isMyRequestOnly === "true") {
+        finalQuery = {
+          org: req.user.org,
+          $or: [
+            baseConditions,
+            { flowTemplate: { $in: authorizedTemplateIds } }
+          ]
+        };
+      } else {
+        finalQuery = {
+          org: req.user.org,
+          $or: [
+            baseConditions,
+            { flowTemplate: { $in: authorizedTemplateIds } }
+          ]
+        };
+      }
     }
-
-    // 3) Gabungkan jadi finalQuery: harus dari org yang sama, dan (salah satu kondisi OR user authorized)
-    const finalQuery = {
-      org: req.user.org,
-      $and: [baseConditions, { flowTemplate: { $in: authorizedTemplateIds } }],
-    };
 
     // 4) Hitung total & ambil data
     const totalData = await FlowInstance.countDocuments(finalQuery);
     const totalPage = Math.ceil(totalData / limit);
-
-    console.log(totalData);
 
     const flowInstanceList = await FlowInstance.find(finalQuery)
       .populate("requestedBy", "username")

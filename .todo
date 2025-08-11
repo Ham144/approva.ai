@@ -60,6 +60,8 @@
 [x] add :tambahin globalIndex di home
 [x] fix search tidak bekerja untuk level member
 [x] fix: cegah user masukkan huruf besar di username
+[] modify: tampilin authorized dimasing masing status bukan hanya currentStatusIndex
+[] add: bisa pilih next authorized user untuk dikirim email
+[] add: pindah perusahaan satu kli klik
 [] add: Rollback 1 langkah (nama fitur: redo) (rollback mundur approval sebelumnya / target approval lainnya)
-[] pindah perusahaan satu kli klik
 [] fix: auto pindah departement jika di LDAP berubah
