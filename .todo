@@ -60,8 +60,15 @@
 [x] add :tambahin globalIndex di home
 [x] fix search tidak bekerja untuk level member
 [x] fix: cegah user masukkan huruf besar di username
-[] modify: tampilin authorized dimasing masing status bukan hanya currentStatusIndex
-[] add: bisa pilih next authorized user untuk dikirim email
+
+[x] modify: tampilin globalIndex pas preview
+[x] modify: ganti backround
+[x] modify: tampilin authorized dimasing masing status bukan hanya currentStatusIndex
+[x] add: fitur view by 1 col, 2 col
+[x] fix: filter dengan flow template
+[50%] add: fitur export csv berdasarkan perbulan
+[] add: fitur bisa pilih next authorized user untuk dikirim email
 [] add: pindah perusahaan satu kli klik
+[] modify: kirim email dengan nama organization bukan fixed csi
 [] add: Rollback 1 langkah (nama fitur: redo) (rollback mundur approval sebelumnya / target approval lainnya)
 [] fix: auto pindah departement jika di LDAP berubah

@@ -2,6 +2,7 @@ import React from "react";
 import { Outlet } from "react-router";
 import { Toaster } from "react-hot-toast";
 import Navigation from "./components/Navigation";
+import "antd/dist/reset.css"; // untuk Antd v5
 
 function App() {
   return (

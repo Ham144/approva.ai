@@ -65,6 +65,10 @@ const flowInstanceApi = {
     );
     return res.data;
   },
+  downloadFlowInstanceByMonth: async (month) => {
+    const res = await axiosInstance.get(`/api/flowInstance/download/${month}`);
+    return res.data;
+  },
   getMyTasks: async () => {
     const res = await axiosInstance.get(`/api/flowInstance/my-tasks`);
     return res.data;

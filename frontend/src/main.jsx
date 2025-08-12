@@ -27,6 +27,7 @@ import OnlyPreview from "./pages/OnlyPreview";
 import SuperTenantPage from "./pages/SuperTenantPage";
 import DepartmentManagement from "./pages/DepartmentManagement";
 import LibraryManagement from "./pages/LibraryManagement";
+import DownloadProcessPage from "./pages/DownloadProcessPage";
 // import RegisterPage from "./pages/RegisterPage";
 
 const router = createBrowserRouter(
@@ -61,6 +62,11 @@ const router = createBrowserRouter(
           index={true}
           path="/status/isOnlyPreview/:instanceId"
           element={<OnlyPreview />}
+        />
+        <Route
+          index={true}
+          path="/process/download"
+          element={<DownloadProcessPage />}
         />
 
         {/* menu IT and admin */}

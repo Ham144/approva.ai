@@ -164,9 +164,9 @@ const Profile = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div className="min-h-screen flex flex-col backdrop dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {/* Header with Tab Navigation */}
-      <div className="sticky top-0 z-20 bg-white dark:bg-gray-800 shadow-md py-3 px-4 sm:px-6">
+      <div className="sticky top-0 z-20  dark:bg-gray-800 shadow-md py-3 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-2">
           {tabs.map((tab) => (
             <button

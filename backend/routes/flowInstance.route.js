@@ -228,9 +228,15 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
       baseConditions._id = instanceId;
     } else {
       if (flowTemplateCategory) {
-        baseConditions.flowTemplate = { 
-          $in: [new mongoose.Types.ObjectId(flowTemplateCategory)] 
-        };
+        console.log(
+          flowTemplateCategory,
+          mongoose.isValidObjectId(flowTemplateCategory)
+        );
+        baseConditions.flowTemplate = new mongoose.Types.ObjectId(
+          flowTemplateCategory
+        );
+
+        console.log(baseConditions.flowTemplate);
       }
       if (overallStatus) {
         baseConditions.overallStatus = overallStatus;
@@ -245,7 +251,8 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
         end.setHours(23, 59, 59, 999);
         baseConditions.createdAt = { $gte: start, $lte: end };
       }
-      if (isMyDepartmentOnly === "true") { //
+      if (isMyDepartmentOnly === "true") {
+        //
         const myDept = await Department.findOne({
           org: req.user.org,
           members: req.user._id,
@@ -261,27 +268,24 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
       }
     }
 
-    let finalQuery= {}
+    let finalQuery = {};
     if (isMyRequestOnly === "true") {
       baseConditions.requestedBy = new mongoose.Types.ObjectId(req.user._id);
     }
-    
+
     if (search) {
       const searchConditions = {
         $or: [
           { instanceTitle: { $regex: `^${search}$`, $options: "i" } },
-          { globalIndex: { $regex: search, $options: "i" } }
-        ]
+          { globalIndex: { $regex: search, $options: "i" } },
+        ],
       };
-    
+
       // Kalau cuma request saya
       if (isMyRequestOnly === "true") {
         finalQuery = {
           org: req.user.org,
-          $and: [
-            baseConditions,
-            searchConditions
-          ]
+          $and: [baseConditions, searchConditions],
         };
       } else {
         finalQuery = {
@@ -290,11 +294,11 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
             {
               $or: [
                 baseConditions,
-                { flowTemplate: { $in: authorizedTemplateIds } }
-              ]
+                { flowTemplate: { $in: authorizedTemplateIds } },
+              ],
             },
-            searchConditions
-          ]
+            searchConditions,
+          ],
         };
       }
     } else {
@@ -303,29 +307,31 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
           org: req.user.org,
           $or: [
             baseConditions,
-            { flowTemplate: { $in: authorizedTemplateIds } }
-          ]
+            { flowTemplate: { $in: authorizedTemplateIds } },
+          ],
         };
       } else {
         finalQuery = {
           org: req.user.org,
-          $or: [
+          $and: [
             baseConditions,
-            { flowTemplate: { $in: authorizedTemplateIds } }
-          ]
+            { flowTemplate: { $in: authorizedTemplateIds } },
+          ],
         };
       }
     }
 
     // 4) Hitung total & ambil data
-    const totalData = await FlowInstance.countDocuments(finalQuery);
+    const totalData = await FlowInstance.countDocuments(finalQuery).populate(
+      "flowTemplate"
+    );
     const totalPage = Math.ceil(totalData / limit);
 
     const flowInstanceList = await FlowInstance.find(finalQuery)
       .populate("requestedBy", "username")
       .populate({
         path: "flowTemplate",
-        select: "title desc",
+        select: "title desc _id",
         populate: [
           { path: "request", model: "Input" },
           { path: "status.requirements", model: "Input" },
@@ -654,112 +660,6 @@ router.delete("/delete/:instanceId", async (req, res) => {
   }
 });
 
-// router.get("/onduty/list", async (req, res) => {
-//   const page = parseInt(req.query.page) || 1;
-//   const limit = parseInt(req.query.limit) || 10;
-//   const userId = req.user._id;
-
-//   try {
-//     const instanceList = await FlowInstance.aggregate([
-//       {
-//         $match: {
-//           overallStatus: "in-progress",
-//           $expr: {
-//             $in: [
-//               { $toObjectId: userId },
-//               {
-//                 $let: {
-//                   vars: {
-//                     currentStatus: {
-//                       $arrayElemAt: [
-//                         "$flowTemplate.status",
-//                         "$currentStatusIndex",
-//                       ],
-//                     },
-//                   },
-//                   in: "$$currentStatus.authorized",
-//                 },
-//               },
-//             ],
-//           },
-//         },
-//       },
-//       {
-//         $lookup: {
-//           from: "userrefrensis",
-//           localField: "requestedBy",
-//           foreignField: "_id",
-//           as: "requestedByInfo",
-//         },
-//       },
-//       {
-//         $unwind: {
-//           path: "$requestedByInfo",
-//           preserveNullAndEmptyArrays: true,
-//         },
-//       },
-//       {
-//         $sort: { createdAt: -1 },
-//       },
-//       {
-//         $skip: (page - 1) * limit,
-//       },
-//       {
-//         $limit: limit,
-//       },
-//       {
-//         $project: {
-//           _id: 1,
-//           instanceTitle: 1,
-//           createdAt: 1,
-//           requestedByUsername: "$requestedByInfo.username",
-//         },
-//       },
-//     ]);
-
-//     // Hitung total count
-//     const totalCountAgg = await FlowInstance.aggregate([
-//       {
-//         $match: {
-//           overallStatus: "in-progress",
-//           $expr: {
-//             $in: [
-//               { $toObjectId: userId },
-//               {
-//                 $let: {
-//                   vars: {
-//                     currentStatus: {
-//                       $arrayElemAt: [
-//                         "$flowTemplate.status",
-//                         "$currentStatusIndex",
-//                       ],
-//                     },
-//                   },
-//                   in: "$$currentStatus.authorized",
-//                 },
-//               },
-//             ],
-//           },
-//         },
-//       },
-//       {
-//         $count: "count",
-//       },
-//     ]);
-
-//     const totalCount = totalCountAgg[0]?.count || 0;
-//     const pages = Math.ceil(totalCount / limit);
-
-//     return res.json({
-//       data: instanceList,
-//       pages,
-//     });
-//   } catch (error) {
-//     console.error("❌ Error on /onduty/list:", error);
-//     return res.status(500).json({ message: "Internal server error" });
-//   }
-// });
-
 // Get tasks assigned to the current user
 router.get("/my-tasks", async (req, res) => {
   const userId = req.user._id;
@@ -853,6 +753,25 @@ router.get("/my-tasks", async (req, res) => {
     console.error("Error fetching user tasks:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
+});
+
+router.get("/download/:month", async (req, res) => {
+  const { month } = req.params; // format: "2025-06"
+
+  let record = await DownloadTemplate.findOne({ month });
+
+  if (!record) {
+    // Generate file kalau belum ada
+    const filePath = `/downloads/template-${month}.xlsx`;
+
+    // 🔹 generateExcelFile() adalah fungsi buat bikin file
+    await generateExcelFile(month, `./public${filePath}`);
+
+    // Simpan ke DB
+    record = await DownloadTemplate.create({ month, filePath });
+  }
+
+  res.download(`./public${record.filePath}`);
 });
 
 router.post("/redo/:_id", async (req, res) => {

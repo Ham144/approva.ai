@@ -42,7 +42,7 @@ export default function ApprovalButton({
   return (
     <div
       id={"verdict"}
-      className="space-y-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm"
+      className="space-y-4 p-4 rounded-lg backdrop border border-gray-200 dark:border-gray-700 shadow-sm"
     >
       {/* Bagian Deskripsi dan Info Badge */}
       <div className="text-gray-700 dark:text-gray-300 text-sm sm:text-base leading-relaxed">

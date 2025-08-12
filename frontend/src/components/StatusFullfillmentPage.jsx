@@ -66,7 +66,12 @@ export default function StatusFullfillmentPage() {
       setFullRequestData(flowInstanceData.data.requestData);
       setOveralStatus(flowInstanceData.data.overallStatus);
       setInstanceTitle(flowInstanceData.data.instanceTitle);
-      setStatuses(flowInstanceData.data.statuses);
+      setStatuses(
+        flowInstanceData.data.statuses.map((status, index) => ({
+          ...status,
+          ...flowInstanceData?.data.flowTemplate?.status[index],
+        }))
+      );
       setCurrentStatusIndex(flowInstanceData.data.currentStatusIndex);
 
       if (
@@ -205,7 +210,7 @@ export default function StatusFullfillmentPage() {
       </div>
 
       {/* FOOTER KONTROL (ApprovalButton - Selalu Tampak) */}
-      <div className="fixed bottom-14 left-0 right-0 z-20 bg-white dark:bg-gray-800 p-3 sm:p-4 shadow-lg border-t border-gray-200 dark:border-gray-700">
+      <div className="fixed bottom-14 left-0 right-0 z-20 dark:bg-gray-800 p-3 sm:p-4 shadow-lg  border-gray-200 dark:border-gray-700">
         <div className="mx-auto max-w-4xl">
           <ApprovalButton
             handleSubmitStatus={handleSubmitStatus}

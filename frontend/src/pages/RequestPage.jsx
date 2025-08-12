@@ -12,6 +12,7 @@ export default function RequestPage() {
   const [searchKey, setSearchKey] = useState("");
   const [selectedFlow, setSelectedFlow] = useState(null);
   const [filter, setFilter] = useState(initialFilterRequestPage);
+  const [columns, setColumns] = useState(1);
 
   const { data: flowList } = useQuery({
     queryKey: ["flows", searchKey],
@@ -23,7 +24,7 @@ export default function RequestPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+    <div className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
       {/* Area Pencarian dengan Ikon */}
       <div className="relative mb-8">
         <input
@@ -62,26 +63,60 @@ export default function RequestPage() {
           Beberapa flow mungkin disembunyikan
         </p>
       </div>
-      <div className="flex mb-4 flex-wrap gap-1">
-        <button
-          onClick={() =>
-            setFilter((prev) => ({
-              ...prev,
-              forMe: true,
-            }))
-          }
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-            filter.forMe
-              ? "bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-inner"
-              : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-          }`}
-        >
-          Untuk saya
-        </button>
+      <div className="flex mb-4 flex-wrap items-center justify-between gap-2">
+        <div className="flex gap-1">
+          <button
+            onClick={() =>
+              setFilter((prev) => ({
+                ...prev,
+                forMe: true,
+              }))
+            }
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              filter.forMe
+                ? "bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-inner"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            Untuk saya
+          </button>
+        </div>
+
+        <div className="inline-flex p-1 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 shadow-lg">
+          {[1, 2, 3].map((col) => (
+            <button
+              key={col}
+              onClick={() => setColumns(col)}
+              className={`relative px-4 py-2 text-sm font-medium transition-all duration-300 ${
+                columns === col
+                  ? "text-white bg-gradient-to-r from-blue-500 to-indigo-600 shadow-md"
+                  : "text-gray-600 hover:text-blue-600 hover:bg-white/20"
+              } ${col === 1 ? "rounded-l-lg" : ""} ${
+                col === 3 ? "rounded-r-lg" : ""
+              }`}
+            >
+              {col} Kolom
+              {columns === col && (
+                <>
+                  <span className="absolute inset-x-1 -bottom-px h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent" />
+                  <span className="absolute -inset-1 rounded-md bg-blue-400/10 pointer-events-none" />
+                </>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="flex flex-col gap-y-3 pb-10">
+      <div
+        className={`grid pb-10 gap-3 ${
+          columns === 1
+            ? "grid-cols-1"
+            : columns === 2
+            ? "grid-cols-2"
+            : "grid-cols-3"
+        }`}
+      >
         {flowList?.data?.length === 0 ? (
-          <div className="md:col-span-2 lg:col-span-2 bg-gray-50 p-10 rounded-xl shadow-inner border border-gray-200 text-center">
+          <div className="col-span-full p-10 rounded-xl shadow-inner border border-gray-200 text-center">
             <p className="text-xl font-semibold text-gray-500">
               Tidak ada alur yang ditemukan.
             </p>
@@ -93,7 +128,7 @@ export default function RequestPage() {
           flowList?.data?.map((flow) => (
             <div
               key={flow._id}
-              className={`relative  border border-gray-200 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden group cursor-pointer`}
+              className={`relative backdrop  border border-gray-200 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden group cursor-pointer`}
             >
               {/* Hover Overlay */}
               <div className="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl z-0"></div>

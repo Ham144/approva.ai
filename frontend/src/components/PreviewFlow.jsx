@@ -432,7 +432,7 @@ export default function PreviewFlow({
 
   const HeaderEditor = () => {
     return (
-      <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm">
+      <div className="flex justify-between items-center bg-white  rounded-lg shadow-sm ">
         <div className="flex gap-2  ">
           <button
             className={`btn ${isJsonMode ? "btn-primary" : "btn-ghost"}`}
@@ -485,7 +485,7 @@ export default function PreviewFlow({
 
   if (isJsonMode) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 ">
         <HeaderEditor />
         <div className="bg-white p-6 rounded-lg shadow-sm pb-20">
           <pre className="bg-gray-50 p-4 text-sm overflow-auto rounded-lg border border-gray-200 max-h-[80vh]">
@@ -496,7 +496,7 @@ export default function PreviewFlow({
     );
   } else {
     return (
-      <div className="space-y-6 w-full ">
+      <div className="space-y-6 w-full max-md:pb-20">
         {!isForApproval && !isForRequest && <HeaderEditor />}
         <div className="space-y-6 flex flex-col overflow-y-auto max-h-[90vh] pr-2  pb-20">
           <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -634,6 +634,32 @@ export default function PreviewFlow({
                         Status: {statuses[i]?.verdict || "Pending"}
                       </span>
                     </div>
+
+                    {/* PENDING belum disii  */}
+                    {statuses[i]?.verdict === "pending" && (
+                      <div className="flex items-start gap-2 text-sm">
+                        <MessageSquareText className="w-5 h-5 mt-0.5 text-yellow-600 flex-shrink-0" />
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-yellow-700">
+                            Menunggu Jawaban:
+                          </span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {statuses[i]?.authorized?.length > 0 ? (
+                              statuses[i].authorized.map((auth, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 text-xs font-medium"
+                                >
+                                  {auth.displayName || auth.username}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-yellow-800">Pending</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {statuses[i]?.verdict !== "pending" && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full md:w-2/3 md:ml-auto md:border-l md:border-current md:pl-6 pt-4 md:pt-0">
