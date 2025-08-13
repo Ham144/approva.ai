@@ -1,7 +1,8 @@
 import flowInstanceApi from "@/api/flowInstanceApi";
 import { useUserInfo } from "@/store";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Eye, PlusCircle, Trash2, History, Pencil } from "lucide-react";
+import { BackTop } from "antd";
+import { Eye, PlusCircle, Trash2, History, Pencil, Undo } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
 
@@ -31,7 +32,6 @@ export default function ProcessActionOption({ selectedInstance }) {
       mutationFn: async () =>
         await flowInstanceApi.rollback(selectedInstance?._id),
       onSuccess: (res) => {
-        console.log(res);
         toast.success(
           res?.response?.data?.message || "berhasil mereset proses"
         );
@@ -44,6 +44,23 @@ export default function ProcessActionOption({ selectedInstance }) {
       },
     }
   );
+
+  const { mutate: handleUndo, isPending: pendingUndo } = useMutation({
+    mutationKey: ["flowInstance", "update"],
+    mutationFn: async () =>
+      await flowInstanceApi.undo_1_step(selectedInstance?._id),
+    onSuccess: (res) => {
+      toast.success(
+        res?.response?.data?.message || "berhasil undo 1 langkah anda"
+      );
+      document.getElementById("modalprocessaction")?.close();
+      queryClient.invalidateQueries(["flowInstance", selectedInstance?._id]);
+    },
+    onError: (er) => {
+      document.getElementById("modalprocessaction")?.close();
+      toast.error(er?.response?.data?.message || "Gagal mereset proses");
+    },
+  });
 
   const isInProgress = selectedInstance?.overallStatus == "in-progress";
   const isMyTurn = selectedInstance?.flowTemplate?.status[
@@ -91,7 +108,6 @@ export default function ProcessActionOption({ selectedInstance }) {
               </span>
             )}
           </button>
-
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -102,7 +118,6 @@ export default function ProcessActionOption({ selectedInstance }) {
             <Eye size={18} className="flex-shrink-0" />
             <span className="font-medium">Melihat Saja</span>
           </button>
-
           <button
             disabled={
               selectedInstance?.requestedBy?._id != userInfo?._id &&
@@ -119,7 +134,6 @@ export default function ProcessActionOption({ selectedInstance }) {
             <Pencil size={18} className="flex-shrink-0" />
             <span className="font-medium">Edit Request</span>
           </button>
-
           <button
             disabled={
               selectedInstance?.requestedBy?._id != userInfo?._id ||
@@ -137,6 +151,29 @@ export default function ProcessActionOption({ selectedInstance }) {
             <History size={18} className="flex-shrink-0" />
             <span className="font-medium">
               Rollback (mulai dari awal status)
+            </span>
+          </button>
+
+          <button
+            disabled={
+              selectedInstance?.requestedBy?._id != userInfo?._id ||
+              selectedInstance?.overallStatus != "in-progress" ||
+              selectedInstance.currentStatusIndex == 0 ||
+              pendingUndo
+            }
+            onClick={handleUndo}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+              selectedInstance?.requestedBy?._id != userInfo?._id ||
+              selectedInstance?.overallStatus != "in-progress" ||
+              selectedInstance.currentStatusIndex == 0 ||
+              pendingUndo
+                ? "bg-gray-100 text-gray-400"
+                : "bg-indigo-600 hover:bg-indigo-700 text-white"
+            }`}
+          >
+            <Undo size={18} className="flex-shrink-0" />
+            <span className="font-medium">
+              Undo (Hapus dan batalkan Approval anda)
             </span>
           </button>
         </div>

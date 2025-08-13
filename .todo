@@ -66,9 +66,9 @@
 [x] modify: tampilin authorized dimasing masing status bukan hanya currentStatusIndex
 [x] add: fitur view by 1 col, 2 col
 [x] fix: filter dengan flow template
-[50%] add: fitur export csv berdasarkan perbulan
-[] add: fitur bisa pilih next authorized user untuk dikirim email
-[] add: pindah perusahaan satu kli klik
-[] modify: kirim email dengan nama organization bukan fixed csi
-[] add: Rollback 1 langkah (nama fitur: redo) (rollback mundur approval sebelumnya / target approval lainnya)
+[x] add: fitur export csv berdasarkan periode bulan
+[x] add: pindah perusahaan satu kli klik
+[x] add: Rollback 1 langkah (nama fitur: redo) (rollback mundur approval sebelumnya / target approval lainnya)
+[10%] add: fitur memilih next approval manual, nama fitur : manual approval
 [] fix: auto pindah departement jika di LDAP berubah
+[] modify: kirim email dengan nama organization bukan fixed csi

@@ -17,7 +17,9 @@ const DownloadProcessPage = () => {
       await flowInstanceApi.downloadFlowInstanceByMonth(
         month.format("YYYY-MM")
       ),
-    onSuccess: () => {},
+    onSuccess: () => {
+      toast.success("Berhasil mengunduh");
+    },
     onError: (err) => {
       toast.error(err?.response?.data?.message || "Gagal mengunduh");
     },
@@ -26,14 +28,13 @@ const DownloadProcessPage = () => {
   const onChange = (value, dateString) => {
     // value = dayjs object (atau null), dateString = formatted string
     setMonth(value);
-    console.log("picked:", value, dateString);
   };
 
   return (
     <div className="relative pb-20 min-h-screen overflow-hidden px-4 py-8 sm:px-6 lg:px-8 mx-auto flex justify-center items-center flex-col ">
       <div className="flex flex-col justify-center items-center border rounded-lg p-3  shadow-lg  ">
         <h2 className="text-2xl font-semibold mb-6">
-          Download Process{" "}
+          Download Process History{" "}
           <div className="badge bg-blue-500 text-white">BETA</div>
         </h2>
 

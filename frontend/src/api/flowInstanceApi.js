@@ -16,12 +16,14 @@ const flowInstanceApi = {
     flowTemplateId,
     overallStatus,
     requestData,
+    selectedAuthorized,
   }) => {
     const res = await axiosInstance.post(`/api/flowInstance/request/new`, {
       instanceTitle,
       flowTemplateId,
       overallStatus,
       requestData,
+      selectedAuthorized,
     });
     return res.data;
   },
@@ -66,17 +68,41 @@ const flowInstanceApi = {
     return res.data;
   },
   downloadFlowInstanceByMonth: async (month) => {
-    const res = await axiosInstance.get(`/api/flowInstance/download/${month}`);
-    return res.data;
+    const res = await axiosInstance.get(`/api/flowInstance/download/${month}`, {
+      responseType: "blob", // Penting untuk download file
+    });
+
+    // Buat blob dan download
+    const blob = new Blob([res.data], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    // Buat URL untuk download
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `process-history-${month}.xlsx`;
+
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    return { success: true };
   },
   getMyTasks: async () => {
     const res = await axiosInstance.get(`/api/flowInstance/my-tasks`);
     return res.data;
   },
+  undo_1_step: async (instanceId) => {
+    const res = await axiosInstance.put(`/api/flowInstance/undo/${instanceId}`);
+    return res.data;
+  },
   rollback: async (instanceId) => {
-    const res = await axiosInstance.put(
-      `/api/flowInstance/rollback/${instanceId}`
-    );
+    const res = await axiosInstance.put(`/api/flowInstance/undo/${instanceId}`);
     return res.data;
   },
 };

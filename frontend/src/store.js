@@ -40,6 +40,13 @@ export const useResponseCollector = create((set) => ({
   requestData: {}, // object { [input._id]: jawaban }
   statuses: [], //pilih current dengan [flowInstance.currentStatusIndex]
   currentStatusIndex: null,
+  selectedAuthorized: [],
+  setSelectedAuthorized: (selected) =>
+    set((state) => ({
+      selectedAuthorized: state.selectedAuthorized.includes(selected)
+        ? state.selectedAuthorized.filter((item) => item !== selected)
+        : [...state.selectedAuthorized, selected],
+    })),
   setCurrentStatusIndex: (index) => set({ currentStatusIndex: index }),
   // Optional helper jika mau set langsung dari key dan value
   setRequestData: (key, value) =>

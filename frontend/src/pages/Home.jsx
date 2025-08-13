@@ -14,7 +14,6 @@ import flowInstanceApi from "@/api/flowInstanceApi";
 import OrgApi from "@/api/orgApi";
 import { switchOrg } from "@/api/authApi";
 import toast from "react-hot-toast";
-import { Boxes } from "@/components/ui/background-boxes";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -28,8 +27,9 @@ const Home = () => {
 
   const { mutateAsync: handleSwitchOrg } = useMutation({
     mutationKey: ["userInfo"],
-    mutationFn: async (res) => switchOrg(),
+    mutationFn: async (id) => switchOrg({ targetOrg: id }),
     onSuccess: async () => {
+      toast.success("Organisasi berhasil di ganti");
       window.location.reload();
     },
     onError: (err) => {
@@ -101,7 +101,11 @@ const Home = () => {
                   className="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-xl bg-white/95 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer font-medium text-gray-700 appearance-none"
                 >
                   {orgList?.data?.map((org) => (
-                    <option key={org._id} value={org._id}>
+                    <option
+                      selected={org._id === userInfo?.org}
+                      key={org._id}
+                      value={org._id}
+                    >
                       {org?.organizationName}
                     </option>
                   ))}

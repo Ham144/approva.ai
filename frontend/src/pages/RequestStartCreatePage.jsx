@@ -16,6 +16,8 @@ export default function RequestStartCreatePage() {
     resetRequestData,
     overallStatus,
     setOveralStatus,
+    selectedAuthorized,
+    setSelectedAuthorized,
   } = useResponseCollector();
 
   // Fetch flow data
@@ -41,6 +43,7 @@ export default function RequestStartCreatePage() {
           flowTemplateId: id,
           overallStatus,
           requestData,
+          selectedAuthorized,
         }),
       onSuccess: (res) => {
         toast.success(res?.message);
@@ -49,6 +52,7 @@ export default function RequestStartCreatePage() {
           navigate(`/process?isMyRequestOnlyQuery=true`);
           resetRequestData();
         }, 500);
+        setSelectedAuthorized([]);
       },
       onError: (err) => {
         console.log(err);
@@ -73,10 +77,10 @@ export default function RequestStartCreatePage() {
       <div className="flex flex-wrap items-center justify-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-b-xl shadow-md border-t border-gray-200 dark:border-gray-700">
         {/* Save/Update Button */}
         <button
-          disabled={sendingEmail}
+          disabled={sendingEmail || !selectedAuthorized?.length}
           onClick={handleSubmitNewRequest}
           className="
-          flex-1 min-w-[150px] sm:min-w-[180px] px-6 py-3
+          flex-1 min-w-[150px] disabled:bg-red-100 sm:min-w-[180px] px-6 py-3
           bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg
           shadow-md transition-all duration-300 ease-in-out
           flex items-center justify-center gap-2
@@ -85,9 +89,8 @@ export default function RequestStartCreatePage() {
           aria-label="Save or Update Request"
         >
           <Save className="w-5 h-5" />
-          {sendingEmail ? "sendingEmail.." : "Simpan"}
+          {sendingEmail ? "sendingEmail.." : "Mulai"}
         </button>
-
         {/* Clear Input Button */}
         <button
           onClick={resetRequestData}
@@ -102,7 +105,6 @@ export default function RequestStartCreatePage() {
           <Trash className="w-5 h-5" />
           Bersihkan
         </button>
-
         {/* Status Dropdown */}
         <div className="relative flex-1 min-w-[150px] sm:min-w-[180px]">
           <select
@@ -124,6 +126,39 @@ export default function RequestStartCreatePage() {
           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700 dark:text-gray-300">
             <CheckCircle className="w-5 h-5" />{" "}
           </div>
+        </div>
+      </div>
+      {/* Untuk memilih authorized User  */}
+      <div className="flex flex-col  my-2 backdrop">
+        <p className="font-light text-start font-serif px-4">
+          Berikut Pilihan yang telah ditetapkan untuk pemberitahuan langsung
+          (yang tidak dipilih juga dapat mengisi persetujuan sebagai alternatif)
+          :
+        </p>
+        <div className="flex flex-wrap gap-2 p-3">
+          {flowData?.data.status[0].authorized.map((authorizedFirstStatus) => {
+            const isSelected = selectedAuthorized?.includes(
+              authorizedFirstStatus._id
+            );
+            return (
+              <div
+                key={authorizedFirstStatus._id}
+                className={`cursor-pointer px-4 py-2 rounded-lg shadow-sm transition-colors duration-300 flex-shrink-0 ${
+                  isSelected
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                }`}
+                onClick={() => {
+                  console.log("Selected ID:", authorizedFirstStatus._id); // Debugging
+                  setSelectedAuthorized(authorizedFirstStatus._id);
+                }}
+              >
+                {authorizedFirstStatus.displayName ||
+                  authorizedFirstStatus.username}
+                {isSelected && " ✓"}
+              </div>
+            );
+          })}
         </div>
       </div>
       <PreviewFlow

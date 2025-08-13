@@ -486,7 +486,7 @@ export default function PreviewFlow({
   if (isJsonMode) {
     return (
       <div className="space-y-6 ">
-        <HeaderEditor />
+        {!isForApproval && !isForRequest && <HeaderEditor />}
         <div className="bg-white p-6 rounded-lg shadow-sm pb-20">
           <pre className="bg-gray-50 p-4 text-sm overflow-auto rounded-lg border border-gray-200 max-h-[80vh]">
             {JSON.stringify(jsonFlow, null, 2)}

@@ -8,6 +8,9 @@ import {
 } from "../utils/emailService.js";
 import Department from "../models/Department.model.js";
 import generateGlobalIndex from "../utils/generateGlobalIndex.js";
+import DownloadedProcess from "../models/DownloadedProcess.model.js";
+import generateExcelFile from "../utils/generateExcelFile.js";
+import UserRefrensi from "../models/User.model.js";
 
 const router = Router();
 
@@ -25,8 +28,19 @@ export async function checkDuplidateGlobalIndex(globalIndex) {
 
 //flow instance untuk start flow baru dengan template yang dipilih
 router.post("/request/new", async (req, res) => {
-  const { instanceTitle, flowTemplateId, overallStatus, requestData } =
-    req.body;
+  const {
+    instanceTitle,
+    flowTemplateId,
+    overallStatus,
+    requestData,
+    selectedAuthorized,
+  } = req.body;
+
+  if (!selectedAuthorized?.length) {
+    return res.status(400).json({
+      message: "selectedAuthorized setidaknya satu diisi.",
+    });
+  }
 
   // 1. Validasi awal untuk keberadaan data utama
   if (!instanceTitle || !flowTemplateId || !overallStatus || !requestData) {
@@ -131,32 +145,35 @@ router.post("/request/new", async (req, res) => {
       globalIndex: globalIndex,
     });
 
-    // --- Start Email Notification Logic for First Approver ---
+    // --- Start Email Notification Logic for First Approver (yang dipilih) ---
     try {
       if (flowInstance.overallStatus === "in-progress") {
-        const nextStatusTemplate =
-          template.status[flowInstance.currentStatusIndex];
-        const nextApprovers = nextStatusTemplate.authorized;
+        let nextApprovers = selectedAuthorized;
+        console.log(selectedAuthorized);
+
+        nextApprovers = await UserRefrensi.find({
+          _id: { $in: nextApprovers }, // langsung pakai array ID
+        });
 
         if (nextApprovers.length > 0) {
           await sendApprovalRequestEmail(
             nextApprovers,
             flowInstance,
-            "System (Initial Request)" // Or use the requester's name: req.user.username
+            req?.user?.username || "System (Initial Request)"
           );
         }
       }
-    } catch (emailError) {
-      console.error(
-        "Email notification for initial request failed:",
-        emailError
-      );
-    }
-    // --- End Email Notification Logic ---
 
-    return res
-      .status(201) // Gunakan 201 Created untuk resource baru
-      .json({ message: "Flow instance berhasil dibuat", data: flowInstance });
+      // --- End Email Notification Logic ---
+      return res
+        .status(201) // Gunakan 201 Created untuk resource baru
+        .json({ message: "Flow instance berhasil dibuat", data: flowInstance });
+    } catch (emailError) {
+      return res.status(500).json({
+        message: "Terjadi kesalahan saat mengirim email",
+        error: emailError,
+      });
+    }
   } catch (error) {
     // Tangani kemungkinan error duplikasi `instanceTitle` jika ada unique index
     if (error.code === 11000) {
@@ -643,6 +660,88 @@ router.put("/rollback/:id", async (req, res) => {
   }
 });
 
+router.put("/undo/:id", async (req, res) => {
+  try {
+    // Ambil instance + otorisasi
+    const flowInstance = await FlowInstance.findOne({
+      _id: req.params.id,
+      org: req.user.org,
+    }).populate({
+      path: "flowTemplate",
+      select: "status.authorized",
+      populate: [
+        {
+          path: "status.authorized",
+          model: "UserRefrensi",
+          select: "_id username email",
+        },
+      ],
+    });
+
+    if (!flowInstance) {
+      return res
+        .status(404)
+        .json({ message: "Flow instance tidak ditemukan." });
+    }
+
+    if (flowInstance.currentStatusIndex <= 0) {
+      return res
+        .status(400)
+        .json({ message: "Tidak bisa undo dari status awal." });
+    }
+
+    // Otorisasi: yang boleh undo adalah authorized di step saat ini (sebelum mundur)
+    const stepBeingUndoneIndex = flowInstance.currentStatusIndex;
+    const currentTemplateStatus =
+      flowInstance.flowTemplate.status[stepBeingUndoneIndex];
+
+    const isCurrentUserAuthorized = currentTemplateStatus.authorized.some(
+      (user) => user._id.toString() === req.user._id.toString()
+    );
+
+    if (!isCurrentUserAuthorized) {
+      return res
+        .status(400)
+        .json({ message: "Tidak bisa undo: Saat ini bukan giliran anda." });
+    }
+
+    // Mundur 1 langkah
+    flowInstance.currentStatusIndex = stepBeingUndoneIndex - 1;
+
+    // RESET jawaban & flag di step yang sekarang (yang akan diisi ulang)
+    const curr = flowInstance.currentStatusIndex;
+    const currStatus = flowInstance.statuses[curr];
+    if (currStatus) {
+      currStatus.completed = false;
+      currStatus.completedBy = null;
+      currStatus.completedAt = null;
+      currStatus.rejectedReason = null;
+      currStatus.verdict = "pending";
+      currStatus.requirementsData = {}; // sesuai default schema
+    }
+
+    // Hapus step yang di depan (yang barusan di-undo)
+    flowInstance.statuses.splice(stepBeingUndoneIndex, 1);
+
+    flowInstance.overallStatus = "in-progress";
+
+    // Pastikan perubahan nested terdeteksi (kadang perlu)
+    flowInstance.markModified("statuses");
+
+    await flowInstance.save();
+
+    return res.json({
+      message:
+        "Berhasil undo satu langkah; jawaban di step aktif sudah dikosongkan.",
+      currentStatusIndex: flowInstance.currentStatusIndex,
+      statusesLength: flowInstance.statuses.length,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Terjadi kesalahan server." });
+  }
+});
+
 router.delete("/delete/:instanceId", async (req, res) => {
   const instanceId = req.params.instanceId;
   try {
@@ -756,22 +855,91 @@ router.get("/my-tasks", async (req, res) => {
 });
 
 router.get("/download/:month", async (req, res) => {
-  const { month } = req.params; // format: "2025-06"
+  try {
+    const { month } = req.params; // format: "2025-06"
 
-  let record = await DownloadTemplate.findOne({ month });
+    // Validasi format month
+    if (!/^\d{4}-\d{2}$/.test(month)) {
+      return res.status(400).json({
+        message:
+          "Format bulan tidak valid. Gunakan format YYYY-MM (contoh: 2025-01)",
+      });
+    }
 
-  if (!record) {
-    // Generate file kalau belum ada
-    const filePath = `/downloads/template-${month}.xlsx`;
+    // Cek apakah sudah ada record di database
+    let record = await DownloadedProcess.findOne({
+      month,
+      org: req.user.org,
+    });
 
-    // 🔹 generateExcelFile() adalah fungsi buat bikin file
-    await generateExcelFile(month, `./public${filePath}`);
+    if (!record) {
+      // Generate Excel buffer
+      const excelBuffer = await generateExcelFile(month);
 
-    // Simpan ke DB
-    record = await DownloadTemplate.create({ month, filePath });
+      // Buat nama file
+      const filename = `process-history-${month}.xlsx`;
+
+      // Set header untuk download
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${filename}"`
+      );
+      res.setHeader("Content-Length", excelBuffer.length);
+
+      // Kirim buffer langsung
+      res.send(excelBuffer);
+
+      // Simpan record ke database untuk tracking
+      try {
+        await DownloadedProcess.create({
+          month,
+          filePath: filename, // Simpan nama file saja
+          org: req.user.org,
+          downloadedAt: new Date(),
+        });
+      } catch (dbError) {
+        // Log error tapi jangan gagalkan download
+        console.error("Failed to save download record:", dbError);
+      }
+    } else {
+      // Jika sudah ada record, generate ulang untuk data terbaru
+      const excelBuffer = await generateExcelFile(month);
+
+      const filename = `process-history-${month}.xlsx`;
+
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${filename}"`
+      );
+      res.setHeader("Content-Length", excelBuffer.length);
+
+      res.send(excelBuffer);
+
+      // Update timestamp
+      try {
+        await DownloadedProcess.findOneAndUpdate(
+          { month, org: req.user.org },
+          { downloadedAt: new Date() }
+        );
+      } catch (dbError) {
+        console.error("Failed to update download record:", dbError);
+      }
+    }
+  } catch (error) {
+    console.error("Error generating Excel file:", error);
+    res.status(500).json({
+      message: "Gagal menggenerate file Excel",
+      error: error.message,
+    });
   }
-
-  res.download(`./public${record.filePath}`);
 });
 
 router.post("/redo/:_id", async (req, res) => {

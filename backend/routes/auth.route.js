@@ -895,17 +895,73 @@ router.put("/takeOverUser", authenticate, authorize, async (req, res) => {
 });
 
 router.post("/switchOrg", authenticate, async (req, res) => {
-  //periksa apakah namanya ada persis di org target
   const { targetOrg } = req.body;
 
-  const oldCookie =
-    req.cookies.token || req.headers.authorization?.split(" ")[1] || null;
+  if (!targetOrg) {
+    return res.status(400).json({
+      success: false,
+      message: "Organisasi tujuan tidak ada.",
+    });
+  }
 
-  const oldPayload = jwt.decode(oldCookie, process.env.JWT_SECRET);
+  if (targetOrg == req.user.org) {
+    return res.status(400).json({
+      success: false,
+      message: "Organisasi tujuan sama dengan organisasi saat ini.",
+    });
+  }
+
+  const oldPayload = req.user;
+
+  const existingUserOtherOrg = await UserRefrensi.findOne({
+    username: oldPayload.username,
+    org: targetOrg,
+  }).select("-password");
+
+  if (!existingUserOtherOrg) {
+    return res.status(400).json({
+      success: false,
+      message: "Tampaknya anda tidak ada di organisasi tujuan, coba login ulang.",
+    });
+  }
+
+  const OrgDB = await Org.findById(targetOrg);
+
+  const departementDB = await Department.findOne({
+    org: targetOrg,
+    members: { $in: [existingUserOtherOrg._id] },
+  });
+
+  const payload = {
+    _id: existingUserOtherOrg._id,
+    username: existingUserOtherOrg.username,
+    org: OrgDB._id,
+    role: existingUserOtherOrg.role,
+    department: departementDB?._id,
+  };
+
+  const token = await generateTokenJWT(payload);
+
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: false,
+    sameSite: "Lax",
+  });
+
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: false,
+    sameSite: "Lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
   return res.json({
-    oldPayload,
+    success: true,
+    body: oldPayload,
+    message: "Berhasil switch organisasi",
   });
 });
+
 
 router.delete("/deleteAppUser/:id", authenticate, async (req, res) => {
   const id = req?.params?.id;
