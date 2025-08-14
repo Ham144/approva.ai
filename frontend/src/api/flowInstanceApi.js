@@ -54,10 +54,10 @@ const flowInstanceApi = {
     );
     return res.data;
   },
-  submitStatusFulfillment: async (instanceId, statuses) => {
+  submitStatusFulfillment: async (instanceId, statuses, selectedAuthorized) => {
     const res = await axiosInstance.post(
       `/api/flowInstance/submitStatusFulfillment/${instanceId}`,
-      statuses
+      { statuses, selectedAuthorized }
     );
     return res.data;
   },

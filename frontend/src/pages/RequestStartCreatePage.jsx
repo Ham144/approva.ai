@@ -6,6 +6,7 @@ import flowApi from "@/api/flowApi";
 import PreviewFlow from "@/components/PreviewFlow";
 import toast from "react-hot-toast";
 import { CheckCircle, Save, Trash } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function RequestStartCreatePage() {
   const { id } = useParams();
@@ -31,6 +32,8 @@ export default function RequestStartCreatePage() {
     enabled: !!id,
   });
 
+  const [authorizedOptionBlinking, setAuthorizedOptionBlinking] =
+    useState(false);
   const navigate = useNavigate();
 
   //flow Data instance untuk memulai flow instance baru
@@ -60,6 +63,15 @@ export default function RequestStartCreatePage() {
       },
     });
 
+  useEffect(() => {
+    if (authorizedOptionBlinking) {
+      const timer = setTimeout(() => {
+        setAuthorizedOptionBlinking(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [authorizedOptionBlinking]);
+
   if (isFlowLoading) {
     return <div className="text-center py-10">Loading...</div>;
   }
@@ -77,8 +89,16 @@ export default function RequestStartCreatePage() {
       <div className="flex flex-wrap items-center justify-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-b-xl shadow-md border-t border-gray-200 dark:border-gray-700">
         {/* Save/Update Button */}
         <button
-          disabled={sendingEmail || !selectedAuthorized?.length}
-          onClick={handleSubmitNewRequest}
+          onClick={async () => {
+            if (selectedAuthorized?.length) {
+              await handleSubmitNewRequest();
+            } else {
+              toast.error(
+                "Anda belum memilih next approval yang ditujukan langsung"
+              );
+              setAuthorizedOptionBlinking(true);
+            }
+          }}
           className="
           flex-1 min-w-[150px] disabled:bg-red-100 sm:min-w-[180px] px-6 py-3
           bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg
@@ -89,7 +109,7 @@ export default function RequestStartCreatePage() {
           aria-label="Save or Update Request"
         >
           <Save className="w-5 h-5" />
-          {sendingEmail ? "sendingEmail.." : "Mulai"}
+          {sendingEmail ? "Mengirim Email.." : "Mulai"}
         </button>
         {/* Clear Input Button */}
         <button
@@ -129,34 +149,62 @@ export default function RequestStartCreatePage() {
         </div>
       </div>
       {/* Untuk memilih authorized User  */}
-      <div className="flex flex-col  my-2 backdrop">
-        <p className="font-light text-start font-serif px-4">
+      <div
+        className={`flex flex-col my-6 p-4 bg-white rounded-xl shadow-lg border ${
+          authorizedOptionBlinking
+            ? "border-red-500 animate-bounce"
+            : "border-gray-200 dark:border-gray-700"
+        }`}
+      >
+        <p className="text-lg font-medium text-gray-700 mb-4 px-2">
           Berikut Pilihan yang telah ditetapkan untuk pemberitahuan langsung
-          (yang tidak dipilih juga dapat mengisi persetujuan sebagai alternatif)
-          :
+          <span className="block text-sm text-gray-500 mt-1 font-normal">
+            (yang tidak dipilih juga dapat mengisi persetujuan sebagai
+            alternatif)
+          </span>
         </p>
-        <div className="flex flex-wrap gap-2 p-3">
+
+        <div className="flex flex-wrap gap-3 p-2">
           {flowData?.data.status[0].authorized.map((authorizedFirstStatus) => {
             const isSelected = selectedAuthorized?.includes(
               authorizedFirstStatus._id
             );
             return (
-              <div
+              <button
                 key={authorizedFirstStatus._id}
-                className={`cursor-pointer px-4 py-2 rounded-lg shadow-sm transition-colors duration-300 flex-shrink-0 ${
-                  isSelected
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-                }`}
+                className={`cursor-pointer px-5 py-2.5 rounded-full shadow-sm transition-all duration-300 flex-shrink-0 
+            flex items-center space-x-2 border-2
+            ${
+              isSelected
+                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-700 shadow-md transform scale-105"
+                : "bg-white text-gray-700 hover:bg-blue-50 border-gray-200 hover:border-blue-300"
+            }`}
                 onClick={() => {
-                  console.log("Selected ID:", authorizedFirstStatus._id); // Debugging
+                  console.log("Selected ID:", authorizedFirstStatus._id);
                   setSelectedAuthorized(authorizedFirstStatus._id);
                 }}
               >
-                {authorizedFirstStatus.displayName ||
-                  authorizedFirstStatus.username}
-                {isSelected && " ✓"}
-              </div>
+                <span className="font-medium">
+                  {authorizedFirstStatus.displayName ||
+                    authorizedFirstStatus.username}
+                </span>
+                {isSelected && (
+                  <span className="bg-white text-blue-600 rounded-full p-0.5">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </span>
+                )}
+              </button>
             );
           })}
         </div>

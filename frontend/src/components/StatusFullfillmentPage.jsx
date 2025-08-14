@@ -22,6 +22,8 @@ export default function StatusFullfillmentPage() {
     setCurrentStatusIndex,
     statuses,
     currentStatusIndex,
+    selectedAuthorized,
+    setSelectedAuthorized,
   } = useResponseCollector();
 
   const queryClient = useQueryClient();
@@ -33,7 +35,8 @@ export default function StatusFullfillmentPage() {
     mutationFn: async () =>
       flowInstanceApi.submitStatusFulfillment(
         instanceId,
-        statuses[currentStatusIndex]
+        statuses[currentStatusIndex],
+        [selectedAuthorized]
       ),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["instance", instanceId] });
@@ -43,6 +46,7 @@ export default function StatusFullfillmentPage() {
         navigate(`/`);
         toast.dismiss();
       }, 1000);
+      setSelectedAuthorized([]);
     },
     onError: (er) => {
       toast.error(er?.response?.data?.message);

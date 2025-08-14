@@ -229,6 +229,7 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
     limit = 10,
     page = 1,
     search,
+    verboseSearch,
   } = req.query;
 
   try {
@@ -252,8 +253,6 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
         baseConditions.flowTemplate = new mongoose.Types.ObjectId(
           flowTemplateCategory
         );
-
-        console.log(baseConditions.flowTemplate);
       }
       if (overallStatus) {
         baseConditions.overallStatus = overallStatus;
@@ -290,11 +289,74 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
       baseConditions.requestedBy = new mongoose.Types.ObjectId(req.user._id);
     }
 
+    if (verboseSearch === "true") {
+      const keyword = search || "";
+      const pageNum = parseInt(page) || 1;
+      const limitNum = parseInt(limit) || 25;
+      const skipNum = (pageNum - 1) * limitNum;
+
+      // Step 1: Cari ID hasil verbose search
+      const pipeline = [
+        {
+          $addFields: {
+            combinedText: {
+              $function: {
+                body: function (reqData, statuses) {
+                  return JSON.stringify(reqData) + JSON.stringify(statuses);
+                },
+                args: ["$requestData", "$statuses"],
+                lang: "js",
+              },
+            },
+          },
+        },
+        {
+          $match: {
+            combinedText: { $regex: keyword, $options: "i" },
+          },
+        },
+        { $skip: skipNum },
+        { $limit: limitNum },
+        {
+          $project: { _id: 1 }, // hanya ambil ID untuk query ulang
+        },
+      ];
+
+      const matchedDocs = await FlowInstance.aggregate(pipeline);
+      const ids = matchedDocs.map((doc) => doc._id);
+
+      if (ids.length === 0) {
+        return res.json({ data: [] });
+      }
+
+      // Step 2: Query ulang pakai find() + populate
+      const results = await FlowInstance.find({ _id: { $in: ids } })
+        .populate("requestedBy", "username")
+        .populate({
+          path: "flowTemplate",
+          select: "title desc _id",
+          populate: [
+            { path: "request", model: "Input" },
+            { path: "status.requirements", model: "Input" },
+            {
+              path: "status.authorized",
+              model: "UserRefrensi",
+              select: "_id username",
+            },
+          ],
+        })
+        .select("-requestData")
+        .sort({ createdAt: -1 });
+
+      return res.json({ data: results });
+    }
+
     if (search) {
       const searchConditions = {
         $or: [
           { instanceTitle: { $regex: `^${search}$`, $options: "i" } },
           { globalIndex: { $regex: search, $options: "i" } },
+          { searchableAnswer: { $regex: search, $options: "i" } },
         ],
       };
 
@@ -330,7 +392,7 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
       } else {
         finalQuery = {
           org: req.user.org,
-          $and: [
+          $or: [
             baseConditions,
             { flowTemplate: { $in: authorizedTemplateIds } },
           ],
@@ -359,7 +421,7 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
           },
         ],
       })
-      .select("-requestData") // ✅ hanya eksklusi, tidak konflik
+      .select("-requestData") // âœ… hanya eksklusi, tidak konflik
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit));
@@ -414,8 +476,25 @@ router.get("/flowInstanceById/:id", async (req, res) => {
 
 //submit hanya 1 status bukan semua
 router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
-  const currentIndexStatusResponse = req.body;
+  const { statuses: currentIndexStatusResponse, selectedAuthorized } = req.body;
+  console.log(req.body);
+
   const instanceId = req.params.instanceId;
+
+  if (!selectedAuthorized?.length) {
+    return res
+      .status(400)
+      .json({ message: "Gagal, selectedAuthorized kosong" });
+  }
+
+  if (
+    !selectedAuthorized?.length &&
+    currentIndexStatusResponse.verdict === "approved"
+  ) {
+    return res.status(400).json({
+      message: "selectedAuthorized setidaknya satu diisi.",
+    });
+  }
 
   if (!currentIndexStatusResponse) {
     return res.status(400).json({ message: "Gagal, status data tidak ada" });
@@ -557,26 +636,28 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
           (user) => !user._id.equals(userId)
         );
 
-        if (skippedUsers.length > 0) {
-          await sendSkippedUserNotification(
-            skippedUsers,
-            flowInstance,
-            req.user.username,
-            flowInstance._id
-          );
-        }
+        // if (skippedUsers.length > 0) {
+        //   await sendSkippedUserNotification(
+        //     skippedUsers,
+        //     flowInstance,
+        //     req.user.username,
+        //     flowInstance._id
+        //   );
+        // }
 
         // 2. Notify the next approvers if the flow is not yet complete.
         if (flowInstance.overallStatus === "in-progress") {
-          const nextStatusTemplate =
-            flowInstance.flowTemplate.status[flowInstance.currentStatusIndex]; // Use the new, incremented index
-          const nextApprovers = nextStatusTemplate.authorized;
+          let nextApprovers = selectedAuthorized;
+
+          nextApprovers = await UserRefrensi.find({
+            _id: { $in: nextApprovers }, // langsung pakai array ID
+          });
 
           if (nextApprovers.length > 0) {
             await sendApprovalRequestEmail(
               nextApprovers,
               flowInstance,
-              req.user.username
+              req?.user?.username
             );
           }
         }

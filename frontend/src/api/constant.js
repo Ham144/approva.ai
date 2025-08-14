@@ -18,7 +18,7 @@ export let siteKeyCloudflare =
 
 export const APP_NAME = "E-Form mycsi";
 export const APP_DESC =
-  "Sistem Workflow tracking status dan form approval yang flexible by CSI";
+  "Sistem Workflow tracking status dan form approval builder yang flexible";
 export const NAMAPERUSAHAAN = "PT. Catur Sukses Internasional";
 
 export const initialTempSourceData = {

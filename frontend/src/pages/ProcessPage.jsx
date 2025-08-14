@@ -147,26 +147,27 @@ export default function ProcessPage() {
     <div className="p-4 md:p-6 lg:p-8  min-h-screen">
       <div className="space-y-6 ">
         <div className="card glass shadow-lg"></div>
-        <div className="backdrop rounded-lg shadow-md mb-6 overflow-hidden">
-          {/* Header Expandable */}
-          <div
-            className="flex items-center justify-between p-4 cursor-pointer  hover:bg-gray-200 transition-colors duration-200"
-            onClick={toggleExpand}
-          >
-            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <Sliders className="w-5 h-5 text-blue-600" />
-              Filter Pencarian
-            </h3>
-            {isExpanded ? (
-              <ChevronUp className="w-5 h-5 text-gray-600" />
-            ) : (
-              <ChevronDown className="w-5 h-5 text-gray-600" />
-            )}
-          </div>
+        {!filter?.verboseSearch && (
+          <div className="backdrop  rounded-lg shadow-md mb-6 overflow-hidden">
+            {/* Header Expandable */}
+            <div
+              className="flex items-center justify-between p-4 cursor-pointer  hover:bg-gray-200 transition-colors duration-200"
+              onClick={toggleExpand}
+            >
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <Sliders className="w-5 h-5 text-blue-600" />
+                Filter Pencarian
+              </h3>
+              {isExpanded ? (
+                <ChevronUp className="w-5 h-5 text-gray-600" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-gray-600" />
+              )}
+            </div>
 
-          {/* Konten Filter - Animasi Expand/Collapse */}
-          <div
-            className={`
+            {/* Konten Filter - Animasi Expand/Collapse */}
+            <div
+              className={`
           grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 p-4
           transition-all duration-300 ease-in-out
           ${
@@ -175,100 +176,101 @@ export default function ProcessPage() {
               : "max-h-0 opacity-0 pointer-events-none"
           }
         `}
-          >
-            {/* Kategori Request */}
-            <div className="form-control w-full">
-              <label className="label py-1">
-                <span className="label-text text-sm font-medium text-gray-700">
-                  Kategori Request
-                </span>
-              </label>
-              <select
-                name="flowTemplateCategory"
-                value={filter?.flowTemplateCategory}
-                onChange={handleFilterChange}
-                className="select select-bordered select-sm w-full bg-white border-gray-300 text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="all">Semua Kategori</option>
-                {flowList?.data?.map((flow) => (
-                  <option key={flow._id} value={flow._id}>
-                    {flow?.title}
-                  </option>
-                ))}
-              </select>
-            </div>
+            >
+              {/* Kategori Request */}
+              <div className="form-control w-full">
+                <label className="label py-1">
+                  <span className="label-text text-sm font-medium text-gray-700">
+                    Kategori Request
+                  </span>
+                </label>
+                <select
+                  name="flowTemplateCategory"
+                  value={filter?.flowTemplateCategory}
+                  onChange={handleFilterChange}
+                  className="select select-bordered select-sm w-full bg-white border-gray-300 text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="all">Semua Kategori</option>
+                  {flowList?.data?.map((flow) => (
+                    <option key={flow._id} value={flow._id}>
+                      {flow?.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            {/* Status */}
-            <div className="form-control w-full">
-              <label className="label py-1">
-                <span className="label-text text-sm font-medium text-gray-700">
-                  Status
-                </span>
-              </label>
-              <select
-                name="overallStatus"
-                value={filter?.overallStatus}
-                onChange={handleFilterChange}
-                className="select select-bordered select-sm w-full bg-white border-gray-300 text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="all">Semua Status</option>
-                <option value="draft">Draft</option>
-                <option value="in-progress">In Progress</option>
-                <option value="completed">completed</option>
-                <option value="rejected">Rejected</option>
-              </select>
-            </div>
+              {/* Status */}
+              <div className="form-control w-full">
+                <label className="label py-1">
+                  <span className="label-text text-sm font-medium text-gray-700">
+                    Status
+                  </span>
+                </label>
+                <select
+                  name="overallStatus"
+                  value={filter?.overallStatus}
+                  onChange={handleFilterChange}
+                  className="select select-bordered select-sm w-full bg-white border-gray-300 text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="all">Semua Status</option>
+                  <option value="draft">Draft</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="completed">completed</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
 
-            {/* Pemohon */}
-            <div className="form-control w-full">
-              <label className="label py-1">
-                <span className="label-text text-sm font-medium text-gray-700">
-                  Pemohon
-                </span>
-              </label>
-              <select
-                name="requestedBy"
-                value={filter?.requestedBy}
-                onChange={handleFilterChange}
-                className="select select-bordered select-sm w-full bg-white border-gray-300 text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="all">Semua Pemohon</option>
-                {users?.data?.map((u) => (
-                  <option key={u?._id} value={u?._id}>
-                    {u?.username}
-                  </option>
-                ))}
-              </select>
-            </div>
+              {/* Pemohon */}
+              <div className="form-control w-full">
+                <label className="label py-1">
+                  <span className="label-text text-sm font-medium text-gray-700">
+                    Pemohon
+                  </span>
+                </label>
+                <select
+                  name="requestedBy"
+                  value={filter?.requestedBy}
+                  onChange={handleFilterChange}
+                  className="select select-bordered select-sm w-full bg-white border-gray-300 text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="all">Semua Pemohon</option>
+                  {users?.data?.map((u) => (
+                    <option key={u?._id} value={u?._id}>
+                      {u?.username}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            {/* Tanggal Request */}
-            <div className="form-control w-full">
-              <label className="label py-1">
-                <span className="label-text text-sm font-medium text-gray-700">
-                  Tanggal Request
-                </span>
-              </label>
-              <input
-                type="date"
-                name="requestDate"
-                value={filter?.requestDate}
-                onChange={handleFilterChange}
-                className="input input-bordered input-sm w-full bg-white border-gray-300 text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
+              {/* Tanggal Request */}
+              <div className="form-control w-full">
+                <label className="label py-1">
+                  <span className="label-text text-sm font-medium text-gray-700">
+                    Tanggal Request
+                  </span>
+                </label>
+                <input
+                  type="date"
+                  name="requestDate"
+                  value={filter?.requestDate}
+                  onChange={handleFilterChange}
+                  className="input input-bordered input-sm w-full bg-white border-gray-300 text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
 
-            {/* Tombol Aksi */}
-            <div className="md:col-span-2 flex gap-3 justify-end pt-2">
-              <button
-                onClick={resetFilters}
-                className="btn btn-ghost btn-sm text-gray-600 hover:bg-gray-200 transition-colors duration-200 flex items-center gap-1"
-              >
-                <XCircle className="w-4 h-4" />
-                Reset
-              </button>
+              {/* Tombol Aksi */}
+              <div className="md:col-span-2 flex gap-3 justify-end pt-2">
+                <button
+                  onClick={resetFilters}
+                  className="btn btn-ghost btn-sm text-gray-600 hover:bg-gray-200 transition-colors duration-200 flex items-center gap-1"
+                >
+                  <XCircle className="w-4 h-4" />
+                  Reset
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="flex flex-wrap justify-between gap-2">
           <div className="flex flex-wrap gap-y-3 gap-x-4 items-center">
@@ -331,18 +333,89 @@ export default function ProcessPage() {
             </a>
           </div>
 
-          <input
-            type="text"
-            placeholder="search"
-            className="input w-full max-w-xs rounded-md bg-transparent border-blue-400"
-            value={filter?.search}
-            onChange={(e) => {
-              setFilter((prev) => ({
-                ...prev,
-                search: e.target.value,
-              }));
-            }}
-          />
+          <div className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-md">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg
+                  className="h-5 w-5 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+              <input
+                type="text"
+                placeholder="Cari..."
+                className="pl-10 pr-4 py-2.5 w-full rounded-lg border-2 border-blue-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 shadow-sm"
+                value={filter?.search}
+                onChange={(e) => {
+                  setFilter((prev) => ({
+                    ...prev,
+                    search: e.target.value,
+                  }));
+                }}
+              />
+            </div>
+
+            {/* Verbose Search Checkbox */}
+            <div className="flex flex-col gap-3 p-4 bg-white rounded-lg shadow-sm border border-gray-100 ">
+              {/* Toggle Switch */}
+              <div className="flex items-center justify-between">
+                <label className="inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={filter?.verboseSearch || false}
+                    onChange={(e) => {
+                      setFilter((prev) => ({
+                        ...prev,
+                        verboseSearch: e.target.checked,
+                      }));
+                    }}
+                  />
+                  <div className="relative w-12 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                  <span className="ml-3 text-sm font-medium text-gray-700">
+                    Verbose Search
+                    <span className="text-blue-600 font-semibold">
+                      {filter?.verboseSearch ? " (ON)" : " (OFF)"}
+                    </span>
+                  </span>
+                </label>
+              </div>
+
+              {/* Warning Message */}
+              {filter?.verboseSearch && (
+                <div className="flex items-start p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800">
+                  <svg
+                    className="flex-shrink-0 h-5 w-5 mr-2 mt-0.5"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <div className="text-sm">
+                    <span className="font-semibold">Perhatian:</span> Verbose
+                    Search akan mencari kata kunci di setiap jawaban dan sangat
+                    lambat. Pastikan Anda mencari dengan{" "}
+                    <span className="font-medium">value</span> bukan{" "}
+                    <span className="font-medium">key</span>.
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* --- Area Konten / Hasil --- */}

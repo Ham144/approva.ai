@@ -69,6 +69,10 @@
 [x] add: fitur export csv berdasarkan periode bulan
 [x] add: pindah perusahaan satu kli klik
 [x] add: Rollback 1 langkah (nama fitur: redo) (rollback mundur approval sebelumnya / target approval lainnya)
-[10%] add: fitur memilih next approval manual, nama fitur : manual approval
+[x] add: fitur pemilihan next approval untuk pengiriman email langsung dan hilangkan email menggangu seperti proses anda telah dilewati
+[x] modify: perjelas pemilihan next approval UI kirim email
+[x] add: fitur bisa mencari dengan jawaban (nama fitur: verbose search)
+[] add: fitur percabangan alur tanpa batas
+[] fix: fitur masih buggy untuk level member, fix di production
 [] fix: auto pindah departement jika di LDAP berubah
 [] modify: kirim email dengan nama organization bukan fixed csi

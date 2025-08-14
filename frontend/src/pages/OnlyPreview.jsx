@@ -34,7 +34,12 @@ export default function OnlyPreview() {
       setFullRequestData(flowInstanceData.data.requestData);
       setOveralStatus(flowInstanceData.data.overallStatus);
       setInstanceTitle(flowInstanceData.data.instanceTitle);
-      setStatuses(flowInstanceData.data.statuses);
+      setStatuses(
+        flowInstanceData.data.statuses.map((status, index) => ({
+          ...status,
+          ...flowInstanceData?.data.flowTemplate?.status[index],
+        }))
+      );
       setCurrentStatusIndex(flowInstanceData.data.currentStatusIndex);
     }
   }, [flowInstanceData?.data?.requestData, setRequestData]);

@@ -25,11 +25,10 @@ const Home = () => {
     enabled: !!userInfo._id,
   });
 
-  const { mutateAsync: handleSwitchOrg } = useMutation({
+  const { mutateAsync: handleSwitchOrg, isPending: switching } = useMutation({
     mutationKey: ["userInfo"],
     mutationFn: async (id) => switchOrg({ targetOrg: id }),
     onSuccess: async () => {
-      toast.success("Organisasi berhasil di ganti");
       window.location.reload();
     },
     onError: (err) => {
@@ -59,6 +58,14 @@ const Home = () => {
     queryFn: flowInstanceApi.getMyTasks,
   });
 
+  if (switching) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <span className="loading loading-ring w-28 loading-xl"></span>
+      </div>
+    );
+  }
+
   return (
     <div className="relative pb-20 min-h-screen overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
       {/* Background only */}
@@ -71,7 +78,13 @@ const Home = () => {
               LIVE 1.0.0
             </span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{APP_NAME}</h1>
+          <h1 className="text-3xl font-semibold bg-clip-text bg-gradient-to-r from-blue-500 to-blue-700 text-transparent mb-2">
+            E-Form{" "}
+            {
+              orgList?.data?.find((org) => org._id === userInfo.org)
+                ?.organizationName
+            }
+          </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">{APP_DESC}</p>
         </div>
 

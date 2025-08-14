@@ -41,12 +41,13 @@ export const useResponseCollector = create((set) => ({
   statuses: [], //pilih current dengan [flowInstance.currentStatusIndex]
   currentStatusIndex: null,
   selectedAuthorized: [],
-  setSelectedAuthorized: (selected) =>
-    set((state) => ({
-      selectedAuthorized: state.selectedAuthorized.includes(selected)
-        ? state.selectedAuthorized.filter((item) => item !== selected)
-        : [...state.selectedAuthorized, selected],
-    })),
+  // setSelectedAuthorized: (selected) =>
+  //   set((state) => ({
+  //     selectedAuthorized: state.selectedAuthorized.includes(selected)
+  //       ? state.selectedAuthorized.filter((item) => item !== selected)
+  //       : [...state.selectedAuthorized, selected],
+  //   })),
+  setSelectedAuthorized: (selected) => set({ selectedAuthorized: selected }),
   setCurrentStatusIndex: (index) => set({ currentStatusIndex: index }),
   // Optional helper jika mau set langsung dari key dan value
   setRequestData: (key, value) =>

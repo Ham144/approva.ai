@@ -65,7 +65,7 @@ export async function sendApprovalRequestEmail(
   const instanceId = flowInstance._id;
   const instanceTitle = flowInstance.instanceTitle;
   const currentStatus =
-    flowInstance.statuses[flowInstance.currentStatusIndex].statusTitle;
+    flowInstance.statuses[flowInstance.currentStatusIndex]?.statusTitle;
 
   const subject = `Approval Required: ${instanceTitle}`;
 
