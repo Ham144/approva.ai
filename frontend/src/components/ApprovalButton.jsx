@@ -52,7 +52,7 @@ export default function ApprovalButton({
       className="space-y-4 p-4 rounded-lg backdrop border border-gray-200 dark:border-gray-700 shadow-sm"
     >
       {/* Bagian Deskripsi dan Info Badge */}
-      {verdict != "rejected" && (
+      {verdict != "rejected" && currentStatusIndex < statuses.length - 1 && (
         <div className="text-gray-700 dark:text-gray-300 text-sm sm:text-base leading-relaxed">
           {/* Untuk memilih authorized User  */}
           <div className="mb-6">
@@ -93,7 +93,7 @@ export default function ApprovalButton({
                 </p>
 
                 <div className="flex flex-wrap gap-3 p-2">
-                  {statuses[currentStatusIndex]?.authorized.map(
+                  {statuses[currentStatusIndex + 1]?.authorized?.map(
                     (authorized) => {
                       const isSelected = selectedAuthorized?.includes(
                         authorized._id

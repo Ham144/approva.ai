@@ -477,7 +477,6 @@ router.get("/flowInstanceById/:id", async (req, res) => {
 //submit hanya 1 status bukan semua
 router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
   const { statuses: currentIndexStatusResponse, selectedAuthorized } = req.body;
-  console.log(req.body);
 
   const instanceId = req.params.instanceId;
 

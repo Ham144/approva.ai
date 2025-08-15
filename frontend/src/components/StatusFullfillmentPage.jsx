@@ -71,7 +71,7 @@ export default function StatusFullfillmentPage() {
       setOveralStatus(flowInstanceData.data.overallStatus);
       setInstanceTitle(flowInstanceData.data.instanceTitle);
       setStatuses(
-        flowInstanceData.data.statuses.map((status, index) => ({
+        flowInstanceData.data?.statuses?.map((status, index) => ({
           ...status,
           ...flowInstanceData?.data.flowTemplate?.status[index],
         }))
@@ -181,7 +181,7 @@ export default function StatusFullfillmentPage() {
                   {flowTemplate?.status[
                     flowInstanceData.data.currentStatusIndex
                   ]?.authorized
-                    .map((user) => user.username)
+                    ?.map((user) => user.username)
                     .join("/")}
                 </p>
 

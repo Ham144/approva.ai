@@ -72,7 +72,8 @@
 [x] add: fitur pemilihan next approval untuk pengiriman email langsung dan hilangkan email menggangu seperti proses anda telah dilewati
 [x] modify: perjelas pemilihan next approval UI kirim email
 [x] add: fitur bisa mencari dengan jawaban (nama fitur: verbose search)
+
+[x] fix: auto pindah departement jika di LDAP berubah
 [] add: fitur percabangan alur tanpa batas
 [] fix: fitur masih buggy untuk level member, fix di production
-[] fix: auto pindah departement jika di LDAP berubah
 [] modify: kirim email dengan nama organization bukan fixed csi

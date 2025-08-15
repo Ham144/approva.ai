@@ -365,21 +365,22 @@ router.post(
       }
 
       //cek apakah departement dari ldap cocok dengan departemnt si user
-      const myPreviousDepartment = await Department.findOne({
-        org: OrgDB._id,
-        members: { $in: [userDB._id] },
-      });
-      if (
-        myPreviousDepartment &&
-        myPreviousDepartment.name !== departementDB.name
-      ) {
-        const toDeleteMemberIdx = await myPreviousDepartment.findIndex(
-          (i) => i.members === userDB._id
-        );
-        myPreviousDepartment.members = myPreviousDepartment.members.splice(
-          toDeleteMemberIdx,
-          1
-        );
+     //cek apakah departement dari ldap cocok dengan departemnt si user
+     const myPreviousDepartment = await Department.findOne({
+      org: OrgDB._id,
+      members: { $in: [userDB._id] },
+    });
+    if (
+      myPreviousDepartment &&
+      myPreviousDepartment.name !== departementDB.name
+    ) {
+      const toDeleteMemberIdx = myPreviousDepartment.members.findIndex(
+        (dep) => String(dep) === String(userDB._id)
+      );
+    
+      if (toDeleteMemberIdx !== -1) {
+        myPreviousDepartment.members.splice(toDeleteMemberIdx, 1);
+      }
       } else {
         //jika departement sebelumnya ga ada tapi departement yang dimaksud sudah terdaftar maka add
         if (!myPreviousDepartment && departementDB) {
