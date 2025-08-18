@@ -17,7 +17,7 @@ import { useUserInfo } from "@/store";
 // Nilai awal untuk filter, berguna untuk reset
 const initialFilterState = {
   flowTemplateCategory: "all",
-  overallStatus: "all",
+  overallStatus: "in-progress", // all untuk semua defaultnya "in-progress"
   requestedBy: "all",
   requestDate: "", // Gunakan string kosong untuk input tanggal yang kosong
   isMyRequestOnly: false,

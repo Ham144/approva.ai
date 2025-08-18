@@ -365,22 +365,22 @@ router.post(
       }
 
       //cek apakah departement dari ldap cocok dengan departemnt si user
-     //cek apakah departement dari ldap cocok dengan departemnt si user
-     const myPreviousDepartment = await Department.findOne({
-      org: OrgDB._id,
-      members: { $in: [userDB._id] },
-    });
-    if (
-      myPreviousDepartment &&
-      myPreviousDepartment.name !== departementDB.name
-    ) {
-      const toDeleteMemberIdx = myPreviousDepartment.members.findIndex(
-        (dep) => String(dep) === String(userDB._id)
-      );
-    
-      if (toDeleteMemberIdx !== -1) {
-        myPreviousDepartment.members.splice(toDeleteMemberIdx, 1);
-      }
+      //cek apakah departement dari ldap cocok dengan departemnt si user
+      const myPreviousDepartment = await Department.findOne({
+        org: OrgDB._id,
+        members: { $in: [userDB._id] },
+      });
+      if (
+        myPreviousDepartment &&
+        myPreviousDepartment.name !== departementDB.name
+      ) {
+        const toDeleteMemberIdx = myPreviousDepartment.members.findIndex(
+          (dep) => String(dep) === String(userDB._id)
+        );
+
+        if (toDeleteMemberIdx !== -1) {
+          myPreviousDepartment.members.splice(toDeleteMemberIdx, 1);
+        }
       } else {
         //jika departement sebelumnya ga ada tapi departement yang dimaksud sudah terdaftar maka add
         if (!myPreviousDepartment && departementDB) {
@@ -673,7 +673,7 @@ router.get(
       _id: req.user._id,
       org: req.user.org,
     })
-      .select("-password")
+      .select("-password -refreshToken")
       .lean();
 
     if (!userDB) {
@@ -710,7 +710,7 @@ router.get(
     const userDB = await UserRefrensi.findOne({
       _id: req.userId,
       org: req.user.org,
-    }).select("-password");
+    }).select("-password -refreshToken");
     if (!userDB) {
       return res.status(404).json({
         success: false,
@@ -922,7 +922,8 @@ router.post("/switchOrg", authenticate, async (req, res) => {
   if (!existingUserOtherOrg) {
     return res.status(400).json({
       success: false,
-      message: "Tampaknya anda tidak ada di organisasi tujuan, coba login ulang.",
+      message:
+        "Tampaknya anda tidak ada di organisasi tujuan, coba login ulang.",
     });
   }
 
@@ -962,7 +963,6 @@ router.post("/switchOrg", authenticate, async (req, res) => {
     message: "Berhasil switch organisasi",
   });
 });
-
 
 router.delete("/deleteAppUser/:id", authenticate, async (req, res) => {
   const id = req?.params?.id;

@@ -72,8 +72,13 @@
 [x] add: fitur pemilihan next approval untuk pengiriman email langsung dan hilangkan email menggangu seperti proses anda telah dilewati
 [x] modify: perjelas pemilihan next approval UI kirim email
 [x] add: fitur bisa mencari dengan jawaban (nama fitur: verbose search)
-
 [x] fix: auto pindah departement jika di LDAP berubah
+[x] modify: default filter in-progress untuk ngilangin completed
+[x] fix: fitur undo 1 langkah diperbaiki
+[x] add: cari berdasar nama pemohon,
+[x] tiny: gray pada approval yang telah lalu sudah semua
+[x] tiny: tukar posisi tombol approve dan decline
+[x] fix: filter level member,viewer dan owner, sudah disempurnakan
 [] add: fitur percabangan alur tanpa batas
 [] fix: fitur masih buggy untuk level member, fix di production
 [] modify: kirim email dengan nama organization bukan fixed csi

@@ -152,7 +152,7 @@ const TableInput = ({
                                     e.target.files[0]
                                   )
                                 }
-                                className="file-input file-input-sm file-input-bordered w-full"
+                                className="file-input file-input-sm  w-full"
                                 {...baseProps}
                               />
                             )}
@@ -188,6 +188,7 @@ const TableInput = ({
                             type="text"
                             inputMode="numeric"
                             pattern="[0-9]*"
+                            {...baseProps}
                             className="input input-bordered w-full max-w-xs text-right"
                             value={(() => {
                               const num = Number(
@@ -210,6 +211,7 @@ const TableInput = ({
                             onChange={(e) =>
                               handleChange(rIdx, cIdx, e.target.value)
                             }
+                            {...baseProps}
                           />
                         )}
                       </td>

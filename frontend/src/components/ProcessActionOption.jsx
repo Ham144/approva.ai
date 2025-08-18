@@ -67,6 +67,8 @@ export default function ProcessActionOption({ selectedInstance }) {
     selectedInstance?.currentStatusIndex
   ].authorized?.find((user) => user._id == userInfo._id);
 
+  console.log(selectedInstance);
+
   return (
     <dialog id="modalprocessaction" className="modal">
       <div className="modal-box max-w-md p-0 overflow-hidden">
@@ -120,15 +122,13 @@ export default function ProcessActionOption({ selectedInstance }) {
           </button>
           <button
             disabled={
-              selectedInstance?.requestedBy?._id != userInfo?._id &&
-              selectedInstance?.currentStatusIndex != 0
+              (selectedInstance?.requestedBy?._id != userInfo?._id &&
+                selectedInstance?.currentStatusIndex != 0) ||
+              selectedInstance?.currentStatusIndex == 0
             }
             onClick={() => navigate(`/request/edit/${selectedInstance?._id}`)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              selectedInstance?.requestedBy?._id != userInfo?._id &&
-              selectedInstance?.currentStatusIndex != 0
-                ? "bg-gray-100 text-gray-400"
-                : "bg-yellow-50 hover:bg-yellow-100 text-yellow-700"
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all bg-yellow-50 hover:bg-yellow-100 text-yellow-700 
+                disabled:bg-gray-100 disabled:text-gray-400 disabled:text-gray-400"
             }`}
           >
             <Pencil size={18} className="flex-shrink-0" />
@@ -138,15 +138,13 @@ export default function ProcessActionOption({ selectedInstance }) {
             disabled={
               selectedInstance?.requestedBy?._id != userInfo?._id ||
               selectedInstance?.overallStatus != "in-progress" ||
-              rollingBack
+              rollingBack ||
+              selectedInstance?.currentStatusIndex == 0
             }
             onClick={handleRollbackToStart}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              selectedInstance?.requestedBy?._id != userInfo?._id ||
-              selectedInstance?.overallStatus != "in-progress"
-                ? "bg-gray-100 text-gray-400"
-                : "bg-purple-600 hover:bg-purple-700 text-white"
-            }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all in-progress disabled:bg-gray-100 text-white disabled:text-gray-400
+              bg-purple-600 hover:bg-purple-700 text-white"
+          }`}
           >
             <History size={18} className="flex-shrink-0" />
             <span className="font-medium">
@@ -156,19 +154,33 @@ export default function ProcessActionOption({ selectedInstance }) {
 
           <button
             disabled={
-              selectedInstance?.requestedBy?._id != userInfo?._id ||
               selectedInstance?.overallStatus != "in-progress" ||
               selectedInstance.currentStatusIndex == 0 ||
-              pendingUndo
+              pendingUndo ||
+              (() => {
+                const idx = (selectedInstance?.currentStatusIndex ?? 0) - 1;
+                let isAuthorized = false;
+
+                if (
+                  idx >= 0 &&
+                  selectedInstance?.flowTemplate?.status?.[idx]?.authorized
+                ) {
+                  const auth =
+                    selectedInstance?.flowTemplate?.status?.[idx]?.authorized;
+                  isAuthorized = auth.some((item) => {
+                    const itemId = item && item._id ? item._id : item;
+                    // jika itemId adalah mongoose ObjectId, .equals aman; fallback ke String
+                    return itemId && typeof itemId.equals === "function"
+                      ? itemId.equals(userInfo._id)
+                      : String(itemId) === String(userInfo._id);
+                  });
+                }
+
+                return !isAuthorized;
+              })()
             }
             onClick={handleUndo}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              selectedInstance?.requestedBy?._id != userInfo?._id ||
-              selectedInstance?.overallStatus != "in-progress" ||
-              selectedInstance.currentStatusIndex == 0 ||
-              pendingUndo
-                ? "bg-gray-100 text-gray-400"
-                : "bg-indigo-600 hover:bg-indigo-700 text-white"
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all disabled:bg-gray-100 disabled:text-gray-400 bg-indigo-600 hover:bg-indigo-700 text-white
             }`}
           >
             <Undo size={18} className="flex-shrink-0" />

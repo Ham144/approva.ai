@@ -174,32 +174,6 @@ export default function ApprovalButton({
             )}
 
             <div className="flex flex-col sm:flex-row gap-3">
-              {/* Reject Button */}
-              <button
-                disabled={isOnlyPreview || isLoadinghandleSubmitStatus}
-                onClick={() => handleSelect("rejected")}
-                className={`
-        btn w-full sm:w-36 py-3 px-4 rounded-lg font-semibold text-white transition-all duration-300 shadow
-        ${
-          verdict === "rejected"
-            ? "bg-red-600 dark:bg-red-700 border-2 border-red-800 ring-2 ring-red-400"
-            : "bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
-        }
-        ${isOnlyPreview ? "opacity-50 cursor-not-allowed" : ""}
-      `}
-              >
-                {isLoadinghandleSubmitStatus ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="loading loading-spinner loading-sm"></span>
-                    <span>Loading...</span>
-                  </span>
-                ) : (
-                  <>
-                    <XCircle className="w-4 h-4 mr-2" /> Reject
-                  </>
-                )}
-              </button>
-
               {/* Approve Button */}
               <button
                 disabled={isOnlyPreview || isLoadinghandleSubmitStatus}
@@ -230,6 +204,31 @@ export default function ApprovalButton({
                 ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4 mr-2" /> Approve
+                  </>
+                )}
+              </button>
+              {/* Reject Button */}
+              <button
+                disabled={isOnlyPreview || isLoadinghandleSubmitStatus}
+                onClick={() => handleSelect("rejected")}
+                className={`
+        btn w-full sm:w-36 py-3 px-4 rounded-lg font-semibold text-white transition-all duration-300 shadow
+        ${
+          verdict === "rejected"
+            ? "bg-red-600 dark:bg-red-700 border-2 border-red-800 ring-2 ring-red-400"
+            : "bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+        }
+        ${isOnlyPreview ? "opacity-50 cursor-not-allowed" : ""}
+      `}
+              >
+                {isLoadinghandleSubmitStatus ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="loading loading-spinner loading-sm"></span>
+                    <span>Loading...</span>
+                  </span>
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4 mr-2" /> Reject
                   </>
                 )}
               </button>

@@ -226,76 +226,23 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
     requestDate,
     isMyRequestOnly,
     isMyDepartmentOnly,
-    limit = 10,
-    page = 1,
+    limit = "10",
+    page = "1",
     search,
     verboseSearch,
   } = req.query;
 
+  const isMyRequest = isMyRequestOnly === "true";
+  const isMyDept = isMyDepartmentOnly === "true";
+  const limitNum = Math.max(1, parseInt(limit) || 10);
+  const pageNum = Math.max(1, parseInt(page) || 1);
+
   try {
-    // 1) Cari semua template di mana user adalah salah satu authorized
-    const authorizedTemplateIds = await FlowAndPoint.find({
-      org: req.user.org,
-      "status.authorized": req.user._id,
-    }).distinct("_id");
-
-    // 2) Bangun query dasar (tanpa org, kita tambahkan nanti di finalQuery)
-    let baseConditions = {};
-
-    if (instanceId) {
-      baseConditions._id = instanceId;
-    } else {
-      if (flowTemplateCategory) {
-        console.log(
-          flowTemplateCategory,
-          mongoose.isValidObjectId(flowTemplateCategory)
-        );
-        baseConditions.flowTemplate = new mongoose.Types.ObjectId(
-          flowTemplateCategory
-        );
-      }
-      if (overallStatus) {
-        baseConditions.overallStatus = overallStatus;
-      }
-      if (requestedBy) {
-        baseConditions.requestedBy = requestedBy;
-      }
-      if (requestDate) {
-        const start = new Date(requestDate);
-        start.setHours(0, 0, 0, 0);
-        const end = new Date(requestDate);
-        end.setHours(23, 59, 59, 999);
-        baseConditions.createdAt = { $gte: start, $lte: end };
-      }
-      if (isMyDepartmentOnly === "true") {
-        //
-        const myDept = await Department.findOne({
-          org: req.user.org,
-          members: req.user._id,
-        });
-
-        if (myDept) {
-          const templates = await FlowAndPoint.find({
-            org: req.user.org,
-            allowedDepartmentToRequest: myDept._id,
-          }).distinct("_id");
-          baseConditions.flowTemplate = { $in: templates };
-        }
-      }
-    }
-
-    let finalQuery = {};
-    if (isMyRequestOnly === "true") {
-      baseConditions.requestedBy = new mongoose.Types.ObjectId(req.user._id);
-    }
-
     if (verboseSearch === "true") {
       const keyword = search || "";
       const pageNum = parseInt(page) || 1;
       const limitNum = parseInt(limit) || 25;
       const skipNum = (pageNum - 1) * limitNum;
-
-      // Step 1: Cari ID hasil verbose search
       const pipeline = [
         {
           $addFields: {
@@ -310,26 +257,16 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
             },
           },
         },
-        {
-          $match: {
-            combinedText: { $regex: keyword, $options: "i" },
-          },
-        },
+        { $match: { combinedText: { $regex: keyword, $options: "i" } } },
         { $skip: skipNum },
         { $limit: limitNum },
-        {
-          $project: { _id: 1 }, // hanya ambil ID untuk query ulang
-        },
+        { $project: { _id: 1 } },
       ];
-
       const matchedDocs = await FlowInstance.aggregate(pipeline);
       const ids = matchedDocs.map((doc) => doc._id);
-
       if (ids.length === 0) {
         return res.json({ data: [] });
       }
-
-      // Step 2: Query ulang pakai find() + populate
       const results = await FlowInstance.find({ _id: { $in: ids } })
         .populate("requestedBy", "username")
         .populate({
@@ -347,64 +284,164 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
         })
         .select("-requestData")
         .sort({ createdAt: -1 });
-
       return res.json({ data: results });
     }
 
-    if (search) {
-      const searchConditions = {
-        $or: [
-          { instanceTitle: { $regex: `^${search}$`, $options: "i" } },
-          { globalIndex: { $regex: search, $options: "i" } },
-          { searchableAnswer: { $regex: search, $options: "i" } },
-        ],
-      };
+    // Ambil authorized templates (dipakai bila perlu)
+    const authorizedTemplateIds = await FlowAndPoint.find({
+      org: req.user.org,
+      "status.authorized": req.user._id,
+    }).distinct("_id");
 
-      // Kalau cuma request saya
-      if (isMyRequestOnly === "true") {
-        finalQuery = {
+    // Ambil dept templates hanya jika tab dept dipilih
+    let deptTemplateIds = [];
+    if (isMyDept) {
+      const myDept = await Department.findOne({
+        org: req.user.org,
+        members: req.user._id,
+      });
+      if (myDept) {
+        deptTemplateIds = await FlowAndPoint.find({
           org: req.user.org,
-          $and: [baseConditions, searchConditions],
-        };
-      } else {
-        finalQuery = {
-          org: req.user.org,
-          $and: [
-            {
-              $or: [
-                baseConditions,
-                { flowTemplate: { $in: authorizedTemplateIds } },
-              ],
-            },
-            searchConditions,
-          ],
-        };
+          allowedDepartmentToRequest: myDept._id,
+        }).distinct("_id");
       }
-    } else {
-      if (isMyRequestOnly === "true") {
-        finalQuery = {
-          org: req.user.org,
-          $or: [
-            baseConditions,
-            { flowTemplate: { $in: authorizedTemplateIds } },
-          ],
-        };
-      } else {
-        finalQuery = {
-          org: req.user.org,
-          $or: [
-            baseConditions,
-            { flowTemplate: { $in: authorizedTemplateIds } },
-          ],
-        };
+      // jika myDept tidak ada -> deptTemplateIds tetap []
+      if (!deptTemplateIds.length) {
+        // no templates for this department => result pasti kosong
+        return res.status(200).json({ data: [], totalPage: 0, totalData: 0 });
       }
     }
 
-    // 4) Hitung total & ambil data
-    const totalData = await FlowInstance.countDocuments(finalQuery).populate(
-      "flowTemplate"
-    );
-    const totalPage = Math.ceil(totalData / limit);
+    // Jika user kirim requestedBy sebagai username atau id -> resolve ke ObjectId
+    let requestedById = null;
+    if (requestedBy) {
+      if (mongoose.isValidObjectId(requestedBy)) {
+        requestedById = mongoose.Types.ObjectId(requestedBy);
+      } else {
+        const userRef = await UserRefrensi.findOne({
+          username: requestedBy,
+          org: req.user.org,
+        }).select("_id");
+        if (userRef) requestedById = userRef._id;
+      }
+    }
+
+    // Build initial query berdasarkan tab
+    // Tab precedence: isMyRequest -> isMyDept -> all
+    let finalQuery = { org: req.user.org };
+
+    if (instanceId) {
+      finalQuery._id = new mongoose.Types.ObjectId(instanceId);
+    } else if (isMyRequest) {
+      // Tab "My Request" — forced requestedBy = me (override requestedBy param)
+      finalQuery.requestedBy = new mongoose.Types.ObjectId(req.user._id);
+    } else if (isMyDept) {
+      // Tab "My Department" — hanya templates yg diijinkan dept
+      finalQuery = {
+        ...finalQuery,
+        $or: [
+          { flowTemplate: { $in: deptTemplateIds } },
+          { flowTemplate: { $in: authorizedTemplateIds } },
+        ],
+      };
+    } else {
+      // Tab "All" — mulai dengan org saja (tampil semua dalam org)
+      // If you want "all" to be restricted to authorizedTemplateIds, change this behaviour.
+    }
+
+    // Setelah tab, apply filters yang lebih sempit
+    // 1) flowTemplateCategory (intersect dengan existing flowTemplate if exists)
+    if (
+      flowTemplateCategory &&
+      mongoose.isValidObjectId(flowTemplateCategory)
+    ) {
+      const tplId = new mongoose.Types.ObjectId(flowTemplateCategory);
+      if (finalQuery.flowTemplate) {
+        // sudah ada flowTemplate (misal dari dept) -> jadi intersection
+        // convert to $and to combine properly
+        finalQuery = {
+          $and: [finalQuery, { flowTemplate: tplId }],
+          org: req.user.org,
+        };
+      } else {
+        finalQuery.flowTemplate = tplId;
+      }
+    }
+
+    // 2) overallStatus
+    if (overallStatus) {
+      if (finalQuery.$and) {
+        finalQuery = {
+          $and: [...finalQuery.$and, { overallStatus }],
+          org: req.user.org,
+        };
+      } else {
+        finalQuery.overallStatus = overallStatus;
+      }
+    }
+
+    // 3) requestedBy (hanya apply kalau bukan tab "My Request", karena tab My Request sudah override)
+    if (!isMyRequest && requestedById) {
+      if (finalQuery.$and) {
+        finalQuery = {
+          $and: [...finalQuery.$and, { requestedBy: requestedById }],
+          org: req.user.org,
+        };
+      } else {
+        finalQuery.requestedBy = requestedById;
+      }
+    }
+
+    // 4) requestDate -> filter createdAt range
+    if (requestDate) {
+      const start = new Date(requestDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(requestDate);
+      end.setHours(23, 59, 59, 999);
+      const dateCond = { createdAt: { $gte: start, $lte: end } };
+
+      if (finalQuery.$and) {
+        finalQuery = {
+          $and: [...finalQuery.$and, dateCond],
+          org: req.user.org,
+        };
+      } else {
+        finalQuery = { ...finalQuery, ...dateCond };
+      }
+    }
+
+    // 5) search — terakhir. (simple search: instanceTitle & globalIndex)
+    if (search && String(search).trim() !== "") {
+      const regex = new RegExp(String(search).trim(), "i");
+      const searchCond = {
+        $or: [
+          { instanceTitle: { $regex: regex } },
+          { globalIndex: { $regex: regex } },
+        ],
+      };
+
+      if (finalQuery.$and) {
+        finalQuery = {
+          $and: [...finalQuery.$and, searchCond],
+          org: req.user.org,
+        };
+      } else {
+        // jika finalQuery punya beberapa key, combine dengan $and
+        const keys = Object.keys(finalQuery).filter((k) => k !== "org");
+        if (keys.length > 0) {
+          const existing = { ...finalQuery };
+          delete existing.org;
+          finalQuery = { org: req.user.org, $and: [existing, searchCond] };
+        } else {
+          finalQuery = { ...finalQuery, ...searchCond };
+        }
+      }
+    }
+
+    // lakukan count dan fetch (tanpa populate di count)
+    const totalData = await FlowInstance.countDocuments(finalQuery);
+    const totalPage = Math.ceil(totalData / limitNum);
 
     const flowInstanceList = await FlowInstance.find(finalQuery)
       .populate("requestedBy", "username")
@@ -421,17 +458,19 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
           },
         ],
       })
-      .select("-requestData") // âœ… hanya eksklusi, tidak konflik
+      .select("-requestData")
       .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
-      .skip((parseInt(page) - 1) * parseInt(limit));
+      .limit(limitNum)
+      .skip((pageNum - 1) * limitNum);
 
     return res
       .status(200)
       .json({ data: flowInstanceList, totalPage, totalData });
   } catch (error) {
     console.error(error);
-    return res.status(400).json({ message: "Terjadi kesalahan server" });
+    return res
+      .status(400)
+      .json({ message: "Terjadi kesalahan server", error: error.message });
   }
 });
 
