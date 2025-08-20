@@ -98,7 +98,7 @@ export default function LibraryManagement() {
             filteredFlow.map((flow) => (
               <div
                 key={flow._id}
-                className="group bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                className="group relative bg-white h-[500px]  rounded-2xl border border-gray-100 overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
               >
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
@@ -143,7 +143,7 @@ export default function LibraryManagement() {
                   </div>
                 </div>
 
-                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+                <div className="px-6 absolute bottom-4">
                   <button
                     onClick={(e) => {
                       e.preventDefault();

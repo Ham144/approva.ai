@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import ModalCreateSourceData from "./ModalCreateSourceData";
 import InputItem from "./InputItem";
 import {
+  AlertCircle,
   AlignLeft,
   BookHeart,
   Building,
   Globe,
   Heading,
   Info,
+  Plus,
   Search,
   Trash,
 } from "lucide-react";
@@ -64,6 +66,22 @@ export default function FlowCreation() {
     const newStatusList = [...flow.status];
     newStatusList[statusIndex]?.requirements.push(newRequirement);
     setFlow({ ...flow, status: newStatusList });
+  };
+
+  const handleMoveRequest = (itsCurrentIndex, direction) => {
+    const directionToNum = direction === "UP" ? -1 : 1;
+    const newIndex = itsCurrentIndex + directionToNum;
+
+    // Cegah keluar batas array
+    if (newIndex < 0 || newIndex >= flow.request.length) return;
+
+    const requestArr = [...flow.request];
+    [requestArr[itsCurrentIndex], requestArr[newIndex]] = [
+      requestArr[newIndex],
+      requestArr[itsCurrentIndex],
+    ];
+
+    setFlow({ ...flow, request: requestArr });
   };
 
   const handleAddAuthorizedUser = (statusIndex, userId) => {
@@ -483,13 +501,13 @@ export default function FlowCreation() {
         {flow.request?.map((input, requestIdx) => (
           <div onClick={() => setCurrentEditingInputID(input._id)}>
             <InputItem
+              isForRequest={true}
               key={input._id}
-              index={requestIdx}
+              index={inputIdx}
               input={input}
               onChange={(newInput) => {
                 updateInputRequest(requestIdx, newInput);
               }}
-              setSourceData={() => {}}
               deleteInput={() => {
                 setFlow((prevFlow) => {
                   if (!prevFlow.request) return prevFlow;
@@ -501,6 +519,7 @@ export default function FlowCreation() {
                   };
                 });
               }}
+              handleMoveRequest={handleMoveRequest}
             />
           </div>
         ))}
@@ -644,6 +663,9 @@ export default function FlowCreation() {
                         };
                       });
                     }}
+                    isForRequest={false}
+                    handleMoveRequest={handleMoveRequest}
+                    statusIndex={i} // Kirim index status yang sedang aktif
                   />
                 </div>
               ))}
@@ -665,6 +687,7 @@ export default function FlowCreation() {
           + Add Status
         </button>
       </div>
+
       <ModalCreateSourceData />
     </div>
   );

@@ -570,6 +570,8 @@ export default function FlowEditing() {
                 });
               }}
               handleMoveRequest={handleMoveRequest}
+              isForRequest={true}
+              onFocusPreviousStatus={() => {}}
             />
           </div>
         ))}
@@ -755,6 +757,9 @@ export default function FlowEditing() {
                         };
                       });
                     }}
+                    isForRequest={false}
+                    handleMoveRequest={handleMoveRequest}
+                    statusIndex={i} // Kirim index status yang sedang aktif
                   />
                 </div>
               ))}
