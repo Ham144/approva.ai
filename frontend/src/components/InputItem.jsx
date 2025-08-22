@@ -30,31 +30,6 @@ import ModalCreateSourceData from "./ModalCreateSourceData";
 import LogicModal from "./LogicModal";
 import { useEditor } from "@/store";
 
-const getInputTypeIcon = (type) => {
-  switch (type) {
-    case "pdf":
-      return <FileBadge size={18} />;
-    case "image":
-      return <Image size={18} />;
-    case "text":
-      return <Type size={18} />;
-    case "table":
-      return <Table size={18} />;
-    case "date":
-      return <CalendarDays size={18} />;
-    case "signature":
-      return <Signature size={18} />;
-    case "number":
-      return <Hash size={18} />;
-    case "select":
-      return <List size={18} />;
-    case "multipleCheckbox":
-      return <CheckSquare size={18} />;
-    default:
-      return <FileText size={18} />;
-  }
-};
-
 function InputItem({
   input,
   index,
@@ -66,21 +41,17 @@ function InputItem({
 }) {
   const hasNew = !!input?.sourceDataNew;
   const [searchSourceDataTitle, setSearchSourceDataTitle] = useState("");
-  const { flow } = useEditor();
+  const [openSignal, setOpenSignal] = useState(0);
+  const { flow, setFlow } = useEditor();
 
   // Gunakan status index yang diterima dari parent
-  const currentStatus = flow?.status?.[statusIndex];
+  const currentStatus = flow?.status[statusIndex];
   const currentStatusId = currentStatus?._id || currentStatus?.id;
 
   // Gunakan ID dari requirement yang sedang dikonfigurasi
   const currentRequirementId = input?._id;
 
-  // Debug: lihat data yang diterima
-  console.log("🔍 InputItem Debug:");
-  console.log("  statusIndex:", statusIndex);
-  console.log("  currentStatus:", currentStatus);
-  console.log("  currentStatusId:", currentStatusId);
-  console.log("  currentRequirementId:", currentRequirementId);
+  // no console logs per user preference
 
   const { data: sourceDataList } = useQuery({
     queryKey: ["sourcedata-list", searchSourceDataTitle],
@@ -101,6 +72,32 @@ function InputItem({
     queryFn: () => FlexSourceDataApi.getSourceDataByIdPost(input?.sourceData),
     enabled: !!input.sourceData,
   });
+
+  // Helper function to get icon based on input type
+  const getInputTypeIcon = (type) => {
+    switch (type) {
+      case "pdf":
+        return <FileBadge size={18} />;
+      case "image":
+        return <Image size={18} />;
+      case "text":
+        return <Type size={18} />;
+      case "table":
+        return <Table size={18} />;
+      case "date":
+        return <CalendarDays size={18} />;
+      case "signature":
+        return <Signature size={18} />;
+      case "number":
+        return <Hash size={18} />;
+      case "select":
+        return <List size={18} />;
+      case "multipleCheckbox":
+        return <CheckSquare size={18} />;
+      default:
+        return <FileText size={18} />;
+    }
+  };
 
   return (
     <div className="p-5 border border-gray-200 dark:border-gray-700 rounded-xl w-full space-y-4 shadow-lg bg-white dark:bg-gray-800 transition-all duration-300">
@@ -700,69 +697,99 @@ function InputItem({
         <>
           <div className={`space-y-4`}>
             <button
-              className="btn rounded-lg shadow-sm bg-primary hover:bg-primary-focus text-white"
-              onClick={() => document.getElementById("logicModal").showModal()}
+              // disabled={flow?.logics?.some((e) => e.uuid === input.uuid)}
+              disabled={flow?.logics?.some((logic) =>
+                currentStatus.requirements.some(
+                  (req) =>
+                    req._id === logic.requirementId ||
+                    req.uuid === logic.requirementId
+                )
+              )}
+              className="btn w-full rounded-lg shadow-sm bg-primary hover:bg-primary-focus text-white"
+              onClick={() => {
+                const modalId = `logicModal-${currentStatusId}-${currentRequirementId}`;
+                // trigger reset state via openSignal by forcing rerender key
+                setOpenSignal((s) => s + 1);
+                document.getElementById(modalId)?.showModal();
+              }}
             >
-              Tambah Logic
+              <Plus />
+              {flow?.logics?.some((logic) =>
+                currentStatus.requirements.some(
+                  (req) =>
+                    req._id === logic.requirementId ||
+                    req.uuid === logic.requirementId
+                )
+              )
+                ? "Hanya boleh satu logic perstatus"
+                : "Tambah Logic Route"}
             </button>
 
-            {/* Daftar Logika yang telah dibuat */}
-            {input.logics && input.logics.length > 0 && (
-              <div className="space-y-3">
-                <h4 className="font-semibold text-gray-800 dark:text-gray-200">
-                  Logika yang telah dibuat:
-                </h4>
-                {input.logics.map((logic, logicIndex) => (
-                  <div
-                    key={logicIndex}
-                    className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 space-y-2"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="badge badge-primary">
-                          {logic.logicType === "jumpTo" && "Jump to"}
-                          {logic.logicType === "completedIf" && "Completed if"}
-                          {logic.logicType === "rejectedIf" && "Rejected if"}
-                          {logic.logicType === "preventNextIf" &&
-                            "Prevent next if"}
-                        </span>
-                        {logic.logicType === "jumpTo" &&
-                          logic.jumpToStatusId && (
-                            <span className="text-sm text-gray-600 dark:text-gray-400">
-                              →{" "}
-                              {flow.status?.find(
-                                (s) => s._id === logic.jumpToStatusId
-                              )?.title || "Unknown Status"}
-                            </span>
-                          )}
+            {/* tammpilin Logika yang telah dibuat */}
+            {flow?.logics && flow.logics.length > 0 && (
+              <div className="space-y-3 my-3 rounded-lg">
+                {flow.logics
+                  .filter(
+                    (logic) => String(logic.requirementId) === String(input._id)
+                  )
+                  .map((logic, logicIndex) => (
+                    <div
+                      key={logicIndex}
+                      className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg  bg-gray-50 dark:bg-gray-700 space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="badge badge-primary text-white rounded-lg">
+                            {logic.logicType === "jumpTo" && "Jump to"}
+                            {logic.logicType === "completedIf" &&
+                              "Completed if"}
+                            {logic.logicType === "rejectedIf" && "Rejected if"}
+                            {logic.logicType === "preventNextIf" &&
+                              "Prevent next if"}
+                          </span>
+                          {logic.logicType === "jumpTo" &&
+                            logic.jumpToStatusUuid && (
+                              <span className="text-sm text-gray-600 dark:text-gray-400">
+                                →{" "}
+                                {flow.status?.find(
+                                  (s) => s.uuid === logic.jumpToStatusUuid
+                                )?.title || "Unknown Status"}
+                              </span>
+                            )}
+                        </div>
+                        <button
+                          onClick={() => {
+                            const newLogics = [...(flow?.logics || [])];
+                            const logicIndex = newLogics.findIndex(
+                              (e) => e.requirementId === input._id
+                            );
+                            newLogics.splice(logicIndex, 1);
+                            setFlow({
+                              ...flow,
+                              logics: newLogics,
+                            });
+                          }}
+                          className="btn btn-error btn-xs"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => {
-                          const newLogics = [...input.logics];
-                          newLogics.splice(logicIndex, 1);
-                          onChange({ ...input, logics: newLogics });
-                        }}
-                        className="btn btn-error btn-xs"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
 
-                    <div className="text-sm space-y-1">
-                      <div>
-                        <span className="font-medium">Requirement:</span>{" "}
-                        {input.title || "Unknown"}
-                      </div>
-                      <div>
-                        <span className="font-medium">Kondisi:</span>{" "}
-                        {logic.operator}{" "}
-                        <span className="font-mono bg-gray-200 dark:bg-gray-600 px-1 rounded">
-                          {logic.value}
-                        </span>
+                      <div className="text-sm space-y-1">
+                        <div>
+                          <span className="font-medium">Requirement:</span>{" "}
+                          {input.title || "Unknown"}
+                        </div>
+                        <div>
+                          <span className="font-medium">Kondisi:</span>{" "}
+                          {logic.operator}{" "}
+                          <span className="font-mono bg-gray-200 dark:bg-gray-600 px-1 rounded">
+                            {logic.value}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
           </div>
@@ -771,11 +798,17 @@ function InputItem({
             flow={flow}
             currentRequirementId={currentRequirementId}
             currentStatus={currentStatus}
+            modalId={`logicModal-${currentStatusId}-${currentRequirementId}`}
+            openSignal={openSignal}
             handleAddlogicModal={(logicData) => {
               const newLogics = [...(input.logics || []), logicData];
-              onChange({ ...input, logics: newLogics });
+              setFlow((prev) => ({
+                ...prev,
+                logics: [...prev?.logics, logicData],
+              }));
             }}
-            key={"modalLogic"}
+            input={input}
+            key={`modalLogic-${currentStatusId}-${currentRequirementId}`}
           />
         </>
       )}

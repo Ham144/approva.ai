@@ -467,6 +467,7 @@ router.put("/update/:id", async (req, res) => {
     allowedDepartmentToRequest,
     allowedSpecificUserToRequest,
     mode,
+    logics,
   } = req.body;
 
   // Validasi input dasar
@@ -526,7 +527,7 @@ router.put("/update/:id", async (req, res) => {
     const youAreTheDesigner = existingFlow.designedBy.find(
       (d) => d.toString() === req.user._id
     );
-    console.log(youAreTheDesigner);
+    console.log("youAreTheDesigner: ", youAreTheDesigner);
     // Buang _id hanya kalau _id memang tidak valid (misal berasal dari frontend bodoh)
     const sanitizedInputs = [];
 
@@ -627,6 +628,7 @@ router.put("/update/:id", async (req, res) => {
       }
 
       updatedStatuses.push({
+        uuid: s.uuid,
         title: s.title,
         desc: s.desc,
         authorized: authorizedIds,
@@ -635,12 +637,12 @@ router.put("/update/:id", async (req, res) => {
     }
 
     // Update flow
-
     existingFlow.mode = mode;
     existingFlow.title = title;
     existingFlow.desc = desc;
     existingFlow.request = sanitizedInputs;
     existingFlow.status = updatedStatuses;
+    existingFlow.logics = logics;
 
     // Tambahkan desainer baru jika belum ada
     if (!youAreTheDesigner) {
@@ -693,6 +695,7 @@ router.post("/duplicate/:_id", async (req, res) => {
       allowedDepartmentToRequest: existingFlow.allowedDepartmentToRequest,
       org: req.user.org,
       mode: existingFlow?.mode,
+      logics: existingFlow?.logics,
     });
 
     return res.json({

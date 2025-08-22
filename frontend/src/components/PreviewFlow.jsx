@@ -11,6 +11,7 @@ import {
   Clock,
   MessageSquareText,
   User2,
+  Trash2,
 } from "lucide-react";
 import FileApi from "@/api/fileApi";
 
@@ -590,18 +591,78 @@ export default function PreviewFlow({
                               </span>
                             )}
                           </div>
-
                           {renderInput(
                             input,
                             currentStatusIndex !== i,
                             true,
                             i
                           )}
+                          {/* tammpilin Logika yang telah dibuat */}
+                          {jsonFlow?.logics && jsonFlow.logics.length > 0 && (
+                            <div className="space-y-3 my-3 rounded-lg">
+                              {jsonFlow.logics
+                                .filter(
+                                  (logic) =>
+                                    String(logic.requirementId) ===
+                                    String(input._id)
+                                )
+                                .map((logic, logicIndex) => (
+                                  <div
+                                    key={logicIndex}
+                                    className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg  bg-gray-50 dark:bg-gray-700 space-y-2"
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <span className="badge badge-primary text-white rounded-lg">
+                                          {logic.logicType === "jumpTo" &&
+                                            "Jump to"}
+                                          {logic.logicType === "completedIf" &&
+                                            "Completed if"}
+                                          {logic.logicType === "rejectedIf" &&
+                                            "Rejected if"}
+                                          {logic.logicType ===
+                                            "preventNextIf" &&
+                                            "Prevent next if"}
+                                        </span>
+                                        {logic.logicType === "jumpTo" &&
+                                          logic.jumpToStatusUuid && (
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                                              →{" "}
+                                              {jsonFlow.status?.find(
+                                                (s) =>
+                                                  s.uuid ===
+                                                  logic.jumpToStatusUuid
+                                              )?.title || "Unknown Status"}
+                                            </span>
+                                          )}
+                                      </div>
+                                    </div>
+
+                                    <div className="text-sm space-y-1">
+                                      <div>
+                                        <span className="font-medium">
+                                          Requirement:
+                                        </span>{" "}
+                                        {input.title || "Unknown"}
+                                      </div>
+                                      <div>
+                                        <span className="font-medium">
+                                          Kondisi:
+                                        </span>{" "}
+                                        {logic.operator}{" "}
+                                        <span className="font-mono bg-gray-200 dark:bg-gray-600 px-1 rounded">
+                                          {logic.value}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
                   </div>
-
                   <div
                     className={`
     flex flex-col md:flex-row md:items-center justify-between

@@ -2,15 +2,13 @@ import { Router } from "express";
 import FlowInstance from "../models/FlowInstance.model.js";
 import FlowAndPoint from "../models/FlowAndPoint.model.js";
 import mongoose from "mongoose";
-import {
-  sendApprovalRequestEmail,
-  sendSkippedUserNotification,
-} from "../utils/emailService.js";
+import { sendApprovalRequestEmail } from "../utils/emailService.js";
 import Department from "../models/Department.model.js";
 import generateGlobalIndex from "../utils/generateGlobalIndex.js";
 import DownloadedProcess from "../models/DownloadedProcess.model.js";
 import generateExcelFile from "../utils/generateExcelFile.js";
 import UserRefrensi from "../models/User.model.js";
+import checkOperator from "../utils/checkingOperator.js";
 
 const router = Router();
 
@@ -282,7 +280,7 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
             },
           ],
         })
-        .select("-requestData")
+        .select("-requestData logics")
         .sort({ createdAt: -1 });
       return res.json({ data: results });
     }
@@ -317,7 +315,7 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
     let requestedById = null;
     if (requestedBy) {
       if (mongoose.isValidObjectId(requestedBy)) {
-        requestedById = mongoose.Types.ObjectId(requestedBy);
+        requestedById = new mongoose.Types.ObjectId(requestedBy);
       } else {
         const userRef = await UserRefrensi.findOne({
           username: requestedBy,
@@ -513,7 +511,7 @@ router.get("/flowInstanceById/:id", async (req, res) => {
   }
 });
 
-//submit hanya 1 status bukan semua
+//submit maju 1 step atau maju berdasarkan logic jika ada
 router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
   const { statuses: currentIndexStatusResponse, selectedAuthorized } = req.body;
 
@@ -656,9 +654,123 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
       if (currentStatusIndex == flowInstance.flowTemplate.status.length - 1) {
         flowInstance.overallStatus = "completed";
       } else {
-        flowInstance.currentStatusIndex += 1;
+        if (flowInstance.flowTemplate?.logics?.length > 0) {
+          const currentStatus =
+            flowInstance.flowTemplate.status[flowInstance.currentStatusIndex];
+
+          const matchingLogicRequirement =
+            flowInstance.flowTemplate.logics.find((logic) => {
+              return currentStatus.requirements.some((requirement) => {
+                return String(requirement._id) === logic.requirementId;
+              });
+            });
+
+          //extract jawaban saat ini
+          const actual =
+            flowInstance.statuses[currentStatusIndex].requirementsData[
+              matchingLogicRequirement.requirementId
+            ];
+
+          //mulai logic routing
+          if (matchingLogicRequirement.logicType === "jumpTo") {
+            console.log(
+              actual,
+              matchingLogicRequirement.value,
+              matchingLogicRequirement.operator
+            );
+            const actualToCheck =
+              typeof actual === "object" ? JSON.stringify(actual) : actual;
+            const isOperatorSatisfied = checkOperator({
+              actual: actualToCheck,
+              operator: matchingLogicRequirement.operator,
+              expected: matchingLogicRequirement.value,
+            });
+            if (isOperatorSatisfied) {
+              const targetLogicIndex =
+                flowInstance.flowTemplate.status.findIndex(
+                  (status) =>
+                    status.uuid === matchingLogicRequirement.jumpToStatusUuid
+                );
+              flowInstance.currentStatusIndex = targetLogicIndex;
+              return res.status(400).json({
+                message: "berhasil memenuhi logic jumpTo",
+                targetLogicIndex,
+              });
+            } else {
+              return res.status(400).json({
+                message: "gagal memenuhi logic jumpTo",
+              });
+              flowInstance.currentStatusIndex += 1;
+            }
+          } else if (matchingLogicRequirement.logicType === "completedIf") {
+            const isOperatorSatisfied = checkOperator({
+              actual,
+              operator: matchingLogicRequirement.operator,
+              expected: matchingLogicRequirement.value,
+            });
+            if (isOperatorSatisfied) {
+              flowInstance.overallStatus = "completed";
+              flowInstance.currentStatusIndex =
+                flowInstance.flowTemplate.status.length;
+
+              return res.status(400).json({
+                message: "berhasil memenuhi logic completedIf",
+              });
+            } else {
+              return res.status(400).json({
+                message: "gagal memenuhi logic completedIf",
+              });
+              flowInstance.currentStatusIndex += 1;
+            }
+          } else if (matchingLogicRequirement.logicType === "rejectedIf") {
+            const isOperatorSatisfied = checkOperator({
+              actual,
+              operator: matchingLogicRequirement.operator,
+              expected: matchingLogicRequirement.value,
+            });
+            if (isOperatorSatisfied) {
+              flowInstance.overallStatus = "rejected";
+              return res.status(400).json({
+                message: "berhasil memenuhi logic rejectedIf",
+              });
+            } else {
+              return res.status(400).json({
+                message: "gagal memenuhi logic rejectedIf",
+              });
+              flowInstance.currentStatusIndex += 1;
+            }
+          } else if (matchingLogicRequirement.logicType === "preventNextIf") {
+            const isOperatorSatisfied = checkOperator({
+              actual,
+              operator: matchingLogicRequirement.operator,
+              expected: matchingLogicRequirement.value,
+            });
+            if (isOperatorSatisfied) {
+              return res.status(403).json({
+                message:
+                  "logic preventNextIf terpenuhi, anda tidak boleh mengisi input demikian: " +
+                  actual,
+              });
+            } else {
+              return res.status(400).json({
+                message: "gagal memenuhi logic preventNextIf",
+              });
+              flowInstance.currentStatusIndex += 1;
+            }
+          } else {
+            return res.status(400).json({
+              message: "Terdapat logicType yang tidak dikenali " + logicType,
+            });
+          }
+        } else {
+          flowInstance.currentStatusIndex += 1;
+        }
       }
     }
+
+    return res
+      .status(400)
+      .json({ flowInstance, message: "dalam tahap pengembangan" });
 
     await flowInstance.save();
 
@@ -668,11 +780,11 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
         // The `flowInstance` variable has the `flowTemplate` populated with authorized users (including email).
 
         // 1. Notify users who were skipped on the step that was just completed.
-        const completedStatusTemplate =
-          flowInstance.flowTemplate.status[currentStatusIndex]; // Use the original index
-        const skippedUsers = completedStatusTemplate.authorized.filter(
-          (user) => !user._id.equals(userId)
-        );
+        // const completedStatusTemplate =
+        //   flowInstance.flowTemplate.status[currentStatusIndex]; // Use the original index
+        // const skippedUsers = completedStatusTemplate.authorized.filter(
+        //   (user) => !user._id.equals(userId)
+        // );
 
         // if (skippedUsers.length > 0) {
         //   await sendSkippedUserNotification(
@@ -813,16 +925,6 @@ router.put("/undo/:id", async (req, res) => {
     const stepBeingUndoneIndex = flowInstance.currentStatusIndex;
     const currentTemplateStatus =
       flowInstance.flowTemplate.status[stepBeingUndoneIndex];
-
-    const isCurrentUserAuthorized = currentTemplateStatus.authorized.some(
-      (user) => user._id.toString() === req.user._id.toString()
-    );
-
-    if (!isCurrentUserAuthorized) {
-      return res
-        .status(400)
-        .json({ message: "Tidak bisa undo: Saat ini bukan giliran anda." });
-    }
 
     // Mundur 1 langkah
     flowInstance.currentStatusIndex = stepBeingUndoneIndex - 1;
@@ -1059,10 +1161,6 @@ router.get("/download/:month", async (req, res) => {
       error: error.message,
     });
   }
-});
-
-router.post("/redo/:_id", async (req, res) => {
-  return res.status(500).json({ message: "Internal Server Error" });
 });
 
 export default router;

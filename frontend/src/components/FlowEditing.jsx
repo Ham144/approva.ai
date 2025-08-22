@@ -47,6 +47,7 @@ export default function FlowEditing() {
       requirements: [],
       isPrivateAuthorized: false,
       privateAuthorizedUser: [],
+      uuid: uuidv4(),
     };
     setFlow((prev) => ({ ...prev, status: [...prev?.status, newStatus] }));
   };
@@ -65,6 +66,7 @@ export default function FlowEditing() {
       tipe: "text",
       sourceData: null,
       isNullable: false,
+      uuid: uuidv4(),
     };
     const newStatusList = [...flow.status];
     newStatusList[statusIndex]?.requirements.push(newRequirement);
@@ -264,7 +266,7 @@ export default function FlowEditing() {
 
           <div className="space-y-6">
             {/* Mode Selection */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="flex flex-col gap-3">
               <button
                 onClick={() => {
                   setFlow({
@@ -275,7 +277,7 @@ export default function FlowEditing() {
                     mode: "public",
                   });
                 }}
-                className={`btn btn-outline ${
+                className={`btn rounded hover:bg-orange-200  ${
                   flow.mode === "public" ? "btn-primary" : ""
                 }`}
               >
@@ -291,7 +293,7 @@ export default function FlowEditing() {
                     mode: "department",
                   });
                 }}
-                className={`btn text-wrap btn-outline ${
+                className={`btn text-wrap rounded hover:bg-orange-200  ${
                   flow.mode === "department" ? "btn-primary" : ""
                 }`}
               >
@@ -307,7 +309,7 @@ export default function FlowEditing() {
                     mode: "private",
                   });
                 }}
-                className={`btn btn-outline ${
+                className={`btn rounded hover:bg-orange-200  ${
                   flow.mode === "private" ? "btn-primary" : ""
                 }`}
               >

@@ -1,102 +1,43 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
+import SelectInput from "./SelectInput";
+import SelectInputForLogicMatching from "./SelectInputForLogicMatching";
+import { BrainCircuit } from "lucide-react";
+import { DatePicker, TimePicker } from "antd";
 
 export default function LogicModal({
   flow,
   currentRequirementId,
   currentStatus, // Status yang sedang aktif (dikirim langsung dari parent)
   handleAddlogicModal,
+  modalId = "logicModal",
+  openSignal, // number atau string yang berubah setiap kali tombol ditekan
+  input,
 }) {
-  console.log("🚀 LogicModal Props:");
-  console.log("  flow:", flow);
-  console.log("  currentRequirementId:", currentRequirementId);
-  console.log("  currentRequirementId type:", typeof currentRequirementId);
-  console.log(
-    "  currentRequirementId === null:",
-    currentRequirementId === null
+  // Validasi ringan
+  if (!currentRequirementId || !currentStatus) return null;
+  const currentStatusIndex = flow.status.findIndex(
+    (status) => status._id === currentStatus._id
   );
-  console.log(
-    "  currentRequirementId === undefined:",
-    currentRequirementId === undefined
-  );
-
-  // Debug: cek struktur data flow
-  console.log("🔍 Flow structure:");
-  console.log("  flow.status length:", flow.status?.length);
-  console.log("  flow.status[0]:", flow.status?.[0]);
-  console.log("  flow.status[0].requirements:", flow.status?.[0]?.requirements);
-
-  // Debug: cek apakah currentRequirementId ada di requirements
-  if (currentRequirementId && flow.status) {
-    flow.status.forEach((status, index) => {
-      const requirements = status.requirements || [];
-      const hasRequirement = requirements.some(
-        (req) => (req._id || req.id) === currentRequirementId
-      );
-      console.log(
-        `🔍 Status ${index} "${status.title}" has requirement ${currentRequirementId}: ${hasRequirement}`
-      );
-    });
-  }
-  // Gunakan status yang dikirim langsung dari parent
-  const currentStatusId = currentStatus?._id || currentStatus?.id;
-
-  // Debugging untuk melihat data yang diterima
-  console.log("Debug LogicModal:");
-  console.log("currentRequirementId:", currentRequirementId);
-  console.log("currentStatus:", currentStatus);
-  console.log("currentStatusId:", currentStatusId);
-
-  // Debug: cek apakah ada masalah dengan data flow
-  console.log("🔍 Flow data structure:");
-  console.log("  flow.status length:", flow.status?.length);
-  console.log("  flow.status:", flow.status);
-
-  // Debug: cek apakah currentRequirementId valid
-  if (currentRequirementId) {
-    const allRequirements =
-      flow.status?.flatMap((s) => s.requirements || []) || [];
-    const requirementExists = allRequirements.some(
-      (req) => (req._id || req.id) === currentRequirementId
-    );
-    console.log("🔍 Requirement validation:");
-    console.log(
-      "  All requirements:",
-      allRequirements.map((req) => ({
-        id: req._id || req.id,
-        title: req.title,
-      }))
-    );
-    console.log("  Requirement exists:", requirementExists);
-  }
-
-  // Validasi data yang diterima
-  if (!currentRequirementId) {
-    console.error("❌ currentRequirementId is undefined or null");
-  }
-
-  if (!currentStatus) {
-    console.error(
-      "❌ currentStatus not found for requirement:",
-      currentRequirementId
-    );
-    console.log(
-      "Available statuses:",
-      flow.status?.map((s) => ({
-        id: s._id,
-        title: s.title,
-        requirements: s.requirements?.length || 0,
-      }))
-    );
-  }
 
   const [logicTemp, setLogicTemp] = useState({
     requirementId: currentRequirementId, // Otomatis terisi dengan requirement yang sedang dikonfigurasi
     logicType: "",
     operator: "",
     value: "",
-    jumpToStatusId: "",
+    jumpToStatusUuid: "",
   });
+
+  // Reset setiap openSignal berubah (tombol ditekan)
+  React.useEffect(() => {
+    setLogicTemp({
+      requirementId: currentRequirementId,
+      logicType: "",
+      operator: "",
+      value: "",
+      jumpToStatusUuid: "",
+    });
+  }, [openSignal, currentRequirementId]);
 
   const handleSave = () => {
     // Validasi
@@ -109,7 +50,7 @@ export default function LogicModal({
     }
 
     // Validasi khusus untuk jumpTo
-    if (logicTemp.logicType === "jumpTo" && !logicTemp.jumpToStatusId) {
+    if (logicTemp.logicType === "jumpTo" && !logicTemp.jumpToStatusUuid) {
       return toast.error("Untuk logika Jump to, pilih status tujuan");
     }
 
@@ -119,7 +60,7 @@ export default function LogicModal({
       logicType: logicTemp.logicType,
       operator: logicTemp.operator,
       value: logicTemp.value,
-      jumpToStatusId: logicTemp.jumpToStatusId,
+      jumpToStatusUuid: logicTemp.jumpToStatusUuid,
     });
 
     // Reset ke default & close modal
@@ -128,17 +69,26 @@ export default function LogicModal({
       logicType: "",
       operator: "",
       value: "",
-      jumpToStatusId: "",
+      jumpToStatusUuid: "",
     });
-    document.getElementById("logicModal")?.close();
+    document.getElementById(modalId)?.close();
   };
 
+  useEffect(() => {
+    if (input?.tipe === "select" || input?.tipe === "multipleCheckbox") {
+      setLogicTemp((prev) => ({
+        ...prev,
+        operator: "is equal to (String/Number/Date/Boolean)",
+      }));
+    }
+  }, [input?.tipe, openSignal]);
+
   return (
-    <dialog id="logicModal" className="modal">
+    <dialog id={modalId} className="modal">
       <div className="modal-box max-w-2xl">
         <h3 className="font-bold text-lg mb-4">Tambah Logika</h3>
 
-        <div className="p-2 rounded-lg bg-blue-400 text-white">
+        <div className="p-2 rounded-lg bg-indigo-400 text-white">
           Logika ini akan menentukan alur approval berdasarkan kondisi
           requirement yang dipilih.
         </div>
@@ -191,23 +141,20 @@ export default function LogicModal({
                 <span className="label-text font-medium">Jump ke Status</span>
               </label>
               <select
-                value={logicTemp?.jumpToStatusId || ""}
+                value={logicTemp?.jumpToStatusUuid || ""}
                 onChange={(e) =>
                   setLogicTemp((prev) => ({
                     ...prev,
-                    jumpToStatusId: e.target.value,
+                    jumpToStatusUuid: e.target.value,
                   }))
                 }
                 className="select select-bordered w-full"
               >
                 <option value="">Pilih status tujuan</option>
                 {flow.status
-                  ?.filter((s) => (s._id || s.id) !== currentStatusId) // Exclude current status
+                  ?.filter((s) => s.uuid !== currentStatus?.uuid)
                   ?.map((status) => (
-                    <option
-                      key={status._id || status.id}
-                      value={status._id || status.id}
-                    >
+                    <option key={status.uuid} value={status.uuid}>
                       {status.title}
                     </option>
                   ))}
@@ -221,6 +168,9 @@ export default function LogicModal({
               <span className="label-text font-medium">Operator</span>
             </label>
             <select
+              disabled={
+                input?.tipe === "select" || input?.tipe === "multipleCheckbox"
+              }
               value={logicTemp.operator || ""}
               onChange={(e) =>
                 setLogicTemp((prev) => ({
@@ -255,8 +205,14 @@ export default function LogicModal({
               <option value="is less than or equal to (Number)">
                 is less than or equal to (Number)
               </option>
-              <option value="is true (Boolean)">is true (Boolean)</option>
-              <option value="is false (Boolean)">is false (Boolean)</option>
+              <option value="is Exist">
+                is Exist: Sekedar di isi (rekomendasi cocok: Image, File,
+                Signature, PDF)
+              </option>
+              <option value="is Not Exist">
+                is Not Exist: Benar benar kosong (rekomendasi cocok: Text,
+                Number, Text Area)
+              </option>
               <option value="is before (Date & Time)">
                 is before (Date & Time)
               </option>
@@ -277,18 +233,50 @@ export default function LogicModal({
             <label className="label">
               <span className="label-text font-medium">Nilai Pembanding</span>
             </label>
-            <input
-              type="text"
-              placeholder="Nilai pembanding terhadap referensi kondisi"
-              className="input input-bordered w-full"
-              value={logicTemp.value || ""}
-              onChange={(e) =>
-                setLogicTemp((prev) => ({
-                  ...prev,
-                  value: e.target.value,
-                }))
-              }
-            />
+            {["text", "number", "textArea", "checkbox", "table"].includes(
+              input.tipe
+            ) && (
+              <input
+                type="text"
+                placeholder="Nilai pembanding terhadap referensi kondisi"
+                className="input input-bordered w-full"
+                value={logicTemp.value || ""}
+                onChange={(e) =>
+                  setLogicTemp((prev) => ({
+                    ...prev,
+                    value: e.target.value,
+                  }))
+                }
+              />
+            )}
+
+            {["select"].includes(input.tipe) && (
+              <div id={input._id} className="space-y-1">
+                <SelectInputForLogicMatching
+                  input={input}
+                  logicTemp={logicTemp}
+                  setLogicTemp={setLogicTemp}
+                />
+              </div>
+            )}
+
+            {["date"].includes(input.tipe) && (
+              <input
+                type="date"
+                placeholder="Pilih tanggal"
+                className="input w-full "
+                value={logicTemp.value || ""}
+                onChange={(e) =>
+                  setLogicTemp((prev) => ({
+                    ...prev,
+                    value: e.target.value,
+                  }))
+                }
+              />
+            )}
+            {["image", "pdf", "signature", "helper"].includes(input.tipe) && (
+              <div className="badge">Tidak dapat diisi</div>
+            )}
           </div>
         </div>
 
@@ -298,16 +286,16 @@ export default function LogicModal({
             <button
               className="btn"
               type="button"
-              onClick={() => document.getElementById("logicModal")?.close()}
+              onClick={() => document.getElementById(modalId)?.close()}
             >
               Tutup
             </button>
             <button
               type="button"
               onClick={handleSave}
-              className="btn btn-primary"
+              className="btn text-white rounded-lg bg-indigo-700 hover:bg-indigo-300"
             >
-              Simpan
+              Simpan <BrainCircuit />
             </button>
           </form>
         </div>

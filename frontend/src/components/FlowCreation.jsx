@@ -503,7 +503,7 @@ export default function FlowCreation() {
             <InputItem
               isForRequest={true}
               key={input._id}
-              index={inputIdx}
+              index={requestIdx}
               input={input}
               onChange={(newInput) => {
                 updateInputRequest(requestIdx, newInput);

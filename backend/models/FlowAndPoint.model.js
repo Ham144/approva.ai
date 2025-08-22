@@ -37,8 +37,10 @@ const flowSchema = new mongoose.Schema(
         ref: "UserRefrensi",
       },
     ],
+
     status: [
       {
+        uuid: String,
         title: {
           type: String,
           required: true,
@@ -65,6 +67,15 @@ const flowSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "UserRefrensi",
+      },
+    ],
+    logics: [
+      {
+        requirementId: String,
+        logicType: String,
+        operator: String,
+        value: String,
+        jumpToStatusUuid: String,
       },
     ],
     org: {

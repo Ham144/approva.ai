@@ -33,6 +33,7 @@ export const InputSchema = new mongoose.Schema({
     sourceDataList: [mongoose.Schema.Types.ObjectId],
   },
   isNullable: Boolean,
+  uuid: String,
 });
 
 const Input = mongoose.model("Input", InputSchema);

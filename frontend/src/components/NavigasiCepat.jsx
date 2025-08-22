@@ -57,7 +57,7 @@ export const NavigasiCepat = ({ flow }) => {
 
         {/* Status & Requirements Tabs */}
         {flow?.status.map((stat, i) => (
-          <React.Fragment key={`status-${stat?._id}`}>
+          <React.Fragment key={`status-${stat?._id || i}`}>
             <button
               className={`w-full text-left px-3 py-2 rounded-md transition-all duration-200 flex items-center gap-2 ${
                 tabNavigation === stat?._id
