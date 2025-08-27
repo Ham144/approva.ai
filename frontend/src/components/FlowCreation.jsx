@@ -33,6 +33,7 @@ export default function FlowCreation() {
 
   const handleAddStatus = () => {
     const newStatus = {
+      uuid: uuidv4(),
       title: "",
       desc: "",
       authorized: [],
@@ -62,6 +63,7 @@ export default function FlowCreation() {
       tipe: "text",
       sourceData: null,
       isNullable: false,
+      uuid: uuidv4(),
     };
     const newStatusList = [...flow.status];
     newStatusList[statusIndex]?.requirements.push(newRequirement);

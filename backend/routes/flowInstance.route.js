@@ -9,6 +9,7 @@ import DownloadedProcess from "../models/DownloadedProcess.model.js";
 import generateExcelFile from "../utils/generateExcelFile.js";
 import UserRefrensi from "../models/User.model.js";
 import checkOperator from "../utils/checkingOperator.js";
+import ExcelJS from "exceljs";
 
 const router = Router();
 
@@ -654,25 +655,30 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
       if (currentStatusIndex == flowInstance.flowTemplate.status.length - 1) {
         flowInstance.overallStatus = "completed";
       } else {
-        if (flowInstance.flowTemplate?.logics?.length > 0) {
-          const currentStatus =
-            flowInstance.flowTemplate.status[flowInstance.currentStatusIndex];
+        // ✅ Periksa apakah ada logics yang relevan untuk status saat ini
+        const currentStatus =
+          flowInstance.flowTemplate.status[flowInstance.currentStatusIndex];
+        const relevantLogics = flowInstance.flowTemplate?.logics?.filter(
+          (logic) => {
+            // Hanya ambil logics yang requirementId-nya ada di status saat ini
+            return currentStatus.requirements.some(
+              (requirement) => String(requirement._id) === logic.requirementId
+            );
+          }
+        );
 
-          const matchingLogicRequirement =
-            flowInstance.flowTemplate.logics.find((logic) => {
-              return currentStatus.requirements.some((requirement) => {
-                return String(requirement._id) === logic.requirementId;
-              });
-            });
+        if (relevantLogics && relevantLogics.length > 0) {
+          // ✅ Gunakan relevantLogics yang sudah difilter
+          const matchingLogicRequirement = relevantLogics[0]; // Ambil logic pertama yang relevan
 
           //extract jawaban saat ini
           const actual =
             flowInstance.statuses[currentStatusIndex].requirementsData[
-              matchingLogicRequirement.requirementId
+              matchingLogicRequirement?.requirementId
             ];
 
           //mulai logic routing
-          if (matchingLogicRequirement.logicType === "jumpTo") {
+          if (matchingLogicRequirement?.logicType === "jumpTo") {
             console.log(
               actual,
               matchingLogicRequirement.value,
@@ -692,17 +698,17 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
                     status.uuid === matchingLogicRequirement.jumpToStatusUuid
                 );
               flowInstance.currentStatusIndex = targetLogicIndex;
-              return res.status(400).json({
-                message: "berhasil memenuhi logic jumpTo",
-                targetLogicIndex,
-              });
+              // return res.status(400).json({
+              //   message: "berhasil memenuhi logic jumpTo",
+              //   targetLogicIndex,
+              // });
             } else {
-              return res.status(400).json({
-                message: "gagal memenuhi logic jumpTo",
-              });
+              // return res.status(400).json({
+              //   message: "gagal memenuhi logic jumpTo",
+              // });
               flowInstance.currentStatusIndex += 1;
             }
-          } else if (matchingLogicRequirement.logicType === "completedIf") {
+          } else if (matchingLogicRequirement?.logicType === "completedIf") {
             const isOperatorSatisfied = checkOperator({
               actual,
               operator: matchingLogicRequirement.operator,
@@ -713,16 +719,16 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
               flowInstance.currentStatusIndex =
                 flowInstance.flowTemplate.status.length;
 
-              return res.status(400).json({
-                message: "berhasil memenuhi logic completedIf",
-              });
+              // return res.status(400).json({
+              //   message: "berhasil memenuhi logic completedIf",
+              // });
             } else {
-              return res.status(400).json({
-                message: "gagal memenuhi logic completedIf",
-              });
+              // return res.status(400).json({
+              //   message: "gagal memenuhi logic completedIf",
+              // });
               flowInstance.currentStatusIndex += 1;
             }
-          } else if (matchingLogicRequirement.logicType === "rejectedIf") {
+          } else if (matchingLogicRequirement?.logicType === "rejectedIf") {
             const isOperatorSatisfied = checkOperator({
               actual,
               operator: matchingLogicRequirement.operator,
@@ -730,16 +736,16 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
             });
             if (isOperatorSatisfied) {
               flowInstance.overallStatus = "rejected";
-              return res.status(400).json({
-                message: "berhasil memenuhi logic rejectedIf",
-              });
+              // return res.status(400).json({
+              //   message: "berhasil memenuhi logic rejectedIf",
+              // });
             } else {
-              return res.status(400).json({
-                message: "gagal memenuhi logic rejectedIf",
-              });
+              // return res.status(400).json({
+              //   message: "gagal memenuhi logic rejectedIf",
+              // });
               flowInstance.currentStatusIndex += 1;
             }
-          } else if (matchingLogicRequirement.logicType === "preventNextIf") {
+          } else if (matchingLogicRequirement?.logicType === "preventNextIf") {
             const isOperatorSatisfied = checkOperator({
               actual,
               operator: matchingLogicRequirement.operator,
@@ -752,14 +758,14 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
                   actual,
               });
             } else {
-              return res.status(400).json({
-                message: "gagal memenuhi logic preventNextIf",
-              });
+              // return res.status(400).json({
+              //   message: "gagal memenuhi logic preventNextIf",
+              // });
               flowInstance.currentStatusIndex += 1;
             }
           } else {
             return res.status(400).json({
-              message: "Terdapat logicType yang tidak dikenali " + logicType,
+              message: "Terdapat logicType yang tidak dikenali ",
             });
           }
         } else {
@@ -767,10 +773,6 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
         }
       }
     }
-
-    return res
-      .status(400)
-      .json({ flowInstance, message: "dalam tahap pengembangan" });
 
     await flowInstance.save();
 
@@ -892,6 +894,11 @@ router.put("/rollback/:id", async (req, res) => {
 });
 
 router.put("/undo/:id", async (req, res) => {
+  return res.status(400).json({
+    message: "Fitur undo sedang dalam perbaikan",
+  });
+  const { targetStatusIndex } = req.body;
+
   try {
     // Ambil instance + otorisasi
     const flowInstance = await FlowInstance.findOne({
@@ -1095,7 +1102,7 @@ router.get("/download/:month", async (req, res) => {
 
     if (!record) {
       // Generate Excel buffer
-      const excelBuffer = await generateExcelFile(month);
+      const excelBuffer = await generateExcelFile(month); //util Excel Js customer complex juga
 
       // Buat nama file
       const filename = `process-history-${month}.xlsx`;
@@ -1160,6 +1167,339 @@ router.get("/download/:month", async (req, res) => {
       message: "Gagal menggenerate file Excel",
       error: error.message,
     });
+  }
+});
+
+router.post("/download-detail", async (req, res) => {
+  const { flowTemplateId, month } = req.body;
+
+  if (!flowTemplateId || !month) {
+    return res.status(400).json({
+      message: "flowTemplateId dan month wajib diisi.",
+    });
+  }
+
+  try {
+    // Ambil template lengkap untuk membangun header
+    const flowTemplate = await FlowAndPoint.findOne({
+      _id: flowTemplateId,
+      org: req.user.org,
+    })
+      .populate({ path: "request", model: "Input" })
+      .populate({ path: "status.requirements", model: "Input" })
+      .populate({
+        path: "status.authorized",
+        model: "UserRefrensi",
+        select: "_id username",
+      })
+      .lean();
+
+    if (!flowTemplate) {
+      return res.status(404).json({ message: "Flow template not found" });
+    }
+
+    // Siapkan workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Detail dalam satu row");
+
+    // Kolom dasar
+    const columns = [
+      { header: "Flow Template", key: "meta_flowTemplate", width: 24 },
+      { header: "Description", key: "meta_desc", width: 30 },
+      { header: "Instance Title", key: "meta_instanceTitle", width: 24 },
+      { header: "Global Index", key: "meta_globalIndex", width: 18 },
+      { header: "Requested By", key: "meta_requestedBy", width: 20 },
+      { header: "Requested At", key: "meta_createdAt", width: 18 },
+      { header: "Overall Status", key: "meta_overallStatus", width: 16 },
+      {
+        header: "Current Status Index",
+        key: "meta_currentStatusIndex",
+        width: 8,
+      },
+    ];
+
+    // Kolom untuk request (berdasarkan template.request)
+    for (const reqInput of flowTemplate.request || []) {
+      const valueKey = `req_${reqInput._id}`;
+      const typeKey = `req_${reqInput._id}_type`;
+      columns.push({
+        header: reqInput.title || valueKey,
+        key: valueKey,
+        width: 24,
+      });
+      columns.push({
+        header: `${reqInput.title} (type)`,
+        key: typeKey,
+        width: 14,
+      });
+      if (reqInput.tipe === "table") {
+        // Show all table columns (including image columns, but data will be filtered)
+        const tableKeys = Array.isArray(reqInput.table?.keys)
+          ? reqInput.table.keys
+          : [];
+
+        if (tableKeys.length > 0) {
+          const tableKey = `req_${reqInput._id}_tableKeys`;
+          const tableHeader = tableKeys.join(" | ");
+          columns.push({ header: tableHeader, key: tableKey, width: 30 });
+        }
+      }
+    }
+
+    // Tambahkan separator pertama setelah request data
+    if ((flowTemplate.status || []).length > 0) {
+      columns.push({
+        header: ` | Next approval | `,
+        key: `sep_0`,
+        width: 6,
+      });
+    }
+
+    // Kolom untuk status dan requirements
+    for (let i = 0; i < (flowTemplate.status || []).length; i++) {
+      const statusTemplate = flowTemplate.status[i];
+
+      // Tambahkan separator sebelum setiap status (kecuali status pertama)
+      if (i > 0) {
+        columns.push({
+          header: ` | Next approval | `,
+          key: `sep_${i}`,
+          width: 6,
+        });
+      }
+
+      columns.push({
+        header: statusTemplate.title,
+        key: `st_${i}_title`,
+        width: 24,
+      });
+      columns.push({
+        header: `Authorized for ${statusTemplate.title}`,
+        key: `st_${i}_authorized`,
+        width: 30,
+      });
+
+      for (const req of statusTemplate.requirements || []) {
+        const rKey = `st_${i}_req_${req._id}`;
+        const rTypeKey = `st_${i}_req_${req._id}_type`;
+        columns.push({ header: req.title || rKey, key: rKey, width: 24 });
+        columns.push({
+          header: `${req.title} (type)`,
+          key: rTypeKey,
+          width: 14,
+        });
+        if (req.tipe === "table") {
+          // Show all table columns (including image columns, but data will be filtered)
+          const tableKeys = Array.isArray(req.table?.keys)
+            ? req.table.keys
+            : [];
+
+          if (tableKeys.length > 0) {
+            const rTableKey = `st_${i}_req_${req._id}_tableKeys`;
+            const rTableHeader = tableKeys.join(" | ");
+            columns.push({ header: rTableHeader, key: rTableKey, width: 30 });
+          }
+        }
+      }
+    }
+
+    worksheet.columns = columns;
+
+    // Styling header
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "2cd451" },
+    };
+
+    // Ambil instances untuk bulan
+    let query = {};
+
+    //make iso date
+    const year = parseInt(month.split("-")[0]);
+    const monthNumber = parseInt(month.split("-")[1]);
+    const startDate = new Date(year, monthNumber - 1, 1);
+    const endDate = new Date(year, monthNumber, 0, 23, 59, 59, 999);
+
+    query = {
+      flowTemplate: flowTemplateId,
+      org: req.user.org,
+      createdAt: {
+        $gte: new Date(startDate),
+        $lt: new Date(endDate),
+      },
+    };
+
+    const instances = await FlowInstance.find(query)
+      .populate("requestedBy", "username")
+      .lean();
+
+    if (!instances?.length) {
+      return res
+        .status(421)
+        .json({ message: "Tidak ada data dengan konfigurasi ini" });
+    }
+
+    // Helper function to filter image columns from table data
+    const filterImageColumnsFromTable = (tableData, keys, keysType) => {
+      if (
+        !Array.isArray(tableData) ||
+        !Array.isArray(keys) ||
+        !Array.isArray(keysType)
+      ) {
+        return tableData;
+      }
+
+      return tableData.map((row) => {
+        if (typeof row !== "object" || row === null) return row;
+
+        const filteredRow = {};
+        keys.forEach((key, index) => {
+          if (keysType[index] === "image") {
+            // For image columns, try to show URL or leave empty
+            const value = row[key];
+            if (
+              value &&
+              typeof value === "string" &&
+              value.startsWith("http")
+            ) {
+              filteredRow[key] = value; // Show URL if it's a valid URL
+            } else {
+              filteredRow[key] = ""; // Empty for image columns
+            }
+          } else {
+            // For non-image columns, show the actual data
+            filteredRow[key] = row[key];
+          }
+        });
+        return filteredRow;
+      });
+    };
+
+    // Helper format
+    const formatValue = (tipe, val, keys, keysType) => {
+      if (val === undefined || val === null) return "";
+      if (tipe === "date") {
+        try {
+          return new Date(val).toLocaleDateString("id-ID");
+        } catch {
+          return String(val);
+        }
+      }
+      if (tipe === "table") {
+        // Filter out image columns before formatting
+        const filteredData = filterImageColumnsFromTable(val, keys, keysType);
+        return typeof filteredData === "string"
+          ? filteredData
+          : JSON.stringify(filteredData);
+      }
+      if (typeof val === "object") return JSON.stringify(val);
+      return String(val);
+    };
+
+    // Tambahkan baris per instance
+    for (const inst of instances) {
+      const row = {
+        meta_flowTemplate: flowTemplate.title,
+        meta_desc: flowTemplate.desc,
+        meta_instanceTitle: inst.instanceTitle,
+        meta_globalIndex: inst.globalIndex,
+        meta_requestedBy: inst.requestedBy?.username || "",
+        meta_createdAt: new Date(inst.createdAt).toLocaleDateString("id-ID"),
+        meta_overallStatus: inst.overallStatus,
+        meta_currentStatusIndex:
+          inst.currentStatusIndex + "/" + inst.statuses.length,
+      };
+
+      // Map requestData (object keyed by Input._id)
+      for (const reqInput of flowTemplate.request || []) {
+        const vKey = `req_${reqInput._id}`;
+        const tKey = `req_${reqInput._id}_type`;
+        const tbKey = `req_${reqInput._id}_tableKeys`;
+        const rawVal = inst.requestData?.[reqInput._id];
+        row[vKey] = formatValue(
+          reqInput.tipe,
+          rawVal,
+          reqInput.table?.keys,
+          reqInput.table?.keysType
+        );
+        row[tKey] = reqInput.tipe;
+        if (reqInput.tipe === "table") {
+          // Show all table columns (including image columns, but data will be filtered)
+          const tableKeys = Array.isArray(reqInput.table?.keys)
+            ? reqInput.table.keys
+            : [];
+
+          if (tableKeys.length > 0) {
+            row[tbKey] = tableKeys.join(" | ");
+          }
+        }
+      }
+
+      // Tambahkan data untuk separator pertama
+      if ((flowTemplate.status || []).length > 0) {
+        row[`sep_0`] = "";
+      }
+
+      // Map statuses[i].requirementsData
+      for (let i = 0; i < (flowTemplate.status || []).length; i++) {
+        const stTpl = flowTemplate.status[i];
+        const stInst = inst.statuses?.[i];
+
+        // Tambahkan data untuk separator di antara status
+        if (i > 0) {
+          row[`sep_${i}`] = "";
+        }
+
+        row[`st_${i}_title`] = stTpl.title;
+        row[`st_${i}_authorized`] = (stTpl.authorized || [])
+          .map((u) => u?.username)
+          .filter(Boolean)
+          .join(", ");
+
+        for (const req of stTpl.requirements || []) {
+          const rKey = `st_${i}_req_${req._id}`;
+          const rTypeKey = `st_${i}_req_${req._id}_type`;
+          const rawVal = stInst?.requirementsData?.[req._id] ?? "";
+          row[rKey] = formatValue(
+            req.tipe,
+            rawVal,
+            req.table?.keys,
+            req.table?.keysType
+          );
+          row[rTypeKey] = req.tipe;
+          if (req.tipe === "table") {
+            // Show all table columns (including image columns, but data will be filtered)
+            const tableKeys = Array.isArray(req.table?.keys)
+              ? req.table.keys
+              : [];
+
+            if (tableKeys.length > 0) {
+              const rTableKey = `st_${i}_req_${req._id}_tableKeys`;
+              row[rTableKey] = tableKeys.join(" | ");
+            }
+          }
+        }
+      }
+
+      worksheet.addRow(row);
+    }
+
+    // Kirim sebagai file download
+    const filename = `process-detail-${month}.xlsx`;
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    res.setHeader("Content-Length", buffer.length);
+    return res.status(200).send(buffer);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 });
 

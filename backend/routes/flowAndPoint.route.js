@@ -19,6 +19,7 @@ router.post("/createFlow", async (req, res) => {
     allowedDepartmentToRequest,
     allowedSpecificUserToRequest,
     mode,
+    logics, //todo
   } = req.body;
 
   if (!title || !desc) {
@@ -153,12 +154,11 @@ router.post("/createFlow", async (req, res) => {
       }
 
       statuses.push({
+        uuid: statusItem?.uuid, // ✅ Tambahkan uuid dari frontend
         title: statusItem?.title,
         desc: statusItem?.desc,
         authorized: statusItem.authorized || [],
         completed: false,
-        isPrivateAuthorized: statusItem?.isPrivateAuthorized || false,
-        privateAuthorizedUser: statusItem?.privateAuthorizedUser || [],
         requirements: requirementIds,
       });
     }
@@ -230,6 +230,7 @@ router.post("/createFlow", async (req, res) => {
     newFlowAndPoint.desc = desc;
     newFlowAndPoint.request = inputRequest;
     newFlowAndPoint.status = statuses;
+    newFlowAndPoint.logics = logics;
     const userId = req.user._id;
 
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
@@ -800,6 +801,7 @@ router.post("/clone-from-other-org/:id", async (req, res) => {
         );
 
         return {
+          uuid: status.uuid, // ✅ Tambahkan uuid saat cloning
           title: status.title,
           desc: status.desc,
           authorized: [], // kosongkan saat cloning

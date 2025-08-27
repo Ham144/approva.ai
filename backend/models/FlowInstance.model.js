@@ -18,6 +18,7 @@ const flowInstanceSchema = new mongoose.Schema(
       required: true,
     },
     requestData: {
+      //response request
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },

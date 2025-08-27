@@ -93,6 +93,52 @@ const flowInstanceApi = {
 
     return { success: true };
   },
+
+  downloadFlowInstanceDetail: async (body) => {
+    const res = await axiosInstance.post(
+      `/api/flowInstance/download-detail`,
+      body,
+      {
+        responseType: "blob", // ✅ penting untuk download file
+      }
+    );
+
+    // Pastikan ini beneran file Excel, bukan JSON error
+    const contentType = res.headers["content-type"];
+    if (!contentType.includes("spreadsheetml")) {
+      // Konversi blob ke text untuk lihat error
+      const text = await res.data.text();
+      throw new Error(`Download gagal: ${text}`);
+    }
+
+    // Buat blob dan download
+    // Note: Backend sudah memfilter kolom dengan keysType === "image" untuk mengurangi ukuran file
+    const blob = new Blob([res.data], {
+      type: contentType,
+    });
+
+    // Nama file: ambil dari header kalau ada, atau fallback
+    const contentDisposition = res.headers["content-disposition"];
+    let filename = `process-history.xlsx`;
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="?(.+)"?/);
+      if (match) filename = match[1];
+    }
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    return { success: true };
+  },
+
   getMyTasks: async () => {
     const res = await axiosInstance.get(`/api/flowInstance/my-tasks`);
     return res.data;

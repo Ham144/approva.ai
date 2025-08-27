@@ -5,7 +5,14 @@ import { useEditor } from "@/store";
 import toast from "react-hot-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import flowApi from "@/api/flowApi";
-import { Trash, StepBack, Globe, FileCode, ListStart } from "lucide-react";
+import {
+  Trash,
+  StepBack,
+  Globe,
+  FileCode,
+  ListStart,
+  MessageCircleWarning,
+} from "lucide-react";
 import { useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import { NavigasiCepat } from "@/components/NavigasiCepat";
@@ -14,7 +21,6 @@ export default function FlowDesignCreate() {
   const navigate = useNavigate();
   const { flow, setFlow } = useEditor();
   const queryClient = useQueryClient();
-  const [tabNavigation, setTabNavigation] = useState();
 
   const { mutate: submitFlow } = useMutation({
     mutationFn: () => flowApi.createFlowAndPoint(flow),
@@ -54,12 +60,19 @@ export default function FlowDesignCreate() {
     <PengelolaSideBarMenu>
       <div className="  p-4 md:p-6 lg:p-8 space-y-6 ">
         <div className="flex justify-between flex-wrap items-center">
-          <div className="div">
+          <div className="flex-col gap-y-3">
             <h2 className="text-2xl font-bold text-primary">Buat Flow Baru</h2>
-            <span>
+            <div>
               Anda bisa pergi kapan saja untuk lanjutkan design, flow telah
               disimpan otomatis
-            </span>
+            </div>
+            <div className="badge bg-blue-400 mt-3 text-white p-5">
+              <MessageCircleWarning />
+              <span className="p-2 rounded-lg">
+                Fitur Logic Routing Belum Sempurna di create flow, gunakan fitur
+                tersebut di saat mengedit. untuk menghindari hal tak terduga
+              </span>
+            </div>
           </div>
           <div className="flex flex-wrap gap-3">
             <button

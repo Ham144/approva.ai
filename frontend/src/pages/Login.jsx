@@ -13,7 +13,10 @@ export default function Login({ className, ...props }) {
   const [username, setUsername] = useState(``);
   const [password, setPassword] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
-  const [selectedOrg, setSelectedOrg] = useState("");
+  const [selectedOrg, setSelectedOrg] = useState({
+    organizationName: "CATUR SUKSES INTERNASIONAL",
+    _id: "687f046738e38024ff0751fc",
+  });
   const [search, setSearch] = useState("*");
   const [authMethod, setAuthMethod] = useState("ldap");
   const [captchaToken, setCaptchaToken] = useState("");
@@ -56,7 +59,16 @@ export default function Login({ className, ...props }) {
       }, 1000);
     },
     onError: (err) => {
-      console.log(err);
+      if (err.response.status === 403) {
+        toast.error(
+          err?.response?.data?.message ||
+            "Login gagal. Periksa username dan password Anda."
+        );
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+        return;
+      }
       toast.error(
         err?.response?.data?.message ||
           "Login gagal. Periksa username dan password Anda."
@@ -90,6 +102,16 @@ export default function Login({ className, ...props }) {
         }, 1000);
       },
       onError: (err) => {
+        if (err.response.status === 403) {
+          toast.error(
+            err?.response?.data?.message ||
+              "Login gagal. Periksa username dan password Anda."
+          );
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+          return;
+        }
         toast.error(
           err?.response?.data?.message ||
             "Login gagal. Periksa username dan password Anda."

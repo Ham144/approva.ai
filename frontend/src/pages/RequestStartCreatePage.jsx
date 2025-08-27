@@ -89,6 +89,7 @@ export default function RequestStartCreatePage() {
       <div className="flex flex-wrap items-center justify-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-b-xl shadow-md border-t border-gray-200 dark:border-gray-700">
         {/* Save/Update Button */}
         <button
+          disabled={sendingEmail}
           onClick={async () => {
             if (selectedAuthorized?.length) {
               await handleSubmitNewRequest();

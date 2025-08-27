@@ -79,6 +79,7 @@
 [x] tiny: gray pada approval yang telah lalu sudah semua
 [x] tiny: tukar posisi tombol approve dan decline
 [x] fix: filter level member,viewer dan owner, sudah disempurnakan
-[x] add: fitur logic routing
+[x] add: fitur logic routing [jump To, completed If, Rejected if, prevent Next if]
+[x] add: export csv perlu lebih lengkap
 [] fix: fitur undo dan duplicate flow harusnya rusak setelah ada fitur logic routing
-[] fix: fitur copy
+[] modify: fitur undo harusnya lebih manual merubah currentStatusIndex
