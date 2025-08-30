@@ -5,17 +5,11 @@ import { useEditor } from "@/store";
 import toast from "react-hot-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import flowApi from "@/api/flowApi";
-import {
-  Trash,
-  StepBack,
-  Globe,
-  FileCode,
-  ListStart,
-  MessageCircleWarning,
-} from "lucide-react";
+import { Trash, StepBack, Globe, MessageCircleWarning } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import { NavigasiCepat } from "@/components/NavigasiCepat";
+import SetupExternalOption from "@/components/setupExternalOption";
 
 export default function FlowDesignCreate() {
   const navigate = useNavigate();
@@ -111,6 +105,7 @@ export default function FlowDesignCreate() {
           </div>
         </div>
       </div>
+      <SetupExternalOption />
     </PengelolaSideBarMenu>
   );
 }

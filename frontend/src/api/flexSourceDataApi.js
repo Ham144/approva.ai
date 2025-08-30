@@ -35,6 +35,17 @@ const FlexSourceDataApi = {
       return error;
     }
   },
+  createSourceDataExternal: async (body) => {
+    try {
+      const res = await axiosInstance.post(
+        `/api/flexSourceData/createSourceDataExternal`,
+        body
+      );
+      return res.data;
+    } catch (error) {
+      return error;
+    }
+  },
   editSourceData: async (id, body) => {
     console.log(id, body);
     const res = await axiosInstance.put(

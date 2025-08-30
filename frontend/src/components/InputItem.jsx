@@ -1,6 +1,7 @@
 import {
   ArrowDownFromLine,
   ArrowUpFromLine,
+  Link,
   MessageSquareText,
 } from "lucide-react";
 import ModalShowTips from "./ModalShowTips";
@@ -591,15 +592,26 @@ function InputItem({
                 </div>
               </div>
             )}
-
-            <button
-              onClick={() => {
-                document.getElementById("modalsourcedata")?.showModal(); // Pastikan modalShowTips ada dan cara memanggilnya benar
-              }}
-              className="btn btn-outline btn-sm sm:btn-md text-purple-500 border-purple-500 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/20 transition-colors duration-200 flex items-center gap-1 mt-2 sm:mt-0"
-            >
-              <Plus size={16} /> Buat Baru
-            </button>
+            <div className="flex flex-col gap-3 justify-start">
+              <button
+                onClick={() => {
+                  document.getElementById("modalsourcedata")?.showModal(); // Pastikan modalShowTips ada dan cara memanggilnya benar
+                }}
+                className=" btn-outline btn sm:btn-md text-purple-500 border-purple-500 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/20 transition-colors duration-200 flex items-center  rounded-lg gap-1 mt-2 sm:mt-0"
+              >
+                <Plus size={16} /> Buat Baru
+              </button>{" "}
+              <button
+                onClick={() => {
+                  document
+                    .getElementById("modal-setup-external-option")
+                    ?.showModal();
+                }}
+                className="btn rounded-lg btn-outline "
+              >
+                <Link size={16} /> Http Request
+              </button>
+            </div>
           </div>
 
           {input.sourceData && (

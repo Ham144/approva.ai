@@ -2,6 +2,7 @@ import { Router } from "express";
 import FlexSourceData from "../models/FlexSourceData.model.js";
 
 const router = Router();
+//interal
 router.post("/createSourceData", async (req, res) => {
   const { title, desc, keys } = req.body;
 
@@ -54,6 +55,49 @@ router.post("/createSourceData", async (req, res) => {
       message: "Internal server error",
       error: error.message,
     });
+  }
+});
+
+router.post("/createSourceDataExternal", async (req, res) => {
+  const {
+    title,
+    desc,
+    endpoint,
+    xApiKey: apiKey,
+    searchKey,
+    penamaanSearchKey,
+    pointer,
+    keyMapping: key,
+    valueMapping: value,
+  } = req.body;
+
+  if (!penamaanSearchKey) {
+    return res.status(400).json({ message: "Penamaan search key is required" });
+  }
+  try {
+    const flexSourceDataInstance = new FlexSourceData({
+      tipe: "external",
+      title,
+      desc,
+      penamaanSearchKey,
+      endpoint,
+      apiKey,
+      pointer,
+      keyMapping: { key, value },
+      createdBy: req.user._id,
+      org: req.user.org, // ✅ penting: scope ke organisasi
+    });
+
+    await flexSourceDataInstance.save();
+
+    return res.json({
+      data: flexSourceDataInstance,
+      message: "New list of data for options added",
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 });
 
