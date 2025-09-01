@@ -270,7 +270,7 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
         .populate("requestedBy", "username")
         .populate({
           path: "flowTemplate",
-          select: "title desc _id status",
+          select: "title desc _id",
           populate: [
             { path: "request", model: "Input" },
             { path: "status.requirements", model: "Input" },
@@ -281,8 +281,11 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
             },
           ],
         })
-        .select("-requestData logics")
+        .select("-requestData logics status")
         .sort({ createdAt: -1 });
+
+      console.log(results);
+
       return res.json({ data: results });
     }
 
