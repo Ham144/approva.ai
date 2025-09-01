@@ -51,7 +51,7 @@ const FlowStatusModal = ({
                   </span>
                   <div className=" p-3 rounded-lg shadow-sm border ">
                     <h5 className="text-md font-medium text-gray-800">
-                      {JSON.stringify(step)}
+                      {JSON.stringify(step.title)}
                     </h5>
                     <p className="text-sm text-gray-600">
                       {step.authorized
