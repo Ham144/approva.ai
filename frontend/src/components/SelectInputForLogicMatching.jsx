@@ -49,6 +49,7 @@ export default function SelectInputForLogicMatching({
           value={
             logicTemp?.value || flow?.responseData?.[logicTemp?.index]?.value
           }
+          placeholder="key:value (tanpa spasi antar titik dua)"
           onChange={(e) => {
             const value = e.target.value;
             setLogicTemp((prev) => ({
