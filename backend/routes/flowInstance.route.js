@@ -952,11 +952,14 @@ router.put("/undo/:id", async (req, res) => {
 
     // Otorisasi: yang boleh undo adalah authorized di step saat ini (sebelum mundur)
     const stepBeingUndoneIndex = flowInstance.currentStatusIndex;
-    const currentTemplateStatus =
-      flowInstance.flowTemplate.status[stepBeingUndoneIndex];
 
-    // Mundur 1 langkah
-    flowInstance.currentStatusIndex = stepBeingUndoneIndex - 1;
+    //main
+    if (flowInstance.currentStatusIndex < targetStatusIndex) {
+      return res
+        .status(400)
+        .json({ message: "Tidak bisa undo ke step di atas." });
+    }
+    flowInstance.currentStatusIndex = targetStatusIndex;
 
     // RESET jawaban & flag di step yang sekarang (yang akan diisi ulang)
     const curr = flowInstance.currentStatusIndex;
