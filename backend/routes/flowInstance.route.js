@@ -502,6 +502,17 @@ router.get("/flowInstanceById/:id", async (req, res) => {
       .populate("statuses.completedBy", "username")
       .populate("requestedBy", "username");
 
+    //jika currentStatusIndex saat ini memliki logic jumpTo maka merge authorized dengan status.authorized dengan target status jumpTo
+    if (
+      flowInstance.currentStatusIndex >= 0 &&
+      flowInstance.currentStatusIndex < flowInstance.statuses.length
+    ) {
+      flowInstance.statuses[flowInstance.currentStatusIndex].authorizedUsers =
+        flowInstance.flowTemplate.status[
+          flowInstance.currentStatusIndex
+        ].authorized;
+    }
+
     return res.json({
       message: "berhasil mengambil data flow instance",
       data: flowInstance,
