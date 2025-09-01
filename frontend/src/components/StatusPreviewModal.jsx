@@ -37,7 +37,13 @@ const FlowStatusModal = ({
             <ol className="relative border-l-2 border-indigo-400 pl-4 space-y-4">
               {selectedFlow.status.map((step, index) => (
                 <li
-                  onClick={(e) => onClick(index)}
+                  onClick={(e) => {
+                    if (mode === "previewStatus") {
+                      onClick(e);
+                    }
+
+                    onSelectIndex(index);
+                  }}
                   key={index}
                   className="relative py-1 hover:bg-indigo-300 rounded-lg  cursor-pointer"
                 >
