@@ -9,6 +9,8 @@ const FlowStatusModal = ({
 }) => {
   if (!selectedFlow) return null;
 
+  console.log(selectedFlow);
+
   return (
     <dialog id="statusmodal" className="modal">
       <div className="modal-box">
@@ -51,7 +53,7 @@ const FlowStatusModal = ({
                   </span>
                   <div className=" p-3 rounded-lg shadow-sm border ">
                     <h5 className="text-md font-medium text-gray-800">
-                      {JSON.stringify(step.title)}
+                      {step.title}
                     </h5>
                     <p className="text-sm text-gray-600">
                       {step.authorized
