@@ -17,6 +17,9 @@ export default function SelectInputForLogicMatching({
   const { flow } = useEditor();
 
   const options = data?.data?.keys || [];
+  const tipe = data?.data?.tipe;
+
+  console.log(tipe);
 
   return (
     <select

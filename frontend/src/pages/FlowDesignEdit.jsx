@@ -18,6 +18,7 @@ import { useNavigate } from "react-router";
 import React, { useEffect, useState } from "react";
 import FlowEditing from "@/components/FlowEditing";
 import { NavigasiCepat } from "@/components/NavigasiCepat";
+import SetupExternalOption from "@/components/setupExternalOption";
 
 export default function FlowDesignEdit() {
   const { id } = useParams();
@@ -114,10 +115,11 @@ export default function FlowDesignEdit() {
           </div>
 
           <div className="max-md:hidden">
-            <PreviewFlow jsonFlow={flow} />
+            <PreviewFlow jsonFlow={flow} forEditing={true} />
           </div>
         </div>
       </div>
+      <SetupExternalOption key={"setupExternalOption"} />
     </PengelolaSideBarMenu>
   );
 }

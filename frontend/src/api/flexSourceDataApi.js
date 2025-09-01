@@ -14,16 +14,24 @@ const FlexSourceDataApi = {
     );
     return res.data;
   },
-  getSourceDataByIdPost: async (id) => {
+  getSourceDataByIdPost: async (id, searchKey) => {
     if (!id) return;
-    const res = await axiosInstance.post(
-      `/api/flexSourceData/getSourceDataByIdPost`,
+
+    const params = {
+      id,
+      ...(searchKey ? { searchKey } : {}), // hanya tambahkan kalau ada
+    };
+
+    const res = await axiosInstance.get(
+      "/api/flexSourceData/getSourceDataByIdPost",
       {
-        id,
+        params,
       }
     );
+
     return res.data;
   },
+
   createSourceData: async (body) => {
     try {
       const res = await axiosInstance.post(

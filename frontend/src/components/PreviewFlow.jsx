@@ -31,6 +31,7 @@ export default function PreviewFlow({
   isOnlyPreview,
   isForRequest,
   isForApproval,
+  forEditing = false,
 }) {
   const [tableData, setTableData] = useState({});
   const [isJsonMode, setIsJsonMode] = useState(false);
@@ -80,7 +81,7 @@ export default function PreviewFlow({
   //isDisabled untuk membedakan request dan status
   const renderInput = (input, isDisabled, isRequirementInput, statusIndex) => {
     const baseProps = {
-      disabled: isOnlyPreview || isDisabled,
+      disabled: isOnlyPreview || (isDisabled && !forEditing),
     };
 
     switch (input.tipe) {

@@ -1,5 +1,7 @@
 import { Router } from "express";
 import FlexSourceData from "../models/FlexSourceData.model.js";
+import axios from "axios";
+import getNestedValue from "../utils/getNestedDataUtil.js";
 
 const router = Router();
 //interal
@@ -150,8 +152,8 @@ router.get("/getSourceDataById/:id", async (req, res) => {
   }
 });
 
-router.post("/getSourceDataByIdPost", async (req, res) => {
-  const { id } = req.body;
+router.get("/getSourceDataByIdPost", async (req, res) => {
+  const { id, searchKey } = req.query;
   if (!id) {
     return res
       .status(400)
@@ -164,7 +166,49 @@ router.post("/getSourceDataByIdPost", async (req, res) => {
     });
 
     if (!flexSourceData) {
-      return res.status(204).json({ message: "We can't find such id" });
+      return res.status(404).json({ message: "Pilihan tidak ditemukan" });
+    }
+
+    if (flexSourceData.tipe == "external") {
+      const { endpoint, apiKey, penamaanSearchKey, pointer, keyMapping } =
+        flexSourceData;
+
+      const params = searchKey ? { [penamaanSearchKey]: searchKey } : {};
+
+      const response = await axios.get(endpoint, {
+        headers: { "x-api-key": apiKey },
+        params,
+      });
+
+      let extractedData = response.data;
+      if (pointer?.length > 0) {
+        extractedData = response.data;
+
+        if (pointer?.length > 0) {
+          extractedData = getNestedValue({
+            obj: response.data,
+            pointer: pointer,
+          });
+        }
+      }
+
+      const keys =
+        extractedData?.map((item) => ({
+          key: item[keyMapping.key],
+          value: item[keyMapping.value],
+        })) || [];
+
+      //jaga jaga jika data dari external terlalu banyak
+      if (keys.length > 30) {
+        result.keys = result.keys.slice(0, 30);
+      }
+
+      const result = {
+        ...flexSourceData._doc,
+        keys,
+      };
+
+      return res.json({ data: result });
     }
 
     return res.json({ data: flexSourceData });
