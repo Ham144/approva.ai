@@ -9,8 +9,6 @@ const FlowStatusModal = ({
 }) => {
   if (!selectedFlow) return null;
 
-  console.log(selectedFlow);
-
   return (
     <dialog id="statusmodal" className="modal">
       <div className="modal-box">
