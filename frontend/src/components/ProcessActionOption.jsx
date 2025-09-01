@@ -58,11 +58,11 @@ export default function ProcessActionOption({ selectedInstance }) {
       toast.success(
         res?.response?.data?.message || "berhasil undo 1 langkah anda"
       );
-      document.getElementById("modalprocessaction")?.close();
+      document.getElementById("statusmodal")?.close();
       queryClient.invalidateQueries(["flowInstance", selectedInstance?._id]);
     },
     onError: (er) => {
-      document.getElementById("modalprocessaction")?.close();
+      document.getElementById("statusmodal")?.close();
       toast.error(er?.response?.data?.message || "Gagal mereset proses");
     },
   });
