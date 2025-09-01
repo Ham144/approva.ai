@@ -142,8 +142,13 @@ const flowInstanceApi = {
     const res = await axiosInstance.get(`/api/flowInstance/my-tasks`);
     return res.data;
   },
-  undo_1_step: async (instanceId) => {
-    const res = await axiosInstance.put(`/api/flowInstance/undo/${instanceId}`);
+  undo_1_step: async (instanceId, targetStatusIndex) => {
+    const res = await axiosInstance.put(
+      `/api/flowInstance/undo/${instanceId}`,
+      {
+        targetStatusIndex,
+      }
+    );
     return res.data;
   },
   rollback: async (instanceId) => {
