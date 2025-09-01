@@ -620,14 +620,14 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
     const requirementsTemplate =
       flowInstance.flowTemplate.status[currentStatusIndex];
 
-    // const isAuthorizedUser = requirementsTemplate.authorized.some((user) =>
-    //   user._id.equals(userId)
-    // );
-    // if (!isAuthorizedUser) {
-    //   return res
-    //     .status(400)
-    //     .json({ message: "Gagal, anda tidak berhak menyelesaikan ini" });
-    // }
+    const isAuthorizedUser = requirementsTemplate.authorized.some((user) =>
+      user._id.equals(userId)
+    );
+    if (!isAuthorizedUser) {
+      return res
+        .status(400)
+        .json({ message: "Gagal, anda tidak berhak menyelesaikan ini" });
+    }
 
     const verdictOfRequirement = currentIndexStatusResponse.verdict;
     if (!verdictOfRequirement) {
