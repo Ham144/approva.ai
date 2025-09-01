@@ -39,13 +39,13 @@ const FlowStatusModal = ({
                 <li
                   onClick={(e) => onClick(index)}
                   key={index}
-                  className="relative py-1"
+                  className="relative py-1 hover:bg-indigo-300 rounded-lg  cursor-pointer"
                 >
                   {/* Lingkaran Indikator Langkah yang lebih kecil */}
-                  <span className="absolute flex items-center justify-center w-7 h-7 rounded-full -left-7 bg-indigo-600 text-white font-bold text-xs shadow-md ring-4 ring-white">
+                  <span className="absolute  flex items-center justify-center w-7 h-7 rounded-full -left-7 bg-indigo-600 text-white font-bold text-xs shadow-md ring-4 ">
                     {index + 1}
                   </span>
-                  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+                  <div className=" p-3 rounded-lg shadow-sm border ">
                     <h5 className="text-md font-medium text-gray-800">
                       {step.title}
                     </h5>
