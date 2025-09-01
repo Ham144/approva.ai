@@ -458,7 +458,7 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
           },
         ],
       })
-      .select("-requestData -statuses.requirements")
+      .select("-requestData")
       .sort({ createdAt: -1 })
       .limit(limitNum)
       .skip((pageNum - 1) * limitNum);
