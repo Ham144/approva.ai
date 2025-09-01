@@ -249,6 +249,7 @@ export default function ProcessActionOption({ selectedInstance }) {
         selectedFlow={selectedInstance?.flowTemplate}
         onClose={() => document.getElementById("statusmodal")?.close()}
         key={"statusmodal"}
+        mode={"undo"}
       />
     </dialog>
   );
