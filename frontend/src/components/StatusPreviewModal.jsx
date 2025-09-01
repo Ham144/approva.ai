@@ -36,7 +36,11 @@ export const FlowStatusModal = ({
             {/* Daftar Langkah dengan Visual Garis */}
             <ol className="relative border-l-2 border-indigo-400 pl-4 space-y-4">
               {selectedFlow.status.map((step, index) => (
-                <li key={index} className="relative py-1">
+                <li
+                  onClick={(e) => onClick(index)}
+                  key={index}
+                  className="relative py-1"
+                >
                   {/* Lingkaran Indikator Langkah yang lebih kecil */}
                   <span className="absolute flex items-center justify-center w-7 h-7 rounded-full -left-7 bg-indigo-600 text-white font-bold text-xs shadow-md ring-4 ring-white">
                     {index + 1}
