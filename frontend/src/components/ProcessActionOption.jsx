@@ -1,7 +1,6 @@
 import flowInstanceApi from "@/api/flowInstanceApi";
 import { useUserInfo } from "@/store";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { BackTop } from "antd";
 import { Eye, PlusCircle, Trash2, History, Pencil, Undo } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -183,13 +182,13 @@ export default function ProcessActionOption({ selectedInstance }) {
                 return !isAuthorized;
               })()
             }
-            onClick={handleUndo}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all disabled:bg-gray-100 disabled:text-gray-400 bg-indigo-600 hover:bg-indigo-700 text-white
+            onClick={() => document.getElementById("statusmodal")?.showModal()}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all disabled:bg-gray-100 disabled:text-gray-400 bg-indigo-600 hover:bg-indigo-400 text-white
             }`}
           >
             <Undo size={18} className="flex-shrink-0" />
             <span className="font-medium">
-              Undo (Hapus dan batalkan Approval anda)
+              Undo (Pilih status sebelumnya untuk kembali)
             </span>
           </button>
         </div>
