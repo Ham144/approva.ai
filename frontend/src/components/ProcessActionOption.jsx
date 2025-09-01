@@ -250,7 +250,14 @@ export default function ProcessActionOption({ selectedInstance }) {
         onClose={() => document.getElementById("statusmodal")?.close()}
         key={"statusmodal"}
         mode={"undo"}
-        onSelectIndex={(idx) => handleUndo(idx)}
+        onSelectIndex={(idx) => {
+          const confirm = window.confirm(
+            `Apakah kamu yakin untuk kembali ke status ${selectedInstance?.flowTemplate?.status?.[idx]?.title} ini?`
+          );
+          if (confirm) {
+            handleUndo(idx);
+          }
+        }}
       />
     </dialog>
   );
