@@ -49,7 +49,7 @@ export default function ProcessActionOption({ selectedInstance }) {
 
   const { mutate: handleUndo, isPending: pendingUndo } = useMutation({
     mutationKey: ["flowInstance", "update"],
-    mutationFn: async () =>
+    mutationFn: async (targetStatusIndex) =>
       await flowInstanceApi.undo_1_step(
         selectedInstance?._id,
         targetStatusIndex
