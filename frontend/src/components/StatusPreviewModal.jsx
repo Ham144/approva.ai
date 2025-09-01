@@ -5,7 +5,7 @@ const FlowStatusModal = ({
   selectedFlow,
   onClose,
   mode = "previewStatus",
-  onClick,
+  onSelectIndex,
 }) => {
   if (!selectedFlow) return null;
 
