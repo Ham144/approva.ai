@@ -81,7 +81,8 @@
 [x] fix: filter level member,viewer dan owner, sudah disempurnakan
 [x] add: fitur logic routing [jump To, completed If, Rejected if, prevent Next if]
 [x] add: export csv perlu lebih lengkap
-[x] add: searchable external http request option for tipe: select
+[x] add: fitur integrasi http request tipe select
+[x] add: searchable external http request option for tipe: select (location, customer dll)
+[x] modify: fitur undo manual merubah currentStatusIndex
 [] add: deteksi lattitude & longtitude dan cocokkan dengan api location
 [] fix: export detail csv masih bagian bug tipe table(csv export detail)
-[] modify: fitur undo harusnya lebih manual merubah currentStatusIndex
