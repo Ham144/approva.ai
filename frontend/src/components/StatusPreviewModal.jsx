@@ -1,7 +1,7 @@
 import { Check } from "lucide-react";
 import React from "react";
 
-export const FlowStatusModal = ({
+const FlowStatusModal = ({
   selectedFlow,
   onClose,
   mode = "previewStatus",
@@ -77,3 +77,5 @@ export const FlowStatusModal = ({
     </dialog>
   );
 };
+
+export default FlowStatusModal;

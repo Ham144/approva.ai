@@ -5,7 +5,7 @@ import { Eye, PlusCircle, Trash2, History, Pencil, Undo } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
-import { FlowStatusModal } from "./StatusPreviewModal";
+import FlowStatusModal from "./StatusPreviewModal";
 
 export default function ProcessActionOption({ selectedInstance }) {
   const { userInfo } = useUserInfo();

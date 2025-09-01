@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import flowApi from "@/api/flowApi";
 import ModalOption from "@/components/ModalOption";
-import { FlowStatusModal } from "@/components/StatusPreviewModal";
+import FlowStatusModal from "@/components/StatusPreviewModal";
 
 export const initialFilterRequestPage = {
   forMe: true,
