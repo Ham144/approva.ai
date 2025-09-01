@@ -963,15 +963,15 @@ router.put("/undo/:id", async (req, res) => {
 
     // RESET jawaban yang didepan targetstatusIndex (yang akan diisi ulang)
     for (
-      let i = flowInstance.currentStatusIndex;
-      i < flowInstance.statuses.length + currentIndexStatusResponse;
+      let i = flowInstance?.currentStatusIndex;
+      i < flowInstance.statuses.length;
       i++
     ) {
       flowInstance.statuses[i].completed = false;
-      flowInstance.statuses[i].completedBy = null;
-      flowInstance.statuses[i].completedAt = null;
-      flowInstance.statuses[i].rejectedReason = null;
-      flowInstance.statuses[i].verdict = "pending";
+      flowInstance.statuses[i].completedBy = null; //ObjectId
+      flowInstance.statuses[i].completedAt = null; //Date
+      flowInstance.statuses[i].rejectedReason = null; //String
+      flowInstance.statuses[i].verdict = "pending"; //String
       flowInstance.statuses[i].requirementsData = {}; // sesuai default schema
     }
 
