@@ -12,7 +12,6 @@ export const FlowStatusModal = ({
   return (
     <dialog id="statusmodal" className="modal">
       <div className="modal-box">
-        {/* Tombol Tutup */}
         <button
           onClick={onClose}
           className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 transition-colors bg-red-200 rounded-lg p-4"
