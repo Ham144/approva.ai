@@ -503,7 +503,7 @@ router.get("/flowInstanceById/:id", async (req, res) => {
       .populate("requestedBy", "username");
 
     //jika currentStatusIndex saat ini memliki logic jumpTo maka merge authorized dengan status.authorized dengan target status jumpTo
-    console.log("flowInstance", flowInstance);
+    console.log("flowInstance", flowInstance.flowTemplate.logics);
     if (
       flowInstance.currentStatusIndex >= 0 &&
       flowInstance.currentStatusIndex < flowInstance.statuses.length
