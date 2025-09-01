@@ -3,12 +3,14 @@ import { useUserInfo } from "@/store";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BackTop } from "antd";
 import { Eye, PlusCircle, Trash2, History, Pencil, Undo } from "lucide-react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
 
 export default function ProcessActionOption({ selectedInstance }) {
   const { userInfo } = useUserInfo();
   const navigate = useNavigate();
+  const [targetStatusIndex, setTargetStatusIndex] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -48,7 +50,10 @@ export default function ProcessActionOption({ selectedInstance }) {
   const { mutate: handleUndo, isPending: pendingUndo } = useMutation({
     mutationKey: ["flowInstance", "update"],
     mutationFn: async () =>
-      await flowInstanceApi.undo_1_step(selectedInstance?._id),
+      await flowInstanceApi.undo_1_step(
+        selectedInstance?._id,
+        targetStatusIndex
+      ),
     onSuccess: (res) => {
       toast.success(
         res?.response?.data?.message || "berhasil undo 1 langkah anda"
