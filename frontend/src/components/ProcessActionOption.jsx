@@ -250,6 +250,7 @@ export default function ProcessActionOption({ selectedInstance }) {
         onClose={() => document.getElementById("statusmodal")?.close()}
         key={"statusmodal"}
         mode={"undo"}
+        onSelectIndex={(idx) => handleUndo(idx)}
       />
     </dialog>
   );
