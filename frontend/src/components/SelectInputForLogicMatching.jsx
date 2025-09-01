@@ -19,26 +19,45 @@ export default function SelectInputForLogicMatching({
   const options = data?.data?.keys || [];
   const tipe = data?.data?.tipe;
 
-  console.log(tipe);
-
   return (
-    <select
-      className="select select-bordered w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-      value={logicTemp?.value || flow?.responseData?.[logicTemp?.index]?.value}
-      onChange={(e) => {
-        const value = e.target.value;
-        setLogicTemp((prev) => ({
-          ...prev,
-          value,
-        }));
-      }}
-    >
-      <option value="">-- Pilih jawaban yang diharapkan --</option>
-      {options.map((k) => (
-        <option key={k._id} value={k.key}>
-          {k.value}
-        </option>
-      ))}
-    </select>
+    <>
+      {tipe === "internal" ? (
+        <select
+          className="select select-bordered w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          value={
+            logicTemp?.value || flow?.responseData?.[logicTemp?.index]?.value
+          }
+          onChange={(e) => {
+            const value = e.target.value;
+            setLogicTemp((prev) => ({
+              ...prev,
+              value,
+            }));
+          }}
+        >
+          <option value="">-- Pilih jawaban yang diharapkan --</option>
+          {options.map((k) => (
+            <option key={k._id} value={k.key}>
+              {k.value}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          type="text"
+          className="input input-bordered w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          value={
+            logicTemp?.value || flow?.responseData?.[logicTemp?.index]?.value
+          }
+          onChange={(e) => {
+            const value = e.target.value;
+            setLogicTemp((prev) => ({
+              ...prev,
+              value,
+            }));
+          }}
+        />
+      )}
+    </>
   );
 }
