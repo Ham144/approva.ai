@@ -961,16 +961,18 @@ router.put("/undo/:id", async (req, res) => {
     }
     flowInstance.currentStatusIndex = targetStatusIndex;
 
-    // RESET jawaban & flag di step yang sekarang (yang akan diisi ulang)
-    const curr = flowInstance.currentStatusIndex;
-    const currStatus = flowInstance.statuses[curr];
-    if (currStatus) {
-      currStatus.completed = false;
-      currStatus.completedBy = null;
-      currStatus.completedAt = null;
-      currStatus.rejectedReason = null;
-      currStatus.verdict = "pending";
-      currStatus.requirementsData = {}; // sesuai default schema
+    // RESET jawaban yang didepan targetstatusIndex (yang akan diisi ulang)
+    for (
+      let i = flowInstance.currentStatusIndex;
+      i < flowInstance.statuses.length + currentIndexStatusResponse;
+      i++
+    ) {
+      flowInstance.statuses[i].completed = false;
+      flowInstance.statuses[i].completedBy = null;
+      flowInstance.statuses[i].completedAt = null;
+      flowInstance.statuses[i].rejectedReason = null;
+      flowInstance.statuses[i].verdict = "pending";
+      flowInstance.statuses[i].requirementsData = {}; // sesuai default schema
     }
 
     // Hapus step yang di depan (yang barusan di-undo)
