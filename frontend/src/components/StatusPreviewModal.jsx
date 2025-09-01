@@ -38,11 +38,9 @@ const FlowStatusModal = ({
               {selectedFlow.status.map((step, index) => (
                 <li
                   onClick={(e) => {
-                    if (mode === "previewStatus") {
-                      onClick(e);
+                    if (mode === "undo") {
+                      onSelectIndex(index);
                     }
-
-                    onSelectIndex(index);
                   }}
                   key={index}
                   className="relative py-1 hover:bg-indigo-300 rounded-lg  cursor-pointer"
@@ -53,7 +51,7 @@ const FlowStatusModal = ({
                   </span>
                   <div className=" p-3 rounded-lg shadow-sm border ">
                     <h5 className="text-md font-medium text-gray-800">
-                      {step.title}
+                      {JSON.stringify(step)}
                     </h5>
                     <p className="text-sm text-gray-600">
                       {step.authorized
