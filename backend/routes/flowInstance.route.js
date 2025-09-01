@@ -921,6 +921,10 @@ router.put("/rollback/:id", async (req, res) => {
 router.put("/undo/:id", async (req, res) => {
   const { targetStatusIndex } = req.body;
 
+  if (!targetStatusIndex) {
+    return res.status(400).json({ message: "status tujuan tak boleh kosong" });
+  }
+
   try {
     // Ambil instance + otorisasi
     const flowInstance = await FlowInstance.findOne({
