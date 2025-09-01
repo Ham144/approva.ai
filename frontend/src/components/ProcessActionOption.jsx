@@ -6,6 +6,7 @@ import { Eye, PlusCircle, Trash2, History, Pencil, Undo } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
+import { FlowStatusModal } from "./StatusPreviewModal";
 
 export default function ProcessActionOption({ selectedInstance }) {
   const { userInfo } = useUserInfo();
@@ -71,8 +72,6 @@ export default function ProcessActionOption({ selectedInstance }) {
   const isMyTurn = selectedInstance?.flowTemplate?.status[
     selectedInstance?.currentStatusIndex
   ].authorized?.find((user) => user._id == userInfo._id);
-
-  console.log(selectedInstance);
 
   return (
     <dialog id="modalprocessaction" className="modal">
@@ -247,6 +246,11 @@ export default function ProcessActionOption({ selectedInstance }) {
           </div>
         </div>
       </dialog>
+      <FlowStatusModal
+        selectedFlow={selectedInstance?.flowTemplate}
+        onClose={() => document.getElementById("statusmodal")?.close()}
+        key={"statusmodal"}
+      />
     </dialog>
   );
 }
