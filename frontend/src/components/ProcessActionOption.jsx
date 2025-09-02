@@ -58,8 +58,7 @@ export default function ProcessActionOption({ selectedInstance }) {
       toast.success(
         res?.response?.data?.message || "berhasil undo 1 langkah anda"
       );
-      document.getElementById("statusmodal")?.close();
-      queryClient.invalidateQueries(["flowInstance", selectedInstance?._id]);
+      window.location.reload();
     },
     onError: (er) => {
       document.getElementById("statusmodal")?.close();

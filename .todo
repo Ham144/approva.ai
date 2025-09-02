@@ -84,5 +84,5 @@
 [x] add: fitur integrasi http request tipe select
 [x] add: searchable external http request option for tipe: select (location, customer dll)
 [x] modify: fitur undo manual merubah currentStatusIndex
+[x] fix: export detail csv masih bagian bug tipe table(csv export detail)
 [] add: deteksi lattitude & longtitude dan cocokkan dengan api location
-[] fix: export detail csv masih bagian bug tipe table(csv export detail)
