@@ -13,6 +13,7 @@ const customerSchema = new mongoose.Schema(
 );
 
 customerSchema.index({ No: 1 }, { unique: true });
+db.users.createIndex({ location: "2dsphere" });
 
 const Customer = mongoose.model("Customer", customerSchema);
 export default Customer;
