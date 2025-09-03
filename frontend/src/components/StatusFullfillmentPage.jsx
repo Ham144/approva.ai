@@ -60,7 +60,14 @@ export default function StatusFullfillmentPage() {
     refetch: resetCurrentStatusIndex,
   } = useQuery({
     queryKey: ["instance", instanceId],
-    queryFn: () => flowInstanceApi.getFlowInstanceById(instanceId),
+    queryFn: async () => {
+      const res = await flowInstanceApi.getFlowInstanceById(instanceId);
+
+      if (res.status == 200) {
+        toast.success(res?.response?.data?.message);
+      }
+      return res.data;
+    },
     enabled: !!instanceId,
   });
 
