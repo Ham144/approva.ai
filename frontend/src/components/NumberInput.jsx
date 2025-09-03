@@ -29,8 +29,8 @@ const NumberInput = ({
       <div className="flex items-stretch gap-0 mt-1 shadow-sm rounded-md overflow-hidden">
         {/* Tombol Kurang (-) */}
         <button
+          {...baseProps}
           className="btn btn-square btn-outline border-r-0 rounded-r-none text-xl font-bold hover:bg-gray-100 transition-colors duration-200"
-          disabled={isOnlyPreview}
           onClick={() => {
             const rawValue = isRequirementInput
               ? statuses[statusIndex]?.requirementsData?.[input._id] || "0"
@@ -83,8 +83,8 @@ const NumberInput = ({
 
         {/* Tombol Tambah (+) */}
         <button
+          {...baseProps}
           className="btn btn-square btn-outline border-l-0 rounded-l-none text-xl font-bold hover:bg-gray-100 transition-colors duration-200"
-          disabled={isOnlyPreview}
           onClick={() => {
             const rawValue = isRequirementInput
               ? statuses[statusIndex]?.requirementsData?.[input._id] || "0"
