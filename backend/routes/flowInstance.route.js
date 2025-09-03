@@ -1259,11 +1259,6 @@ router.post("/download-detail", async (req, res) => {
         key: valueKey,
         width: 24,
       });
-      columns.push({
-        header: `${reqInput.title} (type)`,
-        key: typeKey,
-        width: 14,
-      });
       if (reqInput.tipe === "table") {
         // Show all table columns (including image columns, but data will be filtered)
         const tableKeys = Array.isArray(reqInput.table?.keys)
@@ -1315,11 +1310,6 @@ router.post("/download-detail", async (req, res) => {
         const rKey = `st_${i}_req_${req._id}`;
         const rTypeKey = `st_${i}_req_${req._id}_type`;
         columns.push({ header: req.title || rKey, key: rKey, width: 24 });
-        columns.push({
-          header: `${req.title} (type)`,
-          key: rTypeKey,
-          width: 14,
-        });
         if (req.tipe === "table") {
           // Show all table columns (including image columns, but data will be filtered)
           const tableKeys = Array.isArray(req.table?.keys)
