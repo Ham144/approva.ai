@@ -135,7 +135,7 @@ const DownloadProcessPage = () => {
         </div>
         <div className="flex flex-col flex-wrap justify-center w-full  sm:flex-row sm:items-center gap-4">
           <Button
-            className="w-full sm:w-56"
+            className="w-full sm:w-auto min-w-[200px]"
             type="primary"
             onClick={() => {
               handleDownloadSimpleMode();
@@ -145,23 +145,23 @@ const DownloadProcessPage = () => {
           </Button>
           <Button
             disabled={!selectedFlowTemplateId}
-            className="w-full sm:w-56"
+            className="w-full sm:w-auto min-w-[200px]"
             type="primary"
             onClick={() => {
               handleDownloadDetailMode();
             }}
           >
-            Download Detail mode
+            Download Detail mode Merge Table 1 Column
           </Button>
           <Button
             disabled={!selectedFlowTemplateId}
-            className="w-full sm:w-56"
+            className="w-full sm:w-auto min-w-[200px]"
             type="primary"
             onClick={() => {
               handleDownloadDetailModeTableColumn();
             }}
           >
-            Download Detail mode
+            Download Detail mode Table To Column
           </Button>
         </div>
 
