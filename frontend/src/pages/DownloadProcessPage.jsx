@@ -161,7 +161,7 @@ const DownloadProcessPage = () => {
               handleDownloadDetailModeTableColumn();
             }}
           >
-            Download Detail mode Table To Column
+            Download Detail mode Table To Columns
           </Button>
         </div>
 
