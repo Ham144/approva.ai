@@ -54,6 +54,28 @@ const DownloadProcessPage = () => {
     },
   });
 
+  const { mutateAsync: handleDownloadDetailModeTableColumn } = useMutation({
+    mutationKey: ["download"],
+    mutationFn: async () =>
+      await flowInstanceApi.downloadFlowInstanceDetailTableColum({
+        flowTemplateId: selectedFlowTemplateId,
+        month: month.format("YYYY-MM"),
+      }),
+    onSuccess: (res) => {
+      toast.success(res?.response?.data?.message || "Berhasil mengunduh");
+      toast.success("Berhasil mengunduh");
+    },
+    onError: (res) => {
+      console.log(res);
+      if (res.status === 421) {
+        toast.error("Tidak ada data dengan konfigurasi ini");
+        return;
+      }
+      //tidak bisa diambil message nya karena returntype blob
+      toast.error("Gagal mengunduh penyebab tidak diketahui");
+    },
+  });
+
   const onChange = (value, dateString) => {
     // value = dayjs object (atau null), dateString = formatted string
     setMonth(value);
@@ -98,33 +120,48 @@ const DownloadProcessPage = () => {
             placeholder="Pilih Bulan"
           />
 
-          {!simpleMode && (
-            <select
-              className="select select-bordered w-full max-w-xs"
-              value={selectedFlowTemplateId}
-              onChange={(e) => setSelectedFlowTemplateId(e.target.value)}
-            >
-              <option value="">Pilih Flow</option>
-              {flowDataList.data?.map((flow) => (
-                <option key={flow._id} value={flow._id}>
-                  {flow.title + "-" + flow.desc}
-                </option>
-              ))}
-            </select>
-          )}
-
+          <select
+            className="select select-bordered w-full rounded-md bg-slate-50"
+            value={selectedFlowTemplateId}
+            onChange={(e) => setSelectedFlowTemplateId(e.target.value)}
+          >
+            <option value="">Pilih Flow</option>
+            {flowDataList.data?.map((flow) => (
+              <option key={flow._id} value={flow._id}>
+                {flow.title + "-" + flow.desc}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-col flex-wrap justify-center w-full  sm:flex-row sm:items-center gap-4">
           <Button
-            className="w-full sm:w-auto"
+            className="w-full sm:w-56"
             type="primary"
             onClick={() => {
-              if (simpleMode) {
-                handleDownloadSimpleMode();
-              } else {
-                handleDownloadDetailMode();
-              }
+              handleDownloadSimpleMode();
             }}
           >
             Download
+          </Button>
+          <Button
+            disabled={!selectedFlowTemplateId}
+            className="w-full sm:w-56"
+            type="primary"
+            onClick={() => {
+              handleDownloadDetailMode();
+            }}
+          >
+            Download Detail mode
+          </Button>
+          <Button
+            disabled={!selectedFlowTemplateId}
+            className="w-full sm:w-56"
+            type="primary"
+            onClick={() => {
+              handleDownloadDetailModeTableColumn();
+            }}
+          >
+            Download Detail mode
           </Button>
         </div>
 
