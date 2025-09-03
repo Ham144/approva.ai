@@ -63,24 +63,6 @@ const DownloadProcessPage = () => {
     <div className="relative pb-20 min-h-screen overflow-hidden px-4 py-8 sm:px-6 lg:px-8 mx-auto flex justify-center items-center flex-col ">
       <div className="flex flex-col w-96 gap-y-3 justify-center items-center border rounded-lg p-3  shadow-lg  ">
         <h2 className="text-2xl font-semibold mb-6">Download History </h2>
-        <div className="grid grid-cols-2 gap-x-2 items-center">
-          <button
-            onClick={() => setSimpleMode(true)}
-            className={`btn rounded-lg ${
-              simpleMode ? "bg-blue-500" : "bg-gray-200"
-            }`}
-          >
-            Simple mode
-          </button>
-          <button
-            onClick={() => setSimpleMode(false)}
-            className={`btn rounded-lg ${
-              !simpleMode ? "bg-blue-500" : "bg-gray-200"
-            }`}
-          >
-            Detail mode
-          </button>
-        </div>
 
         {!simpleMode && (
           <div
