@@ -528,6 +528,24 @@ router.get("/flowInstanceById/:id", async (req, res) => {
       ];
     }
 
+    //untuk mencegah error karena flowTemplate status bertambah
+    if (
+      flowInstance.statuses.length != flowInstance.flowTemplate.status.length
+    ) {
+      flowInstance.statuses.map((status) => {
+        status.statusTitle =
+          flowInstance.flowTemplate.status[status.index].title;
+        (status.statusDesc =
+          flowInstance.flowTemplate.status[status.index].description),
+          (status.completed = status?.completed ?? false),
+          (status.verdict = status?.verdict ?? "pending"),
+          (status.isPrivateAuthorized = status?.isPrivateAuthorized ?? false);
+        status._id = status._id ?? new mongoose.Types.ObjectId();
+      });
+
+      await flowInstance.save();
+    }
+
     return res.json({
       message: "berhasil mengambil data flow instance",
       data: flowInstance,
