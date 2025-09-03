@@ -1617,7 +1617,7 @@ router.post("/download-detail", async (req, res) => {
   }
 });
 
-router.post("/download-detail", async (req, res) => {
+router.post("/download-detail-table-column", async (req, res) => {
   const { flowTemplateId, month } = req.body;
 
   if (!flowTemplateId || !month) {
