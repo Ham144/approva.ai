@@ -1212,6 +1212,421 @@ router.post("/download-detail", async (req, res) => {
   }
 
   try {
+    // Ambil template lengkap untuk membangun header
+    const flowTemplate = await FlowAndPoint.findOne({
+      _id: flowTemplateId,
+      org: req.user.org,
+    })
+      .populate({ path: "request", model: "Input" })
+      .populate({ path: "status.requirements", model: "Input" })
+      .populate({
+        path: "status.authorized",
+        model: "UserRefrensi",
+        select: "_id username",
+      })
+      .lean();
+
+    if (!flowTemplate) {
+      return res.status(404).json({ message: "Flow template not found" });
+    }
+
+    // Siapkan workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Detail dalam satu row");
+
+    // Kolom dasar
+    const columns = [
+      { header: "Flow Template", key: "meta_flowTemplate", width: 24 },
+      { header: "Description", key: "meta_desc", width: 30 },
+      { header: "Instance Title", key: "meta_instanceTitle", width: 24 },
+      { header: "Global Index", key: "meta_globalIndex", width: 18 },
+      { header: "Requested By", key: "meta_requestedBy", width: 20 },
+      { header: "Requested At", key: "meta_createdAt", width: 18 },
+      { header: "Overall Status", key: "meta_overallStatus", width: 16 },
+      {
+        header: "Current Status Index",
+        key: "meta_currentStatusIndex",
+        width: 8,
+      },
+    ];
+
+    // Kolom untuk request (berdasarkan template.request)
+    for (const reqInput of flowTemplate.request || []) {
+      const valueKey = `req_${reqInput._id}`;
+      const typeKey = `req_${reqInput._id}_type`;
+      columns.push({
+        header: reqInput.title || valueKey,
+        key: valueKey,
+        width: 24,
+      });
+      if (reqInput.tipe === "table") {
+        // Show all table columns (including image columns, but data will be filtered)
+        const tableKeys = Array.isArray(reqInput.table?.keys)
+          ? reqInput.table.keys
+          : [];
+
+        if (tableKeys.length > 0) {
+          const tableKey = `req_${reqInput._id}_tableKeys`;
+          const tableHeader = tableKeys.join(" | ");
+          columns.push({ header: tableHeader, key: tableKey, width: 30 });
+        }
+      }
+    }
+
+    // Tambahkan separator pertama setelah request data
+    if ((flowTemplate.status || []).length > 0) {
+      columns.push({
+        header: ` | Next approval | `,
+        key: `sep_0`,
+        width: 6,
+      });
+    }
+
+    // Kolom untuk status dan requirements
+    for (let i = 0; i < (flowTemplate.status || []).length; i++) {
+      const statusTemplate = flowTemplate.status[i];
+
+      // Tambahkan separator sebelum setiap status (kecuali status pertama)
+      if (i > 0) {
+        columns.push({
+          header: ` | Next approval | `,
+          key: `sep_${i}`,
+          width: 6,
+        });
+      }
+
+      columns.push({
+        header: statusTemplate.title,
+        key: `st_${i}_title`,
+        width: 24,
+      });
+      columns.push({
+        header: `Authorized for ${statusTemplate.title}`,
+        key: `st_${i}_authorized`,
+        width: 30,
+      });
+
+      for (const req of statusTemplate.requirements || []) {
+        const rKey = `st_${i}_req_${req._id}`;
+        const rTypeKey = `st_${i}_req_${req._id}_type`;
+        columns.push({ header: req.title || rKey, key: rKey, width: 24 });
+        if (req.tipe === "table") {
+          // Show all table columns (including image columns, but data will be filtered)
+          const tableKeys = Array.isArray(req.table?.keys)
+            ? req.table.keys
+            : [];
+
+          if (tableKeys.length > 0) {
+            const rTableKey = `st_${i}_req_${req._id}_tableKeys`;
+            const rTableHeader = tableKeys.join(" | ");
+            columns.push({ header: rTableHeader, key: rTableKey, width: 30 });
+          }
+        }
+      }
+    }
+
+    worksheet.columns = columns;
+
+    // Styling header
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "2cd451" },
+    };
+
+    // Ambil instances untuk bulan
+    let query = {};
+
+    //make iso date
+    const year = parseInt(month.split("-")[0]);
+    const monthNumber = parseInt(month.split("-")[1]);
+    const startDate = new Date(year, monthNumber - 1, 1);
+    const endDate = new Date(year, monthNumber, 0, 23, 59, 59, 999);
+
+    query = {
+      flowTemplate: flowTemplateId,
+      org: req.user.org,
+      createdAt: {
+        $gte: new Date(startDate),
+        $lt: new Date(endDate),
+      },
+    };
+
+    const instances = await FlowInstance.find(query)
+      .populate("requestedBy", "username")
+      .lean();
+
+    if (!instances?.length) {
+      return res
+        .status(421)
+        .json({ message: "Tidak ada data dengan konfigurasi ini" });
+    }
+    // ----------------- START: helper baru (letakkan sebelum `for (const inst of instances)`) -----------------
+
+    // Pastikan kita selalu index dengan string id
+    const idToStr = (id) => (typeof id === "string" ? id : String(id));
+
+    // Normalisasi tiap row table ke object sesuai table.keys
+    const normalizeTableRows = (tableData, keys) => {
+      if (!Array.isArray(tableData)) return [];
+
+      // fallback keys array
+      const cols = Array.isArray(keys) ? keys : [];
+
+      return tableData.map((row) => {
+        // Case: row is array -> map by position into keys
+        if (Array.isArray(row)) {
+          const obj = {};
+          cols.forEach((k, i) => {
+            obj[k] = row[i] !== undefined ? row[i] : "";
+          });
+          return obj;
+        }
+
+        // Case: row is object
+        if (row && typeof row === "object") {
+          // If object already contains the expected keys, pick those
+          const hasAnyKey = cols.some((k) =>
+            Object.prototype.hasOwnProperty.call(row, k)
+          );
+          if (hasAnyKey) {
+            const obj = {};
+            cols.forEach((k) => {
+              obj[k] = row[k] !== undefined ? row[k] : "";
+            });
+            return obj;
+          }
+
+          // If object doesn't contain expected keys, try "fuzzy" match:
+          // - If the object has a single key which looks like header combined, try to split or use value
+          const rowKeys = Object.keys(row);
+          if (rowKeys.length === 1) {
+            const soleKey = rowKeys[0];
+            const val = row[soleKey];
+
+            // If value is array -> maybe it's the original row array
+            if (Array.isArray(val)) {
+              const obj = {};
+              cols.forEach((k, i) => {
+                obj[k] = val[i] !== undefined ? val[i] : "";
+              });
+              return obj;
+            }
+
+            // If soleKey contains separators " | " and val is scalar -> map by separators if possible
+            if (typeof soleKey === "string" && soleKey.includes("|")) {
+              // If val is array or object try to distribute; else fallback to use val as first column
+              if (Array.isArray(val)) {
+                const obj = {};
+                cols.forEach((k, i) => {
+                  obj[k] = val[i] !== undefined ? val[i] : "";
+                });
+                return obj;
+              }
+              // fallback: use the scalar value for first column
+              const obj = {};
+              cols.forEach((k, i) => {
+                obj[k] = i === 0 ? val : "";
+              });
+              return obj;
+            }
+          }
+
+          // Last fallback: attempt to match by partial includes
+          const obj = {};
+          cols.forEach((k) => {
+            const foundKey =
+              rowKeys.find((rk) => rk === k) ||
+              rowKeys.find((rk) =>
+                rk.toString().toLowerCase().includes(k.toString().toLowerCase())
+              ) ||
+              null;
+            obj[k] = foundKey ? row[foundKey] : "";
+          });
+          return obj;
+        }
+
+        // Not an object/array -> return as-is into first column
+        const fallback = {};
+        cols.forEach((k, i) => {
+          fallback[k] = i === 0 ? row : "";
+        });
+        return fallback;
+      });
+    };
+
+    // Filter image columns and convert values into safe form (string)
+    const filterImageColumnsFromTable = (
+      tableData,
+      keys = [],
+      keysType = []
+    ) => {
+      if (!Array.isArray(tableData)) return tableData;
+      // normalize to objects with expected keys
+      const normalized = normalizeTableRows(tableData, keys);
+      return normalized.map((row) => {
+        if (!row || typeof row !== "object") return row;
+        const filtered = {};
+        keys.forEach((key, idx) => {
+          const kt = Array.isArray(keysType) ? keysType[idx] : undefined;
+          const value = row[key];
+          if (kt === "image") {
+            // show url if string and looks like url, else empty
+            if (typeof value === "string" && value.startsWith("http"))
+              filtered[key] = value;
+            else filtered[key] = "";
+          } else {
+            // non-image: stringify scalar or keep object as string
+            if (value === undefined || value === null) filtered[key] = "";
+            else if (typeof value === "object")
+              filtered[key] = JSON.stringify(value);
+            else filtered[key] = String(value);
+          }
+        });
+        return filtered;
+      });
+    };
+
+    // formatValue upgraded
+    const formatValue = (tipe, val, keys = [], keysType = []) => {
+      if (val === undefined || val === null) return "";
+      if (tipe === "date") {
+        try {
+          return new Date(val).toLocaleDateString("id-ID");
+        } catch {
+          return String(val);
+        }
+      }
+      if (tipe === "table") {
+        // Normalize + filter image columns
+        const filtered = filterImageColumnsFromTable(val, keys, keysType);
+        // If empty array or all rows are empty objects -> return empty string
+        if (!Array.isArray(filtered) || filtered.length === 0) return "";
+
+        const allEmpty = filtered.every((r) => {
+          if (r && typeof r === "object") {
+            // check if all values are empty string
+            return Object.values(r).every(
+              (v) => v === "" || v === null || v === undefined
+            );
+          }
+          return !r;
+        });
+        if (allEmpty) return "";
+
+        // return readable JSON. If you prefer CSV, transform here.
+        return JSON.stringify(filtered);
+      }
+      if (typeof val === "object") return JSON.stringify(val);
+      return String(val);
+    };
+
+    // ----------------- END: helper baru -----------------
+
+    // Tambahkan baris per instance
+    for (const inst of instances) {
+      const row = {
+        meta_flowTemplate: flowTemplate.title,
+        meta_desc: flowTemplate.desc,
+        meta_instanceTitle: inst.instanceTitle,
+        meta_globalIndex: inst.globalIndex,
+        meta_requestedBy: inst.requestedBy?.username || "",
+        meta_createdAt: new Date(inst.createdAt).toLocaleDateString("id-ID"),
+        meta_overallStatus: inst.overallStatus,
+        meta_currentStatusIndex:
+          inst.currentStatusIndex + "/" + inst.statuses.length,
+      };
+      // MAP requestData (di dalam for (const inst of instances) { ... })
+      for (const reqInput of flowTemplate.request || []) {
+        const inputId = idToStr(reqInput._id);
+        const vKey = `req_${inputId}`; // gunakan string id sebagai key kolom juga (lebih aman)
+        const tKey = `req_${inputId}_type`;
+        const tbKey = `req_${inputId}_tableKeys`;
+        const rawVal = inst.requestData ? inst.requestData[inputId] : undefined;
+
+        row[vKey] = formatValue(
+          reqInput.tipe,
+          rawVal,
+          reqInput.table?.keys,
+          reqInput.table?.keysType
+        );
+        // optional: tampilkan tipe hanya kalau bukan table, atau hapus sama sekali kalau ga mau debug
+        row[tKey] = reqInput.tipe === "table" ? "" : reqInput.tipe;
+
+        if (reqInput.tipe === "table") {
+          const tableKeys = Array.isArray(reqInput.table?.keys)
+            ? reqInput.table.keys
+            : [];
+          if (tableKeys.length > 0) {
+            row[tbKey] = tableKeys.join(" | ");
+          }
+        }
+      }
+
+      // MAP statuses requirements (di bagian mapping statuses)
+      for (let i = 0; i < (flowTemplate.status || []).length; i++) {
+        const stTpl = flowTemplate.status[i];
+        const stInst = inst.statuses?.[i] || {};
+        // ...
+        for (const req of stTpl.requirements || []) {
+          const reqIdStr = idToStr(req._id);
+          const rKey = `st_${i}_req_${reqIdStr}`;
+          const rTypeKey = `st_${i}_req_${reqIdStr}_type`;
+          const rawVal = stInst?.requirementsData
+            ? stInst.requirementsData[reqIdStr]
+            : undefined;
+
+          row[rKey] = formatValue(
+            req.tipe,
+            rawVal,
+            req.table?.keys,
+            req.table?.keysType
+          );
+          row[rTypeKey] = req.tipe === "table" ? "" : req.tipe;
+
+          if (req.tipe === "table") {
+            const tableKeys = Array.isArray(req.table?.keys)
+              ? req.table.keys
+              : [];
+            if (tableKeys.length > 0) {
+              const rTableKey = `st_${i}_req_${reqIdStr}_tableKeys`;
+              row[rTableKey] = tableKeys.join(" | ");
+            }
+          }
+        }
+      }
+
+      worksheet.addRow(row);
+    }
+
+    // Kirim sebagai file download
+    const filename = `process-detail-${month}.xlsx`;
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    res.setHeader("Content-Length", buffer.length);
+    return res.status(200).send(buffer);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+router.post("/download-detail", async (req, res) => {
+  const { flowTemplateId, month } = req.body;
+
+  if (!flowTemplateId || !month) {
+    return res.status(400).json({
+      message: "flowTemplateId dan month wajib diisi.",
+    });
+  }
+
+  try {
     const flowTemplate = await FlowAndPoint.findOne({
       _id: flowTemplateId,
       org: req.user.org,
