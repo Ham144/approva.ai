@@ -1537,72 +1537,60 @@ router.post("/download-detail", async (req, res) => {
         meta_currentStatusIndex:
           inst.currentStatusIndex + "/" + inst.statuses.length,
       };
-
-      // Map requestData (object keyed by Input._id)
+      // MAP requestData (di dalam for (const inst of instances) { ... })
       for (const reqInput of flowTemplate.request || []) {
-        const vKey = `req_${reqInput._id}`;
-        const tKey = `req_${reqInput._id}_type`;
-        const tbKey = `req_${reqInput._id}_tableKeys`;
-        const rawVal = inst.requestData?.[reqInput._id];
+        const inputId = idToStr(reqInput._id);
+        const vKey = `req_${inputId}`; // gunakan string id sebagai key kolom juga (lebih aman)
+        const tKey = `req_${inputId}_type`;
+        const tbKey = `req_${inputId}_tableKeys`;
+        const rawVal = inst.requestData ? inst.requestData[inputId] : undefined;
+
         row[vKey] = formatValue(
           reqInput.tipe,
           rawVal,
           reqInput.table?.keys,
           reqInput.table?.keysType
         );
-        row[tKey] = reqInput.tipe;
+        // optional: tampilkan tipe hanya kalau bukan table, atau hapus sama sekali kalau ga mau debug
+        row[tKey] = reqInput.tipe === "table" ? "" : reqInput.tipe;
+
         if (reqInput.tipe === "table") {
-          // Show all table columns (including image columns, but data will be filtered)
           const tableKeys = Array.isArray(reqInput.table?.keys)
             ? reqInput.table.keys
             : [];
-
           if (tableKeys.length > 0) {
             row[tbKey] = tableKeys.join(" | ");
           }
         }
       }
 
-      // Tambahkan data untuk separator pertama
-      if ((flowTemplate.status || []).length > 0) {
-        row[`sep_0`] = "";
-      }
-
-      // Map statuses[i].requirementsData
+      // MAP statuses requirements (di bagian mapping statuses)
       for (let i = 0; i < (flowTemplate.status || []).length; i++) {
         const stTpl = flowTemplate.status[i];
-        const stInst = inst.statuses?.[i];
-
-        // Tambahkan data untuk separator di antara status
-        if (i > 0) {
-          row[`sep_${i}`] = "";
-        }
-
-        row[`st_${i}_title`] = stTpl.title;
-        row[`st_${i}_authorized`] = (stTpl.authorized || [])
-          .map((u) => u?.username)
-          .filter(Boolean)
-          .join(", ");
-
+        const stInst = inst.statuses?.[i] || {};
+        // ...
         for (const req of stTpl.requirements || []) {
-          const rKey = `st_${i}_req_${req._id}`;
-          const rTypeKey = `st_${i}_req_${req._id}_type`;
-          const rawVal = stInst?.requirementsData?.[req._id] ?? "";
+          const reqIdStr = idToStr(req._id);
+          const rKey = `st_${i}_req_${reqIdStr}`;
+          const rTypeKey = `st_${i}_req_${reqIdStr}_type`;
+          const rawVal = stInst?.requirementsData
+            ? stInst.requirementsData[reqIdStr]
+            : undefined;
+
           row[rKey] = formatValue(
             req.tipe,
             rawVal,
             req.table?.keys,
             req.table?.keysType
           );
-          row[rTypeKey] = req.tipe;
+          row[rTypeKey] = req.tipe === "table" ? "" : req.tipe;
+
           if (req.tipe === "table") {
-            // Show all table columns (including image columns, but data will be filtered)
             const tableKeys = Array.isArray(req.table?.keys)
               ? req.table.keys
               : [];
-
             if (tableKeys.length > 0) {
-              const rTableKey = `st_${i}_req_${req._id}_tableKeys`;
+              const rTableKey = `st_${i}_req_${reqIdStr}_tableKeys`;
               row[rTableKey] = tableKeys.join(" | ");
             }
           }
