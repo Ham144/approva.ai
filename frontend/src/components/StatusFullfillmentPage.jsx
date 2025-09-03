@@ -66,7 +66,7 @@ export default function StatusFullfillmentPage() {
       if (res.status == 200) {
         toast.success(res?.response?.data?.message);
       }
-      return res.data;
+      return res;
     },
     enabled: !!instanceId,
   });
