@@ -529,6 +529,7 @@ router.get("/flowInstanceById/:id", async (req, res) => {
     }
 
     //untuk mencegah error karena flowTemplate status bertambah
+    let isDiff = false;
     if (
       flowInstance.statuses.length != flowInstance.flowTemplate.status.length
     ) {
@@ -544,10 +545,13 @@ router.get("/flowInstanceById/:id", async (req, res) => {
       });
 
       await flowInstance.save();
+      isDiff = true;
     }
 
     return res.json({
-      message: "berhasil mengambil data flow instance",
+      message: isDiff
+        ? "Terjadi perbedaan status dengan template dan telah disesuikan"
+        : "berhasil mengambil data flow instance",
       data: flowInstance,
     });
   } catch (error) {
