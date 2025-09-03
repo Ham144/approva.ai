@@ -126,7 +126,7 @@ const DownloadProcessPage = () => {
             onChange={(e) => setSelectedFlowTemplateId(e.target.value)}
           >
             <option value="">Pilih Flow</option>
-            {flowDataList.data?.map((flow) => (
+            {flowDataList?.data?.map((flow) => (
               <option key={flow._id} value={flow._id}>
                 {flow.title + "-" + flow.desc}
               </option>
