@@ -533,16 +533,20 @@ router.get("/flowInstanceById/:id", async (req, res) => {
     if (
       flowInstance.statuses.length != flowInstance.flowTemplate.status.length
     ) {
-      flowInstance.statuses.map((status) => {
-        status.statusTitle =
-          flowInstance.flowTemplate.status[status.index].title;
-        (status.statusDesc =
-          flowInstance.flowTemplate.status[status.index].description),
-          (status.completed = status?.completed ?? false),
-          (status.verdict = status?.verdict ?? "pending"),
-          (status.isPrivateAuthorized = status?.isPrivateAuthorized ?? false);
-        status._id = status._id ?? new mongoose.Types.ObjectId();
-      });
+      for (let i = 0; i < flowInstance.flowTemplate.status.length; i++) {
+        flowInstance.statuses[i].statusTitle =
+          flowInstance.flowTemplate.status[i].title;
+        (flowInstance.statuses[i].statusDesc =
+          flowInstance.flowTemplate.status[i].description),
+          (flowInstance.statuses[i].completed =
+            flowInstance.statuses[i]?.completed ?? false),
+          (flowInstance.statuses[i].verdict =
+            flowInstance.statuses[i]?.verdict ?? "pending"),
+          (flowInstance.statuses[i].isPrivateAuthorized =
+            flowInstance.statuses[i]?.isPrivateAuthorized ?? false);
+        flowInstance.statuses[i]._id =
+          flowInstance.statuses[i]._id ?? new mongoose.Types.ObjectId();
+      }
 
       await flowInstance.save();
       isDiff = true;
