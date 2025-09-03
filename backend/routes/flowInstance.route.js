@@ -534,18 +534,23 @@ router.get("/flowInstanceById/:id", async (req, res) => {
       flowInstance.statuses.length != flowInstance.flowTemplate.status.length
     ) {
       for (let i = 0; i < flowInstance.flowTemplate.status.length; i++) {
-        flowInstance.statuses[i].statusTitle =
-          flowInstance.flowTemplate.status[i].title;
-        (flowInstance.statuses[i].statusDesc =
-          flowInstance.flowTemplate.status[i].description),
-          (flowInstance.statuses[i].completed =
-            flowInstance.statuses[i]?.completed ?? false),
-          (flowInstance.statuses[i].verdict =
-            flowInstance.statuses[i]?.verdict ?? "pending"),
-          (flowInstance.statuses[i].isPrivateAuthorized =
-            flowInstance.statuses[i]?.isPrivateAuthorized ?? false);
-        flowInstance.statuses[i]._id =
-          flowInstance.statuses[i]._id ?? new mongoose.Types.ObjectId();
+        // Jika status belum ada, buat baru
+        if (!flowInstance.statuses[i]) {
+          flowInstance.statuses[i] = {
+            statusTitle: flowInstance.flowTemplate.status[i].title,
+            statusDesc: flowInstance.flowTemplate.status[i].desc,
+            requirementsData: {},
+            completed: false,
+            verdict: "pending",
+            isPrivateAuthorized: false,
+          };
+        } else {
+          // Update status yang sudah ada
+          flowInstance.statuses[i].statusTitle =
+            flowInstance.flowTemplate.status[i].title;
+          flowInstance.statuses[i].statusDesc =
+            flowInstance.flowTemplate.status[i].desc;
+        }
       }
 
       await flowInstance.save();
