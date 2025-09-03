@@ -1362,45 +1362,134 @@ router.post("/download-detail", async (req, res) => {
         .status(421)
         .json({ message: "Tidak ada data dengan konfigurasi ini" });
     }
+    // ----------------- START: helper baru (letakkan sebelum `for (const inst of instances)`) -----------------
 
-    // Helper function to filter image columns from table data
-    const filterImageColumnsFromTable = (tableData, keys, keysType) => {
-      if (
-        !Array.isArray(tableData) ||
-        !Array.isArray(keys) ||
-        !Array.isArray(keysType)
-      ) {
-        return tableData;
-      }
+    // Pastikan kita selalu index dengan string id
+    const idToStr = (id) => (typeof id === "string" ? id : String(id));
+
+    // Normalisasi tiap row table ke object sesuai table.keys
+    const normalizeTableRows = (tableData, keys) => {
+      if (!Array.isArray(tableData)) return [];
+
+      // fallback keys array
+      const cols = Array.isArray(keys) ? keys : [];
 
       return tableData.map((row) => {
-        if (typeof row !== "object" || row === null) return row;
+        // Case: row is array -> map by position into keys
+        if (Array.isArray(row)) {
+          const obj = {};
+          cols.forEach((k, i) => {
+            obj[k] = row[i] !== undefined ? row[i] : "";
+          });
+          return obj;
+        }
 
-        const filteredRow = {};
-        keys.forEach((key, index) => {
-          if (keysType[index] === "image") {
-            // For image columns, try to show URL or leave empty
-            const value = row[key];
-            if (
-              value &&
-              typeof value === "string" &&
-              value.startsWith("http")
-            ) {
-              filteredRow[key] = value; // Show URL if it's a valid URL
-            } else {
-              filteredRow[key] = ""; // Empty for image columns
-            }
-          } else {
-            // For non-image columns, show the actual data
-            filteredRow[key] = row[key];
+        // Case: row is object
+        if (row && typeof row === "object") {
+          // If object already contains the expected keys, pick those
+          const hasAnyKey = cols.some((k) =>
+            Object.prototype.hasOwnProperty.call(row, k)
+          );
+          if (hasAnyKey) {
+            const obj = {};
+            cols.forEach((k) => {
+              obj[k] = row[k] !== undefined ? row[k] : "";
+            });
+            return obj;
           }
+
+          // If object doesn't contain expected keys, try "fuzzy" match:
+          // - If the object has a single key which looks like header combined, try to split or use value
+          const rowKeys = Object.keys(row);
+          if (rowKeys.length === 1) {
+            const soleKey = rowKeys[0];
+            const val = row[soleKey];
+
+            // If value is array -> maybe it's the original row array
+            if (Array.isArray(val)) {
+              const obj = {};
+              cols.forEach((k, i) => {
+                obj[k] = val[i] !== undefined ? val[i] : "";
+              });
+              return obj;
+            }
+
+            // If soleKey contains separators " | " and val is scalar -> map by separators if possible
+            if (typeof soleKey === "string" && soleKey.includes("|")) {
+              // If val is array or object try to distribute; else fallback to use val as first column
+              if (Array.isArray(val)) {
+                const obj = {};
+                cols.forEach((k, i) => {
+                  obj[k] = val[i] !== undefined ? val[i] : "";
+                });
+                return obj;
+              }
+              // fallback: use the scalar value for first column
+              const obj = {};
+              cols.forEach((k, i) => {
+                obj[k] = i === 0 ? val : "";
+              });
+              return obj;
+            }
+          }
+
+          // Last fallback: attempt to match by partial includes
+          const obj = {};
+          cols.forEach((k) => {
+            const foundKey =
+              rowKeys.find((rk) => rk === k) ||
+              rowKeys.find((rk) =>
+                rk.toString().toLowerCase().includes(k.toString().toLowerCase())
+              ) ||
+              null;
+            obj[k] = foundKey ? row[foundKey] : "";
+          });
+          return obj;
+        }
+
+        // Not an object/array -> return as-is into first column
+        const fallback = {};
+        cols.forEach((k, i) => {
+          fallback[k] = i === 0 ? row : "";
         });
-        return filteredRow;
+        return fallback;
       });
     };
 
-    // Helper format
-    const formatValue = (tipe, val, keys, keysType) => {
+    // Filter image columns and convert values into safe form (string)
+    const filterImageColumnsFromTable = (
+      tableData,
+      keys = [],
+      keysType = []
+    ) => {
+      if (!Array.isArray(tableData)) return tableData;
+      // normalize to objects with expected keys
+      const normalized = normalizeTableRows(tableData, keys);
+      return normalized.map((row) => {
+        if (!row || typeof row !== "object") return row;
+        const filtered = {};
+        keys.forEach((key, idx) => {
+          const kt = Array.isArray(keysType) ? keysType[idx] : undefined;
+          const value = row[key];
+          if (kt === "image") {
+            // show url if string and looks like url, else empty
+            if (typeof value === "string" && value.startsWith("http"))
+              filtered[key] = value;
+            else filtered[key] = "";
+          } else {
+            // non-image: stringify scalar or keep object as string
+            if (value === undefined || value === null) filtered[key] = "";
+            else if (typeof value === "object")
+              filtered[key] = JSON.stringify(value);
+            else filtered[key] = String(value);
+          }
+        });
+        return filtered;
+      });
+    };
+
+    // formatValue upgraded
+    const formatValue = (tipe, val, keys = [], keysType = []) => {
       if (val === undefined || val === null) return "";
       if (tipe === "date") {
         try {
@@ -1410,15 +1499,30 @@ router.post("/download-detail", async (req, res) => {
         }
       }
       if (tipe === "table") {
-        // Filter out image columns before formatting
-        const filteredData = filterImageColumnsFromTable(val, keys, keysType);
-        return typeof filteredData === "string"
-          ? filteredData
-          : JSON.stringify(filteredData);
+        // Normalize + filter image columns
+        const filtered = filterImageColumnsFromTable(val, keys, keysType);
+        // If empty array or all rows are empty objects -> return empty string
+        if (!Array.isArray(filtered) || filtered.length === 0) return "";
+
+        const allEmpty = filtered.every((r) => {
+          if (r && typeof r === "object") {
+            // check if all values are empty string
+            return Object.values(r).every(
+              (v) => v === "" || v === null || v === undefined
+            );
+          }
+          return !r;
+        });
+        if (allEmpty) return "";
+
+        // return readable JSON. If you prefer CSV, transform here.
+        return JSON.stringify(filtered);
       }
       if (typeof val === "object") return JSON.stringify(val);
       return String(val);
     };
+
+    // ----------------- END: helper baru -----------------
 
     // Tambahkan baris per instance
     for (const inst of instances) {
