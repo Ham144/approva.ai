@@ -160,7 +160,7 @@ export default function ProcessActionOption({ selectedInstance }) {
               selectedInstance.currentStatusIndex == 0 ||
               pendingUndo ||
               (() => {
-                const idx = (selectedInstance?.currentStatusIndex ?? 0) - 1;
+                const idx = selectedInstance?.currentStatusIndex ?? 0;
                 let isAuthorized = false;
 
                 if (
@@ -194,6 +194,11 @@ export default function ProcessActionOption({ selectedInstance }) {
 
         {/* Information Box */}
         <div className="bg-blue-50 p-3 mx-4 mb-4 rounded-lg border border-blue-100">
+          <p className="text-blue-700 text-sm">
+            Untuk rollback, lakukan edit dulu lalu rollback, karena saat
+            rollback approval pertama akan mendapatkan notifikasi perubahan
+            langsung
+          </p>
           <p className="text-blue-700 text-sm">
             Untuk rollback, lakukan edit dulu lalu rollback, karena saat
             rollback approval pertama akan mendapatkan notifikasi perubahan
