@@ -94,11 +94,6 @@ const TableInput = ({
     }
   };
 
-  const formatThousand = (val) => {
-    const num = Number(val?.toString().replace(/\./g, ""));
-    return !isNaN(num) && val !== "" ? num.toLocaleString("id-ID") : val;
-  };
-
   return (
     <div
       ref={(el) => (inputRefs.current[input._id] = el)}
