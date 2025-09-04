@@ -68,7 +68,11 @@ const NumberInput = ({
               ? setRequirement(currentStatusIndex, input._id, cleaned)
               : setRequestData(input._id, cleaned);
           }}
-          className="input input-bordered w-full text-center rounded-none font-bold text-gray-800 transition-colors duration-200"
+          className={`p-4 rounded-md text-center  w-full ${
+            baseProps.disabled
+              ? "bg-white font-bold text-black"
+              : "input input-bordered"
+          }`}
           style={
             isOnlyPreview
               ? {
