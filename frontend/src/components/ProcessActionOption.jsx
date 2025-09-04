@@ -200,9 +200,8 @@ export default function ProcessActionOption({ selectedInstance }) {
             langsung
           </p>
           <p className="text-blue-700 text-sm">
-            Untuk rollback, lakukan edit dulu lalu rollback, karena saat
-            rollback approval pertama akan mendapatkan notifikasi perubahan
-            langsung
+            Untuk undo, bisa dilakukan oleh approval saat ini untuk kembalik ke
+            approval yang salah untuk di revisi
           </p>
         </div>
 

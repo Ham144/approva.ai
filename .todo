@@ -89,7 +89,7 @@
 [x] fix: bug saat approval status template tidak sama dengan instance
 
 [x] add: open camera untuk foto
-[x] fix: perbaiki fitur undo
+[x] modif: modif fitur undo
 [x] tiny: modif styling disabled
 
 onChange={(e) =>
