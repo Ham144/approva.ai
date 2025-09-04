@@ -122,7 +122,11 @@ export default function SelectInput({
       {tipe === "internal" && (
         <select
           {...baseProps}
-          className="select select-bordered w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className={`p-4 rounded-md  w-full ${
+            baseProps.disabled
+              ? "bg-white font-bold text-black"
+              : "input input-bordered"
+          }`}
           style={disabledStyle}
           value={
             isRequirementInput
