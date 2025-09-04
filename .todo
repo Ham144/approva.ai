@@ -90,6 +90,7 @@
 
 [x] add: open camera untuk foto
 [x] fix: perbaiki fitur undo
+[x] tiny: modif styling disabled
 
 onChange={(e) =>
 handleFileChange(
