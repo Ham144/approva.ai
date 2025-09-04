@@ -88,7 +88,7 @@
 [x] fix: export detail csv tipe table
 [x] fix: bug saat approval status template tidak sama dengan instance
 
-[x] add: open camera
+[x] add: open camera untuk foto
 [x] fix: perbaiki fitur undo
 
 onChange={(e) =>
