@@ -90,3 +90,11 @@
 
 [x] add: open camera
 [x] fix: perbaiki fitur undo
+
+onChange={(e) =>
+handleFileChange(
+rIdx,
+cIdx,
+e.target.files[0]
+)
+}

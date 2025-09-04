@@ -142,19 +142,24 @@ const TableInput = ({
                         {colType === "image" ? (
                           <div className="space-y-2">
                             {!baseProps?.disabled && (
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) =>
-                                  handleFileChange(
-                                    rIdx,
-                                    cIdx,
-                                    e.target.files[0]
-                                  )
-                                }
-                                className="file-input file-input-sm  w-full"
-                                {...baseProps}
-                              />
+                              <label className="btn btn-secondary btn-sm cursor-pointer">
+                                <span className="i-ph-camera-duotone mr-2"></span>
+                                Ambil Foto
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  capture="environment"
+                                  {...baseProps}
+                                  className="hidden"
+                                  onChange={(e) =>
+                                    handleFileChange(
+                                      rIdx,
+                                      cIdx,
+                                      e.target.files[0]
+                                    )
+                                  }
+                                />
+                              </label>
                             )}
 
                             {typeof val === "string" && (
