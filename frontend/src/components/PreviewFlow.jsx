@@ -243,7 +243,6 @@ export default function PreviewFlow({
             />
           </div>
         );
-
       case "pdf":
       case "image":
         const isDisabled = baseProps?.disabled;
@@ -252,12 +251,11 @@ export default function PreviewFlow({
           <div
             ref={(el) => (inputRefs.current[input._id] = el)}
             id={input._id}
-            className="bg-gray-50 p-4 rounded-lg border border-gray-200"
+            className="bg-base-100 p-5 rounded-xl border border-base-300 shadow-md"
           >
-            <p className="text-sm text-gray-600 mb-3">{input.help}</p>
+            <p className="text-sm text-base-content/70 mb-4">{input.help}</p>
 
             {isDisabled ? (
-              // Tampilkan file yang sudah diisi dalam mode preview
               <>
                 {input.tipe === "image" &&
                   (requestData[input._id] ||
@@ -273,88 +271,147 @@ export default function PreviewFlow({
                         ""
                       }
                       alt="Preview"
-                      className="object-contain rounded-md mx-auto p-2 max-h-60"
+                      className="object-contain rounded-lg mx-auto p-2 max-h-60 border border-base-300"
                     />
                   )}
+
                 {input.tipe === "pdf" &&
                   (requestData[input._id] ||
                     (statuses[statusIndex]?.requirementsData || {})[
                       input._id
                     ]) && (
-                    <p className="text-sm text-gray-600">
-                      File dipilih:{" "}
-                      <strong>
-                        {requestData[input._id] ||
-                          (statuses[statusIndex]?.requirementsData || {})[
-                            input._id
-                          ] ||
-                          ""}
-                      </strong>
-                    </p>
+                    <div className="flex items-center gap-2 text-sm text-base-content/80 bg-base-200 p-2 rounded-md">
+                      <span className="i-ph-file-pdf-duotone text-error"></span>
+                      <span>
+                        File dipilih:{" "}
+                        <strong>
+                          {requestData[input._id] ||
+                            (statuses[statusIndex]?.requirementsData || {})[
+                              input._id
+                            ] ||
+                            ""}
+                        </strong>
+                      </span>
+                    </div>
                   )}
 
                 {!(
                   requestData[input._id] ||
                   (statuses[statusIndex]?.requirementsData || {})[input._id]
                 ) && (
-                  <p className="text-sm text-gray-400 italic">
+                  <p className="text-sm text-base-content/50 italic">
                     Belum ada file.
                   </p>
                 )}
               </>
             ) : (
-              <>
-                <input
-                  type="file"
-                  accept={input.tipe === "image" ? "image/*" : ".pdf"}
-                  {...baseProps}
-                  className="file-input file-input-bordered w-full file-input-primary"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) {
-                      setRequestData(input._id, null);
-                      return;
-                    }
+              <div className="flex flex-col gap-3">
+                {/* Tombol aksi */}
+                <div className="flex gap-3">
+                  <label className="btn btn-primary btn-sm cursor-pointer">
+                    <span className="i-ph-upload-simple-duotone mr-2"></span>
+                    Upload File
+                    <input
+                      type="file"
+                      accept={input.tipe === "image" ? "image/*" : ".pdf"}
+                      {...baseProps}
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) {
+                          setRequestData(input._id, null);
+                          return;
+                        }
 
-                    const formData = new FormData();
-                    formData.append("file", file);
-                    formData.append("tipe", input.tipe); // opsional
+                        const formData = new FormData();
+                        formData.append("file", file);
+                        formData.append("tipe", input.tipe);
 
-                    try {
-                      const res = await FileApi.uploadImage(formData); // ✅ pakai await
-                      console.log(res);
-                      const fileUrl = res.url; // ✅ langsung ambil dari response
+                        try {
+                          const res = await FileApi.uploadImage(formData);
+                          const fileUrl = res.url;
 
-                      if (isRequirementInput) {
-                        setRequirement(currentStatusIndex, input._id, fileUrl);
-                      } else {
-                        setRequestData(input._id, fileUrl);
-                      }
-                    } catch (err) {
-                      toast.error("Gagal upload file.");
-                      console.error(err);
-                    }
-                  }}
-                />
+                          if (isRequirementInput) {
+                            setRequirement(
+                              currentStatusIndex,
+                              input._id,
+                              fileUrl
+                            );
+                          } else {
+                            setRequestData(input._id, fileUrl);
+                          }
+                        } catch (err) {
+                          toast.error("Gagal upload file.");
+                          console.error(err);
+                        }
+                      }}
+                    />
+                  </label>
 
-                {/* Preview untuk tipe image */}
+                  {input.tipe === "image" && (
+                    <label className="btn btn-secondary btn-sm cursor-pointer">
+                      <span className="i-ph-camera-duotone mr-2"></span>
+                      Ambil Foto
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        {...baseProps}
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) {
+                            setRequestData(input._id, null);
+                            return;
+                          }
+
+                          const formData = new FormData();
+                          formData.append("file", file);
+                          formData.append("tipe", input.tipe);
+
+                          try {
+                            const res = await FileApi.uploadImage(formData);
+                            const fileUrl = res.url;
+
+                            if (isRequirementInput) {
+                              setRequirement(
+                                currentStatusIndex,
+                                input._id,
+                                fileUrl
+                              );
+                            } else {
+                              setRequestData(input._id, fileUrl);
+                            }
+                          } catch (err) {
+                            toast.error("Gagal upload file.");
+                            console.error(err);
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+
+                {/* Preview */}
                 {input.tipe === "image" && requestData[input._id] && (
                   <img
                     src={requestData[input._id]}
                     alt="Preview"
-                    className="object-contain rounded-md mx-auto p-2 max-h-60 mt-4"
+                    className="object-contain rounded-lg mx-auto p-2 max-h-60 border border-base-300"
                   />
                 )}
 
-                {/* Info file untuk tipe pdf */}
                 {input.tipe === "pdf" &&
                   requestData[input._id] &&
                   typeof requestData[input._id] === "string" && (
-                    <p className="text-sm text-gray-600 mt-2">
-                      File dipilih: <strong>{requestData[input._id]}</strong>
-                    </p>
+                    <div className="flex items-center gap-2 text-sm text-base-content/80 bg-base-200 p-2 rounded-md">
+                      <span className="i-ph-file-pdf-duotone text-error"></span>
+                      <span>
+                        File dipilih: <strong>{requestData[input._id]}</strong>
+                      </span>
+                    </div>
                   )}
-              </>
+              </div>
             )}
           </div>
         );
