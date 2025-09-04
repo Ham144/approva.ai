@@ -143,10 +143,10 @@ export default function PreviewFlow({
             <textarea
               {...baseProps}
               placeholder={input.help}
-              className={`textarea textarea-bordered w-full min-h-[120px] resize-y font-sans ${
+              className={`p-4 rounded-md   w-full ${
                 baseProps.disabled
-                  ? "bg-gray-100 text-gray-700 opacity-100 cursor-default"
-                  : ""
+                  ? "bg-white font-bold text-black"
+                  : "textarea-primary textarea"
               }`}
               value={
                 isRequirementInput
