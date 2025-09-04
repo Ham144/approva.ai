@@ -210,7 +210,11 @@ const TableInput = ({
                             inputMode="numeric"
                             pattern="[0-9]*"
                             {...baseProps}
-                            className="input input-bordered w-full max-w-xs text-right"
+                            className={`p-4 rounded-md  w-full ${
+                              baseProps.disabled
+                                ? "bg-white font-bold text-black"
+                                : "input input-bordered"
+                            }`}
                             value={(() => {
                               const num = Number(
                                 val?.toString().replace(/\./g, "")
@@ -227,7 +231,11 @@ const TableInput = ({
                         ) : (
                           <input
                             type={colType === "date" ? "date" : colType}
-                            className="input input-bordered w-full max-w-xs"
+                            className={`p-4 rounded-md  w-full ${
+                              baseProps.disabled
+                                ? "bg-white font-bold text-black"
+                                : "input input-bordered"
+                            }`}
                             value={val}
                             onChange={(e) =>
                               handleChange(rIdx, cIdx, e.target.value)
