@@ -87,4 +87,5 @@
 
 [x] fix: export detail csv tipe table
 [x] fix: bug saat approval status template tidak sama dengan instance
-[] add: deteksi lattitude & longtitude dan cocokkan dengan api location
+
+[] add: open camera
