@@ -73,16 +73,6 @@ const NumberInput = ({
               ? "bg-white font-bold text-black"
               : "input input-bordered"
           }`}
-          style={
-            isOnlyPreview
-              ? {
-                  backgroundColor: "#f3f4f6",
-                  color: "#374151",
-                  opacity: 1,
-                  cursor: "default",
-                }
-              : {}
-          }
         />
 
         {/* Tombol Tambah (+) */}
