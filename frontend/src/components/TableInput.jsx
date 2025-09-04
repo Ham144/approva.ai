@@ -142,24 +142,50 @@ const TableInput = ({
                         {colType === "image" ? (
                           <div className="space-y-2">
                             {!baseProps?.disabled && (
-                              <label className="btn btn-secondary btn-sm cursor-pointer">
-                                <span className="i-ph-camera-duotone mr-2"></span>
-                                Ambil Foto
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  capture="environment"
-                                  {...baseProps}
-                                  className="hidden"
-                                  onChange={(e) =>
-                                    handleFileChange(
-                                      rIdx,
-                                      cIdx,
-                                      e.target.files[0]
-                                    )
-                                  }
-                                />
-                              </label>
+                              <>
+                                <label className="btn btn-secondary btn-sm cursor-pointer">
+                                  <span className="i-ph-camera-duotone mr-2"></span>
+                                  Ambil Foto
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    capture="environment"
+                                    {...baseProps}
+                                    className="hidden"
+                                    onChange={async (e) => {
+                                      const file = e.target.files?.[0];
+                                      if (!file) {
+                                        setRequestData(input._id, null);
+                                        return;
+                                      }
+
+                                      const formData = new FormData();
+                                      formData.append("file", file);
+                                      formData.append("tipe", input.tipe);
+
+                                      try {
+                                        const res = await FileApi.uploadImage(
+                                          formData
+                                        );
+                                        const fileUrl = res.url;
+
+                                        if (isRequirementInput) {
+                                          setRequirement(
+                                            currentStatusIndex,
+                                            input._id,
+                                            fileUrl
+                                          );
+                                        } else {
+                                          setRequestData(input._id, fileUrl);
+                                        }
+                                      } catch (err) {
+                                        toast.error("Gagal upload file.");
+                                        console.error(err);
+                                      }
+                                    }}
+                                  />
+                                </label>
+                              </>
                             )}
 
                             {typeof val === "string" && (
