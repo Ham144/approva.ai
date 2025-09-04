@@ -111,10 +111,10 @@ export default function PreviewFlow({
               type="text"
               {...baseProps}
               placeholder={input.help}
-              className={`input input-bordered w-full ${
+              className={`p-4 rounded-md  w-full ${
                 baseProps.disabled
-                  ? "bg-gray-100 text-gray-700 opacity-100 cursor-default"
-                  : ""
+                  ? "bg-white font-bold text-black"
+                  : "input input-bordered"
               }`}
               value={displayValue}
               onChange={(e) => {
