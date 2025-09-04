@@ -213,7 +213,11 @@ export default function PreviewFlow({
             <input
               type="date"
               {...baseProps}
-              className="input input-bordered w-full"
+              className={`p-4 rounded-md  w-full ${
+                baseProps.disabled
+                  ? "bg-white font-bold text-black"
+                  : "input input-bordered"
+              }`}
               style={
                 baseProps.disabled
                   ? {
