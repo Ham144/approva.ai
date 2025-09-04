@@ -88,4 +88,5 @@
 [x] fix: export detail csv tipe table
 [x] fix: bug saat approval status template tidak sama dengan instance
 
-[] add: open camera
+[x] add: open camera
+[x] fix: perbaiki fitur undo
