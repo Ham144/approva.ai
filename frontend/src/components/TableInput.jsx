@@ -138,13 +138,14 @@ const TableInput = ({
                     const colType = keysType[cIdx] || "text";
 
                     return (
-                      <td key={cIdx} className="px-4 py-2 align-top">
+                      <td key={cIdx} className="px-4 py-3 align-top">
                         {colType === "image" ? (
-                          <div className="space-y-2">
+                          <div className="space-y-3">
+                            {/* Upload & Ambil Foto */}
                             {!baseProps?.disabled && (
-                              <>
-                                <label className="btn btn-secondary btn-sm cursor-pointer max-md:hidden">
-                                  <span className="i-ph-camera-duotone mr-2"></span>
+                              <div className="flex flex-col gap-2">
+                                <label className="btn btn-secondary btn-sm w-fit cursor-pointer">
+                                  <span className="i-ph-camera-duotone mr-2" />
                                   Ambil Foto
                                   <input
                                     type="file"
@@ -164,9 +165,9 @@ const TableInput = ({
 
                                 <input
                                   type="file"
-                                  className="file-input w-full max-w-xs"
                                   accept="image/*"
                                   {...baseProps}
+                                  className="file-input file-input-bordered file-input-primary w-full max-w-xs"
                                   onChange={(e) =>
                                     handleFileChange(
                                       rIdx,
@@ -175,18 +176,22 @@ const TableInput = ({
                                     )
                                   }
                                 />
-                              </>
+                              </div>
                             )}
 
+                            {/* Preview gambar */}
                             {typeof val === "string" && (
-                              <ZoomableImage
-                                src={val}
-                                className="max-h-24 mx-auto"
-                              />
+                              <div className="flex justify-center">
+                                <ZoomableImage
+                                  src={val}
+                                  className="max-h-28 rounded-lg border shadow-sm"
+                                />
+                              </div>
                             )}
 
+                            {/* Empty state */}
                             {!val && baseProps?.disabled && (
-                              <p className="text-sm text-gray-400 italic">
+                              <p className="text-sm text-gray-400 italic text-center">
                                 Tidak ada gambar
                               </p>
                             )}
