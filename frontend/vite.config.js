@@ -50,6 +50,10 @@ export default defineConfig({
         drop_debugger: true,
       },
     },
+    // Ensure proper MIME types for production
+    assetsInlineLimit: 0,
+    cssCodeSplit: true,
+    sourcemap: false,
   },
   optimizeDeps: {
     include: [
