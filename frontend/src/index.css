@@ -23,8 +23,8 @@ html {
 }
 
 /* Override DaisyUI vendor prefixes yang tidak didukung */
+html,
 :host {
-  font-size: 10px;
-  -webkit-transform: scale(0.83);
-  display: inline-block;
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
 }
