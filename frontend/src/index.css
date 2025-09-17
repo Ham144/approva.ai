@@ -24,7 +24,7 @@ html {
 
 /* Override DaisyUI vendor prefixes yang tidak didukung */
 :host {
-  -webkit-text-size-adjust: unset !important;
-  -ms-text-size-adjust: unset !important;
-  text-size-adjust: 100% !important;
+  font-size: 10px;
+  -webkit-transform: scale(0.83);
+  display: inline-block;
 }
