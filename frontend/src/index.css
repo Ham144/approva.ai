@@ -17,3 +17,9 @@ body {
 .backdrop {
   @apply backdrop-blur-md bg-white/50;
 }
+/* mengatasi error untuk browser lama */
+html {
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%; /* untuk Safari lama */
+  -ms-text-size-adjust: 100%; /* untuk IE/Edge lama */
+}
