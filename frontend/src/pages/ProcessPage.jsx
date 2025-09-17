@@ -785,16 +785,6 @@ export default function ProcessPage() {
         </div>
       </div>
 
-      <style jsx global>{`
-        @keyframes shine {
-          to {
-            background-position: 200% center;
-          }
-        }
-        .animate-shine {
-          animation: shine 2s linear infinite;
-        }
-      `}</style>
       <ProcessActionOption
         key={"modalprocessaction"}
         selectedInstance={selectedInstance}

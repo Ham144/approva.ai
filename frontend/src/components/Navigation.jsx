@@ -55,46 +55,6 @@ const SideDrawer = ({ children }) => {
 
         {/* Main content container */}
         <div className="relative h-full w-full overflow-y-auto">{children}</div>
-
-        {/* Custom animations */}
-        <style jsx>{`
-          @keyframes float-slow {
-            0%,
-            100% {
-              transform: translateY(0) translateX(0) rotate(0deg);
-            }
-            50% {
-              transform: translateY(-40px) translateX(20px) rotate(2deg);
-            }
-          }
-          @keyframes float-medium {
-            0%,
-            100% {
-              transform: translateY(0) translateX(0) rotate(0deg);
-            }
-            50% {
-              transform: translateY(-60px) translateX(30px) rotate(-3deg);
-            }
-          }
-          @keyframes float-fast {
-            0%,
-            100% {
-              transform: translateY(0) translateX(0) rotate(0deg);
-            }
-            50% {
-              transform: translateY(-80px) translateX(40px) rotate(5deg);
-            }
-          }
-          .animate-float-slow {
-            animation: float-slow 15s ease-in-out infinite;
-          }
-          .animate-float-medium {
-            animation: float-medium 12s ease-in-out infinite;
-          }
-          .animate-float-fast {
-            animation: float-fast 9s ease-in-out infinite;
-          }
-        `}</style>
       </div>
 
       {/* Bottom Navigation Bar */}
