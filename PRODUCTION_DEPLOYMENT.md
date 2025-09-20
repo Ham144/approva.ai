@@ -68,6 +68,27 @@ cd frontend
 
 ## Troubleshooting
 
+### Error CSP "connect-src" untuk Backend API:
+Jika muncul error: `Refused to connect to 'http://192.168.169.12:3000/api/...' because it violates the following Content Security Policy directive: "connect-src 'self' https:"`
+
+**Solusi:**
+1. Pastikan backend URL ditambahkan ke `connect-src` di CSP
+2. Untuk development: tambahkan `http://192.168.169.12:3000` dan `http://localhost:3000`
+3. Untuk production: gunakan HTTPS URL backend
+
+**Contoh CSP yang benar:**
+```html
+<meta http-equiv="Content-Security-Policy" content="
+  script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src 'self' https://fonts.gstatic.com;
+  img-src 'self' data: https:;
+  connect-src 'self' https: http://192.168.169.12:3000 http://localhost:3000;
+  frame-src 'self' https://challenges.cloudflare.com;
+  default-src 'self';
+" />
+```
+
 ### Jika masih muncul error MIME type:
 
 1. Periksa server logs untuk melihat MIME type yang dikirim
