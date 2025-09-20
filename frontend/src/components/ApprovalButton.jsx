@@ -165,7 +165,10 @@ export default function ApprovalButton({
         </div>
       ) : (
         /* Tampilan Pilihan (isOnlyPreview false) */ <div className="dropdown dropdown-top w-full">
-          <label tabIndex={0} className="btn w-full sm:w-auto">
+          <label
+            tabIndex={0}
+            className="h-6 text-center bg-primary rounded-md flex items-center justify-center text-white w-full sm:w-auto"
+          >
             Continue
           </label>
 
