@@ -17,6 +17,7 @@ export default function ApprovalButton({
   } = useResponseCollector();
   const verdict = statuses[currentStatusIndex]?.verdict;
   const rejectedReason = statuses[currentStatusIndex]?.rejectedReason;
+  const [isApprovalButtonVisible, setIsApprovalButtonVisible] = useState(false);
 
   const [searchParams] = useSearchParams();
   const action = searchParams.get("action");
@@ -174,7 +175,7 @@ export default function ApprovalButton({
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 hidden">
               {/* Approve Button */}
               <button
                 disabled={isOnlyPreview || isLoadinghandleSubmitStatus}
