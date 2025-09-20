@@ -8,6 +8,8 @@ if (import.meta.env.VITE_BACKEND_URL) {
 // Cek apakah environment ini demo
 const isDemo = !!import.meta.env.VITE_DEMO;
 
+console.log(isDemo);
+
 // Set NODE_ENV berdasarkan kondisi
 const NODE_ENV = isDemo ? "development" : "production"; // kalau staging perlu beda, bisa ubah sini
 
