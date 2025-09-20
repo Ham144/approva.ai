@@ -223,8 +223,6 @@ router.post(
 
     const username = usernameRaw.toLowerCase();
 
-    console.log(captchaToken);
-
     try {
       const result = await axios.post(
         "https://challenges.cloudflare.com/turnstile/v0/siteverify",
@@ -302,6 +300,7 @@ router.post(
         });
         userLDAP = result[0];
       } catch (error) {
+        console.log(error);
         return res.status(400).json({
           message:
             "Gagal menghubungkan kredensial user ke LDAP, mungkin kesalahan pemmilihan organisasi atau username:password.",
