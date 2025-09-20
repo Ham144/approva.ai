@@ -164,106 +164,105 @@ export default function ApprovalButton({
           )}
         </div>
       ) : (
-        /* Tampilan Pilihan (isOnlyPreview false) */
-        <div className="dropdown dropdown-top">
-          <label tabIndex={0} className="btn m-1">
+        /* Tampilan Pilihan (isOnlyPreview false) */ <div className="dropdown dropdown-top w-full">
+          <label tabIndex={0} className="btn w-full sm:w-auto">
             Continue
           </label>
+
           <div
             tabIndex={0}
-            className="dropdown-content z-[1] card card-compact  w-full "
+            className="dropdown-content z-[1] card card-compact w-full shadow-xl"
           >
-            <div className="card-body w-full">
-              <div className="flex  flex-col gap-4 sm:flex-row sm:items-start w-full">
-                {/* Tombol Approve/Reject */}
-                <div className="flex flex-col gap-3 w-full sm:w-auto ">
-                  {isLoadinghandleSubmitStatus && (
-                    <div className="text-sm text-gray-600 dark:text-gray-300 text-center">
-                      <span className="loading loading-spinner loading-sm mr-2 text-blue-500"></span>
-                      Mengirim email...
-                    </div>
-                  )}
-
-                  <div className="flex flex-col sm:flex-row gap-3 w-full">
-                    {/* Approve Button */}
-                    <button
-                      disabled={isOnlyPreview || isLoadinghandleSubmitStatus}
-                      onClick={() => {
-                        if (!isVisible) return setIsVisible(true);
-                        handleSelect("approved");
-                        onChangeRejectedReason({ target: { value: "" } });
-                        handleSubmitStatus();
-                      }}
-                      className={`btn w-full sm:w-36 py-3 px-4 rounded-lg font-semibold text-white 
-      transition-all duration-300 shadow flex items-center justify-center gap-2
-      ${
-        verdict === "approved"
-          ? "bg-green-600 dark:bg-green-700 border-2 border-green-800 ring-2 ring-green-400"
-          : "bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
-      }
-      ${isOnlyPreview ? "opacity-50 cursor-not-allowed" : ""}
-    `}
-                    >
-                      {isLoadinghandleSubmitStatus ? (
-                        <>
-                          <span className="loading loading-spinner loading-sm"></span>
-                          <span>Loading...</span>
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="w-4 h-4" /> Approve
-                        </>
-                      )}
-                    </button>
-
-                    {/* Reject Button */}
-                    <button
-                      disabled={isOnlyPreview || isLoadinghandleSubmitStatus}
-                      onClick={() => handleSelect("rejected")}
-                      className={`btn w-full sm:w-36 py-3 px-4 rounded-lg font-semibold text-white 
-      transition-all duration-300 shadow flex items-center justify-center gap-2
-      ${
-        verdict === "rejected"
-          ? "bg-red-600 dark:bg-red-700 border-2 border-red-800 ring-2 ring-red-400"
-          : "bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
-      }
-      ${isOnlyPreview ? "opacity-50 cursor-not-allowed" : ""}
-    `}
-                    >
-                      {isLoadinghandleSubmitStatus ? (
-                        <>
-                          <span className="loading loading-spinner loading-sm"></span>
-                          <span>Loading...</span>
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="w-4 h-4" /> Reject
-                        </>
-                      )}
-                    </button>
-                  </div>
+            <div className="card-body w-full space-y-4 backdrop">
+              {/* Loader */}
+              {isLoadinghandleSubmitStatus && (
+                <div className="flex items-center justify-center text-sm text-gray-600 dark:text-gray-300">
+                  <span className="loading loading-spinner loading-sm mr-2 text-blue-500"></span>
+                  Mengirim email...
                 </div>
+              )}
 
-                {/* Input alasan jika rejected */}
-                {verdict === "rejected" && (
-                  <div className="flex flex-col gap-3 w-full">
-                    <textarea
-                      onChange={onChangeRejectedReason}
-                      autoFocus
-                      value={rejectedReason || ""}
-                      placeholder="Berikan alasan penolakan di sini..."
-                      className="textarea textarea-bordered w-full min-h-[80px] p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400 dark:focus:ring-red-500 transition-colors resize-y"
-                    />
-                    <button
-                      onClick={handleSubmitStatus}
-                      disabled={!rejectedReason || isLoadinghandleSubmitStatus}
-                      className="btn btn-error w-full sm:w-auto"
-                    >
-                      Kirim Penolakan
-                    </button>
-                  </div>
-                )}
+              {/* Action Buttons */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                {/* Approve Button */}
+                <button
+                  disabled={isOnlyPreview || isLoadinghandleSubmitStatus}
+                  onClick={() => {
+                    if (!isVisible) return setIsVisible(true);
+                    handleSelect("approved");
+                    onChangeRejectedReason({ target: { value: "" } });
+                    handleSubmitStatus();
+                  }}
+                  className={`btn py-3 px-4 font-semibold text-white transition-all duration-300 shadow flex items-center justify-center gap-2
+            ${
+              verdict === "approved"
+                ? "bg-green-600 dark:bg-green-700 border-2 border-green-800 ring-2 ring-green-400"
+                : "bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
+            }
+            ${isOnlyPreview ? "opacity-50 cursor-not-allowed" : ""}
+          `}
+                >
+                  {isLoadinghandleSubmitStatus ? (
+                    <>
+                      <span className="loading loading-spinner loading-sm"></span>
+                      <span>Loading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" /> Approve
+                    </>
+                  )}
+                </button>
+
+                {/* Reject Button */}
+                <button
+                  disabled={isOnlyPreview || isLoadinghandleSubmitStatus}
+                  onClick={() => handleSelect("rejected")}
+                  className={`btn py-3 px-4 font-semibold text-white transition-all duration-300 shadow flex items-center justify-center gap-2
+            ${
+              verdict === "rejected"
+                ? "bg-red-600 dark:bg-red-700 border-2 border-red-800 ring-2 ring-red-400"
+                : "bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+            }
+            ${isOnlyPreview ? "opacity-50 cursor-not-allowed" : ""}
+          `}
+                >
+                  {isLoadinghandleSubmitStatus ? (
+                    <>
+                      <span className="loading loading-spinner loading-sm"></span>
+                      <span>Loading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="w-4 h-4" /> Reject
+                    </>
+                  )}
+                </button>
               </div>
+
+              {/* Reject Reason */}
+              {verdict === "rejected" && (
+                <div className="flex flex-col gap-3 w-full">
+                  <textarea
+                    onChange={onChangeRejectedReason}
+                    autoFocus
+                    value={rejectedReason || ""}
+                    placeholder="Berikan alasan penolakan di sini..."
+                    className="textarea textarea-bordered w-full min-h-[80px] rounded-lg
+              bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+              border-gray-300 dark:border-gray-600
+              focus:outline-none focus:ring-2 focus:ring-red-400 dark:focus:ring-red-500
+              transition-colors resize-y"
+                  />
+                  <button
+                    onClick={handleSubmitStatus}
+                    disabled={!rejectedReason || isLoadinghandleSubmitStatus}
+                    className="btn btn-error w-full sm:w-auto"
+                  >
+                    Kirim Penolakan
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
