@@ -84,7 +84,7 @@ export default function ApprovalButton({
 
             {/* Content */}
             {isVisible && (
-              <div className="flex flex-col p-4 bg-white rounded-xl shadow-lg border border-gray-200 transition-all duration-300">
+              <div className="flex flex-col p-2 bg-white rounded-xl shadow-lg border border-gray-200 transition-all duration-300 overflow-y-auto">
                 <p className="text-lg font-medium text-gray-700 mb-4 px-2">
                   Berikut Pilihan yang telah ditetapkan untuk pemberitahuan
                   langsung
