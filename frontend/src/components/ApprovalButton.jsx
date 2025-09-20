@@ -23,6 +23,7 @@ export default function ApprovalButton({
 
   function handleSelect(verdict) {
     const statusesCopy = [...statuses];
+    console.log(statusesCopy);
     statusesCopy[currentStatusIndex].verdict = verdict;
     setStatuses(statusesCopy);
   }
