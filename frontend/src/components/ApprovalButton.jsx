@@ -175,75 +175,63 @@ export default function ApprovalButton({
               </div>
             )}
 
-            <div className="w-full dropdown dropdown-top">
-              <label tabIndex={0} className=" w-full btn m-1">
-                Click
-              </label>
-              <ul
-                tabIndex={0}
-                className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52"
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
+              {/* Approve Button */}
+              <button
+                disabled={isOnlyPreview || isLoadinghandleSubmitStatus}
+                onClick={() => {
+                  if (!isVisible) return setIsVisible(true);
+                  handleSelect("approved");
+                  onChangeRejectedReason({ target: { value: "" } });
+                  handleSubmitStatus();
+                }}
+                className={`btn w-full sm:w-36 py-3 px-4 rounded-lg font-semibold text-white 
+      transition-all duration-300 shadow flex items-center justify-center gap-2
+      ${
+        verdict === "approved"
+          ? "bg-green-600 dark:bg-green-700 border-2 border-green-800 ring-2 ring-green-400"
+          : "bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
+      }
+      ${isOnlyPreview ? "opacity-50 cursor-not-allowed" : ""}
+    `}
               >
-                <div className="flex flex-col sm:flex-row gap-3">
-                  {/* Approve Button */}
-                  <button
-                    disabled={isOnlyPreview || isLoadinghandleSubmitStatus}
-                    onClick={() => {
-                      if (!isVisible) {
-                        return setIsVisible(true);
-                      }
+                {isLoadinghandleSubmitStatus ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    <span>Loading...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" /> Approve
+                  </>
+                )}
+              </button>
 
-                      handleSelect("approved");
-                      onChangeRejectedReason({ target: { value: "" } });
-                      handleSubmitStatus();
-                    }}
-                    className={`
-        btn w-full sm:w-36 py-3 px-4 rounded-lg font-semibold text-white transition-all duration-300 shadow
-        ${
-          verdict === "approved"
-            ? "bg-green-600 dark:bg-green-700 border-2 border-green-800 ring-2 ring-green-400"
-            : "bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
-        }
-        ${isOnlyPreview ? "opacity-50 cursor-not-allowed" : ""}
-      `}
-                  >
-                    {isLoadinghandleSubmitStatus ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="loading loading-spinner loading-sm"></span>
-                        <span>Loading...</span>
-                      </span>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 mr-2" /> Approve
-                      </>
-                    )}
-                  </button>
-                  {/* Reject Button */}
-                  <button
-                    disabled={isOnlyPreview || isLoadinghandleSubmitStatus}
-                    onClick={() => handleSelect("rejected")}
-                    className={`
-        btn w-full sm:w-36 py-3 px-4 rounded-lg font-semibold text-white transition-all duration-300 shadow
-        ${
-          verdict === "rejected"
-            ? "bg-red-600 dark:bg-red-700 border-2 border-red-800 ring-2 ring-red-400"
-            : "bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
-        }
-        ${isOnlyPreview ? "opacity-50 cursor-not-allowed" : ""}
-      `}
-                  >
-                    {isLoadinghandleSubmitStatus ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="loading loading-spinner loading-sm"></span>
-                        <span>Loading...</span>
-                      </span>
-                    ) : (
-                      <>
-                        <XCircle className="w-4 h-4 mr-2" /> Reject
-                      </>
-                    )}
-                  </button>
-                </div>
-              </ul>
+              {/* Reject Button */}
+              <button
+                disabled={isOnlyPreview || isLoadinghandleSubmitStatus}
+                onClick={() => handleSelect("rejected")}
+                className={`btn w-full sm:w-36 py-3 px-4 rounded-lg font-semibold text-white 
+      transition-all duration-300 shadow flex items-center justify-center gap-2
+      ${
+        verdict === "rejected"
+          ? "bg-red-600 dark:bg-red-700 border-2 border-red-800 ring-2 ring-red-400"
+          : "bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+      }
+      ${isOnlyPreview ? "opacity-50 cursor-not-allowed" : ""}
+    `}
+              >
+                {isLoadinghandleSubmitStatus ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    <span>Loading...</span>
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4" /> Reject
+                  </>
+                )}
+              </button>
             </div>
           </div>
 
