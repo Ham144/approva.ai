@@ -167,13 +167,13 @@ export default function ApprovalButton({
         /* Tampilan Pilihan (isOnlyPreview false) */
         <div className="dropdown dropdown-top">
           <label tabIndex={0} className="btn m-1">
-            Click
+            Continue
           </label>
           <div
             tabIndex={0}
-            className="dropdown-content z-[1] card card-compact w-64 p-2 shadow bg-primary text-primary-content"
+            className="dropdown-content z-[1] card card-compact  w-full "
           >
-            <div className="card-body">
+            <div className="card-body w-full">
               <div className="flex  flex-col gap-4 sm:flex-row sm:items-start w-full">
                 {/* Tombol Approve/Reject */}
                 <div className="flex flex-col gap-3 w-full sm:w-auto ">
