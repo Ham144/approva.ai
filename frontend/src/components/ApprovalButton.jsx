@@ -175,20 +175,28 @@ export default function ApprovalButton({
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-3 hidden">
-              {/* Approve Button */}
-              <button
-                disabled={isOnlyPreview || isLoadinghandleSubmitStatus}
-                onClick={() => {
-                  if (!isVisible) {
-                    return setIsVisible(true);
-                  }
+            <div className="w-full dropdown dropdown-top">
+              <label tabIndex={0} className=" w-full btn m-1">
+                Click
+              </label>
+              <ul
+                tabIndex={0}
+                className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52"
+              >
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {/* Approve Button */}
+                  <button
+                    disabled={isOnlyPreview || isLoadinghandleSubmitStatus}
+                    onClick={() => {
+                      if (!isVisible) {
+                        return setIsVisible(true);
+                      }
 
-                  handleSelect("approved");
-                  onChangeRejectedReason({ target: { value: "" } });
-                  handleSubmitStatus();
-                }}
-                className={`
+                      handleSelect("approved");
+                      onChangeRejectedReason({ target: { value: "" } });
+                      handleSubmitStatus();
+                    }}
+                    className={`
         btn w-full sm:w-36 py-3 px-4 rounded-lg font-semibold text-white transition-all duration-300 shadow
         ${
           verdict === "approved"
@@ -197,23 +205,23 @@ export default function ApprovalButton({
         }
         ${isOnlyPreview ? "opacity-50 cursor-not-allowed" : ""}
       `}
-              >
-                {isLoadinghandleSubmitStatus ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="loading loading-spinner loading-sm"></span>
-                    <span>Loading...</span>
-                  </span>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 mr-2" /> Approve
-                  </>
-                )}
-              </button>
-              {/* Reject Button */}
-              <button
-                disabled={isOnlyPreview || isLoadinghandleSubmitStatus}
-                onClick={() => handleSelect("rejected")}
-                className={`
+                  >
+                    {isLoadinghandleSubmitStatus ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="loading loading-spinner loading-sm"></span>
+                        <span>Loading...</span>
+                      </span>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 mr-2" /> Approve
+                      </>
+                    )}
+                  </button>
+                  {/* Reject Button */}
+                  <button
+                    disabled={isOnlyPreview || isLoadinghandleSubmitStatus}
+                    onClick={() => handleSelect("rejected")}
+                    className={`
         btn w-full sm:w-36 py-3 px-4 rounded-lg font-semibold text-white transition-all duration-300 shadow
         ${
           verdict === "rejected"
@@ -222,18 +230,20 @@ export default function ApprovalButton({
         }
         ${isOnlyPreview ? "opacity-50 cursor-not-allowed" : ""}
       `}
-              >
-                {isLoadinghandleSubmitStatus ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="loading loading-spinner loading-sm"></span>
-                    <span>Loading...</span>
-                  </span>
-                ) : (
-                  <>
-                    <XCircle className="w-4 h-4 mr-2" /> Reject
-                  </>
-                )}
-              </button>
+                  >
+                    {isLoadinghandleSubmitStatus ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="loading loading-spinner loading-sm"></span>
+                        <span>Loading...</span>
+                      </span>
+                    ) : (
+                      <>
+                        <XCircle className="w-4 h-4 mr-2" /> Reject
+                      </>
+                    )}
+                  </button>
+                </div>
+              </ul>
             </div>
           </div>
 
