@@ -92,7 +92,7 @@ export default function ApprovalButton({
             tabIndex={0}
             className="dropdown-content z-[1] card card-compact w-full shadow-xl"
           >
-            <div className="card-body w-full space-y-4 backdrop">
+            <div className="card-body w-full space-y-4 bg-white">
               {/* Bagian Deskripsi dan Info Badge */}
               {verdict != "rejected" &&
                 currentStatusIndex < statuses.length - 1 && (
