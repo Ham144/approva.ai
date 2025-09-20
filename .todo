@@ -91,11 +91,3 @@
 [x] add: open camera untuk foto
 [x] modif: modif fitur undo
 [x] tiny: modif styling disabled
-
-onChange={(e) =>
-handleFileChange(
-rIdx,
-cIdx,
-e.target.files[0]
-)
-}
