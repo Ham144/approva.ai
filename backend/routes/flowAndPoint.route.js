@@ -842,9 +842,7 @@ router.get("/list/forDownload", async (req, res) => {
   try {
     const flowList = await FlowAndPoint.find({
       org: req.user.org,
-      mode: {
-        $ne: ["private"],
-      },
+      mode: { $ne: "private" },
     })
       .select("title desc")
       .lean();
