@@ -14,7 +14,7 @@ const DownloadProcessPage = () => {
 
   const { data: flowDataList } = useQuery({
     queryKey: ["flows"],
-    queryFn: async () => await flowApi.getAllFlowNameAndDescForRequest(),
+    queryFn: async () => await flowApi.getFlowForDownload(),
     enabled: !!simpleMode,
   });
 

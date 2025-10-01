@@ -42,6 +42,16 @@ const flowApi = {
     } catch (error) {
       throw error.response?.data || error;
     }
+  },getFlowForDownload: async (searchKey = "") => {
+    try {
+      const params = searchKey ? { searchKey } : {};
+      const response = await axiosInstance.get(`/api/flow/list/forDownload`, {
+        params,
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
   },
   updateFlowAndDesc: async (id, body) => {
     try {
