@@ -28,7 +28,7 @@ export default function SelectInputInsideTable({
   return (
     <select
       {...baseProps}
-      className={`p-4 rounded-md  w-full ${
+      className={`px-3 rounded-md  w-full ${
         baseProps.disabled
           ? "bg-white font-bold text-black"
           : "input input-bordered"
