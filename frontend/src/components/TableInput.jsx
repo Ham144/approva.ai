@@ -1,7 +1,6 @@
 import React, { useEffect } from "react"; // Tambahkan useEffect
 import { useResponseCollector } from "@/store"; // Pastikan path benar
 import ZoomableImage from "./ZoomableImage";
-import SelectInput from "./SelectInput";
 import SelectInputInsideTable from "./SelectInputInsideTable";
 
 const TableInput = ({
