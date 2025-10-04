@@ -81,7 +81,7 @@ export default function SelectInput({
               value={searchKey}
               className="input input-bordered w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-lg"
             />
-
+            
             {isSearchingExternal ? (
               <div className="flex justify-center items-center mt-2">
                 <span className="loading items-center justify-center flex loading-ring loading-lg"></span>
