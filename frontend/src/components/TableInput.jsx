@@ -135,7 +135,6 @@ const TableInput = ({
                       <td key={cIdx} className="px-4 py-3 align-top">
                         {colType === "image" ? (
                           <div className="space-y-3">
-                            {/* Upload & Ambil Foto */}
                             {!baseProps?.disabled && (
                               <div className="flex flex-col gap-2">
                                 <label className="btn btn-secondary btn-sm w-fit cursor-pointer">
