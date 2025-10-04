@@ -1,7 +1,8 @@
-import React, { useEffect } from "react"; // Tambahkan useEffect
+import React, { useEffect, useState, useRef } from "react"; // Tambahkan useEffect, useState, useRef
 import { useResponseCollector } from "@/store"; // Pastikan path benar
 import ZoomableImage from "./ZoomableImage";
 import SelectInputInsideTable from "./SelectInputInsideTable";
+import TextModal from "./TextModal";
 
 const TableInput = ({
   input,
@@ -12,6 +13,13 @@ const TableInput = ({
 }) => {
   const { requestData, setRequirement, setRequestData, statuses } =
     useResponseCollector();
+
+  // State untuk modal text
+  const [textModal, setTextModal] = useState({
+    isOpen: false,
+    text: "",
+    title: "",
+  });
 
   const keys = input?.table?.keys ?? [];
   const keysType = input?.table?.keysType ?? [];
@@ -91,6 +99,29 @@ const TableInput = ({
         tableRows.filter((_, i) => i !== rowIdx)
       );
     }
+  };
+
+  // Fungsi untuk menangani pembukaan modal text
+  const handleTextModal = (text, columnName) => {
+    setTextModal({
+      isOpen: true,
+      text: text,
+      title: `Detail - ${columnName}`,
+    });
+  };
+
+  // Fungsi untuk menutup modal
+  const closeTextModal = () => {
+    setTextModal({
+      isOpen: false,
+      text: "",
+      title: "",
+    });
+  };
+
+  // Fungsi untuk mendeteksi apakah text overflow
+  const isTextOverflow = (text, maxLength = 50) => {
+    return text && text.length > maxLength;
   };
 
   return (
@@ -227,19 +258,56 @@ const TableInput = ({
                             }}
                           />
                         ) : (
-                          <input
-                            type={colType === "date" ? "date" : colType}
-                            className={`p-4 rounded-md  w-full ${
-                              baseProps.disabled
-                                ? "bg-white font-bold text-black"
-                                : "input input-bordered"
-                            }`}
-                            value={val}
-                            onChange={(e) =>
-                              handleChange(rIdx, cIdx, e.target.value)
-                            }
-                            {...baseProps}
-                          />
+                          <div className="space-y-2">
+                            <input
+                              type={colType === "date" ? "date" : colType}
+                              className={`p-4 rounded-md  w-full ${
+                                baseProps.disabled
+                                  ? "bg-white font-bold text-black"
+                                  : "input input-bordered"
+                              }`}
+                              value={val}
+                              onChange={(e) =>
+                                handleChange(rIdx, cIdx, e.target.value)
+                              }
+                              {...baseProps}
+                            />
+
+                            {/* Tombol lihat detail untuk text yang panjang */}
+                            {colType === "text" && isTextOverflow(val) && (
+                              <button
+                                type="button"
+                                className="btn btn-xs btn-outline btn-info w-full"
+                                onClick={() => handleTextModal(val, keys[cIdx])}
+                              >
+                                <span className="i-ph-eye-duotone mr-1" />
+                                Lihat Detail
+                              </button>
+                            )}
+
+                            {/* Preview text untuk disabled mode */}
+                            {baseProps?.disabled &&
+                              colType === "text" &&
+                              val && (
+                                <div className="space-y-1">
+                                  <div className="text-sm text-gray-600 truncate">
+                                    {val}
+                                  </div>
+                                  {isTextOverflow(val) && (
+                                    <button
+                                      type="button"
+                                      className="btn btn-xs btn-outline btn-info"
+                                      onClick={() =>
+                                        handleTextModal(val, keys[cIdx])
+                                      }
+                                    >
+                                      <span className="i-ph-eye-duotone mr-1" />
+                                      Lihat Detail
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                          </div>
                         )}
                       </td>
                     );
@@ -270,6 +338,14 @@ const TableInput = ({
           ➕ Tambah Baris
         </button>
       )}
+
+      {/* Modal untuk menampilkan teks lengkap */}
+      <TextModal
+        isOpen={textModal.isOpen}
+        onClose={closeTextModal}
+        text={textModal.text}
+        title={textModal.title}
+      />
     </div>
   );
 };
