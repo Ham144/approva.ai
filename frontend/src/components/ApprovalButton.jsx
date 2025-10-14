@@ -83,7 +83,7 @@ export default function ApprovalButton({
         /* Tampilan Pilihan (isOnlyPreview false) */ <div className="dropdown dropdown-top w-full">
           <label
             tabIndex={0}
-            className="h-6 cursor-pointer text-center bg-primary rounded-md flex items-center justify-center text-white w-full sm:w-auto"
+            className="max-md:h-6 h-10 cursor-pointer text-center bg-primary rounded-md flex items-center justify-center text-white w-full sm:w-auto"
           >
             Continue
           </label>
