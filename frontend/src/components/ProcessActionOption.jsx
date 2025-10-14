@@ -86,77 +86,276 @@ export default function ProcessActionOption({ selectedInstance }) {
 
         {/* Action Buttons */}
         <div className="p-4 space-y-3">
-          <button
-            disabled={!isInProgress || !isMyTurn}
-            onClick={() =>
-              navigate(`/status/fulfillment/${selectedInstance._id}`)
-            }
-            className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-all ${
-              !isInProgress || !isMyTurn
-                ? "bg-gray-100 text-gray-400"
-                : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <PlusCircle size={18} className="flex-shrink-0" />
-              <span className="font-medium">Penuhi</span>
-            </div>
-            {!isMyTurn && (
-              <span className="badge badge-sm bg-gray-200 text-gray-600">
-                Bukan giliran
-              </span>
-            )}
-            {selectedInstance?.overallStatus === "completed" && (
-              <span className="badge badge-sm bg-green-100 text-green-700">
-                Completed
-              </span>
-            )}
-          </button>
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              navigate(`/status/isOnlyPreview/${selectedInstance._id}`);
-            }}
-            className="w-full flex items-center gap-3 px-4 py-3 bg-orange-50 hover:bg-orange-100 rounded-lg text-orange-700 transition-all"
-          >
-            <Eye size={18} className="flex-shrink-0" />
-            <span className="font-medium">Melihat Saja</span>
-          </button>
-          <button
-            disabled={
-              (selectedInstance?.requestedBy?._id != userInfo?._id &&
+          {/* Penuhi Button */}
+          <div className="relative group">
+            <button
+              disabled={!isInProgress || !isMyTurn}
+              onClick={() =>
+                navigate(`/status/fulfillment/${selectedInstance._id}`)
+              }
+              onContextMenu={(e) => {
+                e.preventDefault();
+                window.open(
+                  `/status/fulfillment/${selectedInstance._id}`,
+                  "_blank"
+                );
+              }}
+              className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-all relative ${
+                !isInProgress || !isMyTurn
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 hover:shadow-md cursor-pointer group"
+              }`}
+              title="Klik kiri untuk buka di tab ini, klik kanan untuk buka di tab baru"
+            >
+              <div className="flex items-center gap-3">
+                <PlusCircle size={18} className="flex-shrink-0" />
+                <span className="font-medium">Penuhi</span>
+              </div>
+              {!isMyTurn && (
+                <span className="badge badge-sm bg-gray-200 text-gray-600">
+                  Bukan giliran
+                </span>
+              )}
+              {selectedInstance?.overallStatus === "completed" && (
+                <span className="badge badge-sm bg-green-100 text-green-700">
+                  Completed
+                </span>
+              )}
+
+              {/* Context Menu Indicator */}
+              {!isInProgress || !isMyTurn ? null : (
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              )}
+            </button>
+          </div>
+
+          {/* Melihat Saja Button */}
+          <div className="relative group">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                navigate(`/status/isOnlyPreview/${selectedInstance._id}`);
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                window.open(
+                  `/status/isOnlyPreview/${selectedInstance._id}`,
+                  "_blank"
+                );
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 bg-orange-50 hover:bg-orange-100 rounded-lg text-orange-700 transition-all hover:shadow-md cursor-pointer group"
+              title="Klik kiri untuk buka di tab ini, klik kanan untuk buka di tab baru"
+            >
+              <Eye size={18} className="flex-shrink-0" />
+              <span className="font-medium">Melihat Saja</span>
+
+              {/* Context Menu Indicator */}
+              <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </button>
+          </div>
+
+          {/* Edit Request Button */}
+          <div className="relative group">
+            <button
+              disabled={
+                (selectedInstance?.requestedBy?._id != userInfo?._id &&
+                  selectedInstance?.currentStatusIndex != 0) ||
+                selectedInstance?.currentStatusIndex == 0
+              }
+              onClick={() => navigate(`/request/edit/${selectedInstance?._id}`)}
+              onContextMenu={(e) => {
+                if (
+                  !(
+                    (selectedInstance?.requestedBy?._id != userInfo?._id &&
+                      selectedInstance?.currentStatusIndex != 0) ||
+                    selectedInstance?.currentStatusIndex == 0
+                  )
+                ) {
+                  e.preventDefault();
+                  window.open(
+                    `/request/edit/${selectedInstance?._id}`,
+                    "_blank"
+                  );
+                }
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all relative ${
+                (selectedInstance?.requestedBy?._id != userInfo?._id &&
+                  selectedInstance?.currentStatusIndex != 0) ||
+                selectedInstance?.currentStatusIndex == 0
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-yellow-50 hover:bg-yellow-100 text-yellow-700 hover:shadow-md cursor-pointer group"
+              }`}
+              title="Klik kiri untuk buka di tab ini, klik kanan untuk buka di tab baru"
+            >
+              <Pencil size={18} className="flex-shrink-0" />
+              <span className="font-medium">Edit Request</span>
+
+              {/* Context Menu Indicator */}
+              {(selectedInstance?.requestedBy?._id != userInfo?._id &&
                 selectedInstance?.currentStatusIndex != 0) ||
-              selectedInstance?.currentStatusIndex == 0
-            }
-            onClick={() => navigate(`/request/edit/${selectedInstance?._id}`)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all bg-yellow-50 hover:bg-yellow-100 text-yellow-700 
-                disabled:bg-gray-100 disabled:text-gray-400 disabled:text-gray-400"
-            }`}
-          >
-            <Pencil size={18} className="flex-shrink-0" />
-            <span className="font-medium">Edit Request</span>
-          </button>
-          <button
-            disabled={
-              selectedInstance?.requestedBy?._id != userInfo?._id ||
+              selectedInstance?.currentStatusIndex == 0 ? null : (
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              )}
+            </button>
+          </div>
+
+          {/* Rollback Button */}
+          <div className="relative group">
+            <button
+              disabled={
+                selectedInstance?.requestedBy?._id != userInfo?._id ||
+                selectedInstance?.overallStatus != "in-progress" ||
+                rollingBack ||
+                selectedInstance?.currentStatusIndex == 0
+              }
+              onClick={handleRollbackToStart}
+              onContextMenu={(e) => {
+                if (
+                  !(
+                    selectedInstance?.requestedBy?._id != userInfo?._id ||
+                    selectedInstance?.overallStatus != "in-progress" ||
+                    rollingBack ||
+                    selectedInstance?.currentStatusIndex == 0
+                  )
+                ) {
+                  e.preventDefault();
+                  // Untuk rollback, buka halaman yang sama di tab baru
+                  window.open(window.location.href, "_blank");
+                }
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all relative ${
+                selectedInstance?.requestedBy?._id != userInfo?._id ||
+                selectedInstance?.overallStatus != "in-progress" ||
+                rollingBack ||
+                selectedInstance?.currentStatusIndex == 0
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-purple-600 hover:bg-purple-700 text-white hover:shadow-md cursor-pointer group"
+              }`}
+              title="Klik kiri untuk rollback, klik kanan untuk buka di tab baru"
+            >
+              <History size={18} className="flex-shrink-0" />
+              <span className="font-medium">
+                Rollback (mulai dari awal status)
+                {rollingBack && (
+                  <span className="loading loading-spinner loading-xs ml-2"></span>
+                )}
+              </span>
+
+              {/* Context Menu Indicator */}
+              {selectedInstance?.requestedBy?._id != userInfo?._id ||
               selectedInstance?.overallStatus != "in-progress" ||
               rollingBack ||
-              selectedInstance?.currentStatusIndex == 0
-            }
-            onClick={handleRollbackToStart}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all in-progress disabled:bg-gray-100 text-white disabled:text-gray-400
-              bg-purple-600 hover:bg-purple-700 text-white"
-          }`}
-          >
-            <History size={18} className="flex-shrink-0" />
-            <span className="font-medium">
-              Rollback (mulai dari awal status)
-            </span>
-          </button>
+              selectedInstance?.currentStatusIndex == 0 ? null : (
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              )}
+            </button>
+          </div>
 
-          <button
-            disabled={
-              selectedInstance?.overallStatus != "in-progress" ||
+          {/* Undo Button */}
+          <div className="relative group">
+            <button
+              disabled={
+                selectedInstance?.overallStatus != "in-progress" ||
+                selectedInstance.currentStatusIndex == 0 ||
+                pendingUndo ||
+                (() => {
+                  const idx = selectedInstance?.currentStatusIndex ?? 0;
+                  let isAuthorized = false;
+
+                  if (
+                    idx >= 0 &&
+                    selectedInstance?.flowTemplate?.status?.[idx]?.authorized
+                  ) {
+                    const auth =
+                      selectedInstance?.flowTemplate?.status?.[idx]?.authorized;
+                    isAuthorized = auth.some((item) => {
+                      const itemId = item && item._id ? item._id : item;
+                      return itemId && typeof itemId.equals === "function"
+                        ? itemId.equals(userInfo._id)
+                        : String(itemId) === String(userInfo._id);
+                    });
+                  }
+
+                  return !isAuthorized;
+                })()
+              }
+              onClick={() =>
+                document.getElementById("statusmodal")?.showModal()
+              }
+              onContextMenu={(e) => {
+                if (
+                  !(
+                    selectedInstance?.overallStatus != "in-progress" ||
+                    selectedInstance.currentStatusIndex == 0 ||
+                    pendingUndo ||
+                    (() => {
+                      const idx = selectedInstance?.currentStatusIndex ?? 0;
+                      let isAuthorized = false;
+
+                      if (
+                        idx >= 0 &&
+                        selectedInstance?.flowTemplate?.status?.[idx]
+                          ?.authorized
+                      ) {
+                        const auth =
+                          selectedInstance?.flowTemplate?.status?.[idx]
+                            ?.authorized;
+                        isAuthorized = auth.some((item) => {
+                          const itemId = item && item._id ? item._id : item;
+                          return itemId && typeof itemId.equals === "function"
+                            ? itemId.equals(userInfo._id)
+                            : String(itemId) === String(userInfo._id);
+                        });
+                      }
+
+                      return !isAuthorized;
+                    })()
+                  )
+                ) {
+                  e.preventDefault();
+                  // Untuk undo, buka halaman yang sama di tab baru
+                  window.open(window.location.href, "_blank");
+                }
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all relative ${
+                selectedInstance?.overallStatus != "in-progress" ||
+                selectedInstance.currentStatusIndex == 0 ||
+                pendingUndo ||
+                (() => {
+                  const idx = selectedInstance?.currentStatusIndex ?? 0;
+                  let isAuthorized = false;
+
+                  if (
+                    idx >= 0 &&
+                    selectedInstance?.flowTemplate?.status?.[idx]?.authorized
+                  ) {
+                    const auth =
+                      selectedInstance?.flowTemplate?.status?.[idx]?.authorized;
+                    isAuthorized = auth.some((item) => {
+                      const itemId = item && item._id ? item._id : item;
+                      return itemId && typeof itemId.equals === "function"
+                        ? itemId.equals(userInfo._id)
+                        : String(itemId) === String(userInfo._id);
+                    });
+                  }
+
+                  return !isAuthorized;
+                })()
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-md cursor-pointer group"
+              }`}
+              title="Klik kiri untuk undo, klik kanan untuk buka di tab baru"
+            >
+              <Undo size={18} className="flex-shrink-0" />
+              <span className="font-medium">
+                Undo (Pilih status sebelumnya untuk kembali)
+                {pendingUndo && (
+                  <span className="loading loading-spinner loading-xs ml-2"></span>
+                )}
+              </span>
+
+              {/* Context Menu Indicator */}
+              {selectedInstance?.overallStatus != "in-progress" ||
               selectedInstance.currentStatusIndex == 0 ||
               pendingUndo ||
               (() => {
@@ -171,7 +370,6 @@ export default function ProcessActionOption({ selectedInstance }) {
                     selectedInstance?.flowTemplate?.status?.[idx]?.authorized;
                   isAuthorized = auth.some((item) => {
                     const itemId = item && item._id ? item._id : item;
-                    // jika itemId adalah mongoose ObjectId, .equals aman; fallback ke String
                     return itemId && typeof itemId.equals === "function"
                       ? itemId.equals(userInfo._id)
                       : String(itemId) === String(userInfo._id);
@@ -179,17 +377,11 @@ export default function ProcessActionOption({ selectedInstance }) {
                 }
 
                 return !isAuthorized;
-              })()
-            }
-            onClick={() => document.getElementById("statusmodal")?.showModal()}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all disabled:bg-gray-100 disabled:text-gray-400 bg-indigo-600 hover:bg-indigo-400 text-white
-            }`}
-          >
-            <Undo size={18} className="flex-shrink-0" />
-            <span className="font-medium">
-              Undo (Pilih status sebelumnya untuk kembali)
-            </span>
-          </button>
+              })() ? null : (
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Information Box */}
