@@ -515,17 +515,22 @@ router.get("/flowInstanceById/:id", async (req, res) => {
 
     if (currentLogicIdx != -1) {
       const currentLogic = flowInstance.flowTemplate.logics[currentLogicIdx];
-      const jumpToStatusUuidExtracted = flowInstance.flowTemplate.status.find(
-        (status) => String(status?.uuid) === currentLogic?.jumpToStatusUuid
-      );
+      const jumpToStatusUuid = currentLogic?.jumpToStatusUuid;
 
-      flowInstance.flowTemplate.status[
-        flowInstance.currentStatusIndex
-      ].authorized = [
-        ...flowInstance.flowTemplate.status[flowInstance.currentStatusIndex]
-          .authorized,
-        ...jumpToStatusUuidExtracted?.authorized,
-      ];
+      if (jumpToStatusUuid) {
+        const jumpToStatusUuidExtracted = flowInstance.flowTemplate.status.find(
+          (status) => String(status?.uuid) === jumpToStatusUuid
+        );
+
+        const currentAuthorized =
+          flowInstance.flowTemplate.status[flowInstance.currentStatusIndex]
+            .authorized ?? [];
+        const jumpAuthorized = jumpToStatusUuidExtracted?.authorized ?? [];
+
+        flowInstance.flowTemplate.status[
+          flowInstance.currentStatusIndex
+        ].authorized = [...currentAuthorized, ...jumpAuthorized];
+      }
     }
 
     //untuk mencegah error karena flowTemplate status bertambah
