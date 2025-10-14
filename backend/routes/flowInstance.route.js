@@ -516,7 +516,7 @@ router.get("/flowInstanceById/:id", async (req, res) => {
     if (currentLogicIdx != -1) {
       const currentLogic = flowInstance.flowTemplate.logics[currentLogicIdx];
       const jumpToStatusUuidExtracted = flowInstance.flowTemplate.status.find(
-        (status) => String(status?.uuid) === currentLogic.jumpToStatusUuid
+        (status) => String(status?.uuid) === currentLogic?.jumpToStatusUuid
       );
 
       flowInstance.flowTemplate.status[
@@ -524,7 +524,7 @@ router.get("/flowInstanceById/:id", async (req, res) => {
       ].authorized = [
         ...flowInstance.flowTemplate.status[flowInstance.currentStatusIndex]
           .authorized,
-        ...jumpToStatusUuidExtracted.authorized,
+        ...jumpToStatusUuidExtracted?.authorized,
       ];
     }
 
