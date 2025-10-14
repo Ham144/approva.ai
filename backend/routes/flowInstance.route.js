@@ -515,7 +515,6 @@ router.get("/flowInstanceById/:id", async (req, res) => {
 
     if (currentLogicIdx != -1) {
       const currentLogic = flowInstance.flowTemplate.logics[currentLogicIdx];
-      console.log(currentLogic);
       const jumpToStatusUuidExtracted = flowInstance.flowTemplate.status.find(
         (status) => String(status?.uuid) === currentLogic.jumpToStatusUuid
       );
