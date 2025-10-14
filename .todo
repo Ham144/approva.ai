@@ -91,3 +91,8 @@
 [x] add: open camera untuk foto
 [x] modif: modif fitur undo
 [x] tiny: modif styling disabled
+
+//small fix
+[x] mod: tombol continue kekecilan
+[x] fix: logic completed if internal server error
+[x] mod: process page bisa di klik kiri (open new tab)
