@@ -153,13 +153,13 @@ router.post("/request/new", async (req, res) => {
           _id: { $in: nextApprovers }, // langsung pakai array ID
         });
 
-        if (nextApprovers.length > 0) {
-          await sendApprovalRequestEmail(
-            nextApprovers,
-            flowInstance,
-            req?.user?.username || "System (Initial Request)"
-          );
-        }
+        // if (nextApprovers.length > 0) {
+        //   await sendApprovalRequestEmail(
+        //     nextApprovers,
+        //     flowInstance,
+        //     req?.user?.username || "System (Initial Request)"
+        //   );
+        // }
       }
 
       // --- End Email Notification Logic ---
