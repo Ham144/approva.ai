@@ -21,8 +21,10 @@ async function sendEmail(to, subject, html, flowInstance) {
 
     const transportOptions = {
       host: org.EMAIL_HOST,
-      port: org.EMAIL_PORT,
-      secure: org.EMAIL_SECURE,
+      port: Number(org.EMAIL_PORT),
+      secure:
+        org.EMAIL_SECURE === true ||
+        String(org.EMAIL_SECURE).toLowerCase() === "true",
       auth: {
         user: org.EMAIL_USER,
         pass: org.EMAIL_PASS,

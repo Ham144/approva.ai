@@ -148,7 +148,6 @@ router.post("/request/new", async (req, res) => {
     try {
       if (flowInstance.overallStatus === "in-progress") {
         let nextApprovers = selectedAuthorized;
-        console.log(selectedAuthorized);
 
         nextApprovers = await UserRefrensi.find({
           _id: { $in: nextApprovers }, // langsung pakai array ID
