@@ -69,7 +69,7 @@ export default function ProcessActionOption({ selectedInstance }) {
   const isInProgress = selectedInstance?.overallStatus == "in-progress";
   const isMyTurn = selectedInstance?.flowTemplate?.status[
     selectedInstance?.currentStatusIndex
-  ].authorized?.find((user) => user._id == userInfo._id);
+  ]?.authorized?.find((user) => user._id == userInfo._id);
 
   return (
     <dialog id="modalprocessaction" className="modal">

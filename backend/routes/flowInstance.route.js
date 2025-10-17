@@ -507,8 +507,8 @@ router.get("/flowInstanceById/:id", async (req, res) => {
       (logic) =>
         flowInstance.flowTemplate.status[
           flowInstance.currentStatusIndex
-        ].requirements.some(
-          (requirement) => String(requirement._id) === logic.requirementId
+        ]?.requirements.some(
+          (requirement) => String(requirement._id) === logic?.requirementId
         )
     );
 
