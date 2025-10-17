@@ -451,11 +451,11 @@ export default function ProcessPage() {
                     const progress = Math.round(
                       (currentIndex / statusLength) * 100
                     );
-                    const currentApprovers = instance?.flowTemplate?.status?.[
-                      currentIndex
-                    ]?.authorized
-                      ?.map((user) => user.username)
-                      .join(" & ");
+                    const currentApprovers =
+                      instance?.flowTemplate?.status?.[currentIndex]?.authorized
+                        ?.map((user) => user?.username)
+                        ?.filter(Boolean)
+                        ?.join(" & ") || "No approvers assigned";
 
                     return (
                       <div
