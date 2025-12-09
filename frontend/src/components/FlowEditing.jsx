@@ -8,7 +8,6 @@ import {
   Heading,
   Info,
   Trash,
-  Lock,
   ArrowUpFromLine,
   ArrowDownFromLine,
   Globe,
