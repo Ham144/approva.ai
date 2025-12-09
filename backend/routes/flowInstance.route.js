@@ -266,7 +266,6 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
         return res.json({ data: [] });
       }
       const results = await FlowInstance.find({ _id: { $in: ids } })
-        .populate("requestedBy", "username")
         .populate({
           path: "flowTemplate",
           select: "title desc _id",
@@ -276,11 +275,15 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
             {
               path: "status.authorized",
               model: "UserRefrensi",
-              select: "_id username",
+              select: "_id username displayName",
             },
           ],
         })
-        .select("-requestData logics status")
+        .populate({
+          path: "requestedBy",
+          select: "username displayName",
+        })
+        .select("-requestData logics status requestedBy")
         .sort({ createdAt: -1 });
 
       return res.json({ data: results });
@@ -443,7 +446,7 @@ router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
     const totalPage = Math.ceil(totalData / limitNum);
 
     const flowInstanceList = await FlowInstance.find(finalQuery)
-      .populate("requestedBy", "username")
+      .populate("requestedBy", "username displayName")
       .populate({
         path: "flowTemplate",
         select: "title desc _id status",
@@ -1132,7 +1135,7 @@ router.get("/my-tasks", async (req, res) => {
           createdAt: 1,
           debugTitle: 1,
           currentStatusTitle: "$currentStatusObject.title",
-          requestedByUsername: "$requestedByInfo.username",
+          requestedByUsername: "$requestedByInfo.displayName",
           flowTemplateTitle: "$flowTemplateDetails.title",
           globalIndex: 1, // << langsung ambil dari FlowInstance
         },

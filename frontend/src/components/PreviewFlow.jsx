@@ -11,9 +11,12 @@ import {
   Clock,
   MessageSquareText,
   User2,
-  Trash2,
+  FileText,
+  Download,
 } from "lucide-react";
 import FileApi from "@/api/fileApi";
+import toast from "react-hot-toast";
+// import PdfPreviewModal from "./PdfPreviewModal";
 
 export const renderHelpText = (input) => (
   <div className="mb-1 flex items-center gap-2">
@@ -48,12 +51,51 @@ export default function PreviewFlow({
     setRequirement,
   } = useResponseCollector();
 
+  //pdf states
+  // const [selectedPDF, setSelectedPDF] = useState(null);
+
   const flatInputs = jsonFlow
     ? [
         ...(jsonFlow?.request || []),
         ...(jsonFlow?.status || []).flatMap((s) => s.requirements),
       ]
     : [];
+
+  // Fungsi untuk handle download file (PDF dan gambar)
+  const handleDownloadPDF = async (fileName) => {
+    if (!fileName) {
+      toast.error("File tidak ditemukan");
+      return;
+    }
+
+    try {
+      // Extract filename dari URL jika perlu (jika fileName adalah full URL)
+      const filename = fileName.includes("/")
+        ? fileName.split("/").pop()
+        : fileName;
+
+      // Download file menggunakan FileApi
+      const blob = await FileApi.downloadFile(filename);
+
+      // Buat URL object dari blob
+      const url = window.URL.createObjectURL(blob);
+
+      // Buat link untuk download
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+
+      toast.success("File berhasil didownload");
+    } catch (error) {
+      toast.error("Gagal mendownload file");
+    }
+  };
 
   useEffect(() => {
     if (!jsonFlow) return;
@@ -284,18 +326,44 @@ export default function PreviewFlow({
                     (statuses[statusIndex]?.requirementsData || {})[
                       input._id
                     ]) && (
-                    <div className="flex items-center gap-2 text-sm text-base-content/80 bg-base-200 p-2 rounded-md">
-                      <span className="i-ph-file-pdf-duotone text-error"></span>
-                      <span>
-                        File dipilih:{" "}
-                        <strong>
-                          {requestData[input._id] ||
-                            (statuses[statusIndex]?.requirementsData || {})[
-                              input._id
-                            ] ||
-                            ""}
-                        </strong>
-                      </span>
+                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-base-200 to-base-100 rounded-lg border border-base-300 shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-gradient-to-br from-error/20 to-error/10 rounded-lg">
+                          <FileText className="w-5 h-5 text-error" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-base-content truncate max-w-xs">
+                            {requestData[input._id] ||
+                              (statuses[statusIndex]?.requirementsData || {})[
+                                input._id
+                              ] ||
+                              ""}
+                          </div>
+                          <div className="text-xs text-base-content/60 flex items-center gap-1">
+                            <FileText className="w-3 h-3" />
+                            PDF Document
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-1">
+                        {/* Download */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleDownloadPDF(
+                              requestData[input._id] ||
+                                (statuses[statusIndex]?.requirementsData || {})[
+                                  input._id
+                                ]
+                            )
+                          }
+                          className="btn btn-sm btn-ghost text-success hover:bg-success/10"
+                          title="Download PDF"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -312,7 +380,7 @@ export default function PreviewFlow({
               <div className="flex flex-col gap-3">
                 {/* Tombol aksi */}
                 <div className="flex gap-3">
-                  <label className="btn btn-primary btn-sm cursor-pointer">
+                  <label className="btn btn-primary btn-sm cursor-pointer text-white rounded-md">
                     <span className="i-ph-upload-simple-duotone mr-2"></span>
                     Upload File
                     <input
@@ -322,8 +390,12 @@ export default function PreviewFlow({
                       className="hidden"
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
-                        if (!file) {
-                          setRequestData(input._id, null);
+                        if (!file && isRequirementInput) {
+                          if (isForRequest) {
+                            setRequestData(input._id, null);
+                          } else {
+                            setRequirement(currentStatusIndex, input._id, null);
+                          }
                           return;
                         }
 
@@ -336,13 +408,29 @@ export default function PreviewFlow({
                           const fileUrl = res.url;
 
                           if (isRequirementInput) {
-                            setRequirement(
-                              currentStatusIndex,
-                              input._id,
-                              fileUrl
-                            );
+                            if (isForRequest) {
+                              setRequirement(
+                                currentStatusIndex,
+                                input._id,
+                                fileUrl
+                              );
+                            } else {
+                              setRequirement(
+                                currentStatusIndex,
+                                input._id,
+                                fileUrl
+                              );
+                            }
                           } else {
-                            setRequestData(input._id, fileUrl);
+                            if (isForRequest) {
+                              setRequestData(input._id, fileUrl);
+                            } else {
+                              setRequirement(
+                                currentStatusIndex,
+                                input._id,
+                                null
+                              );
+                            }
                           }
                         } catch (err) {
                           toast.error("Gagal upload file.");
@@ -863,6 +951,14 @@ export default function PreviewFlow({
             </>
           )}
         </div>
+        {/* PDF Preview Modal
+        {selectedPDF && (
+          <PdfPreviewModal
+            selectedPDF={selectedPDF}
+            setSelectedPDF={setSelectedPDF}
+            handleDownloadPDF={handleDownloadPDF}
+          />
+        )} */}
       </div>
     );
   }

@@ -842,13 +842,13 @@ router.get("/list/forDownload", async (req, res) => {
   try {
     const flowList = await FlowAndPoint.find({
       org: req.user.org,
-      mode: { $ne: "private" },
     })
       .select("title desc")
       .lean();
 
     return res.status(200).json({
-      message: "Berhasil mengambil data flow, flow mode private tidak dimunculkan kecuali anda status owner/viewer",
+      message:
+        "Berhasil mengambil data flow, flow mode private tidak dimunculkan kecuali anda status owner/viewer",
       data: flowList,
     });
   } catch (error) {

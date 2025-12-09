@@ -208,15 +208,13 @@ export default function StatusFullfillmentPage() {
           </div>
 
           {/* PreviewFlow Component */}
-          <div className="">
-            <PreviewFlow
-              isForApproval={true}
-              isForRequest={false}
-              isOnlyPreview={false}
-              jsonFlow={flowTemplate}
-              key={"approval"}
-            />
-          </div>
+          <PreviewFlow
+            isForApproval={true}
+            isForRequest={false}
+            isOnlyPreview={false}
+            jsonFlow={flowTemplate}
+            key={"approval"}
+          />
         </div>
       </div>
 

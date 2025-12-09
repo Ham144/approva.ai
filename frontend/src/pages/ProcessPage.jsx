@@ -236,7 +236,7 @@ export default function ProcessPage() {
                   <option value="all">Semua Pemohon</option>
                   {users?.data?.map((u) => (
                     <option key={u?._id} value={u?._id}>
-                      {u?.username}
+                      {u?.displayName}
                     </option>
                   ))}
                 </select>
@@ -503,7 +503,9 @@ export default function ProcessPage() {
                               Pemohon
                             </p>
                             <p className="text-sm text-gray-800 line-clamp-1">
-                              {instance?.requestedBy?.username || "-"}
+                              {instance?.requestedBy?.displayName ||
+                                instance?.requestedBy?.username ||
+                                "-"}
                             </p>
                           </div>
                           <div className="space-y-0.5">
@@ -641,7 +643,9 @@ export default function ProcessPage() {
                             {instance?.flowTemplate?.title || "-"}
                           </td>
                           <td className="text-gray-600 py-4 px-6">
-                            {instance?.requestedBy?.username || "-"}
+                            {instance?.requestedBy?.displayName ||
+                              instance?.requestedBy?.username ||
+                              "-"}
                           </td>
                           <td className="text-gray-600 py-4 px-6">
                             {new Date(instance.createdAt).toLocaleDateString()}

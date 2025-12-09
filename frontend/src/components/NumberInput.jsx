@@ -1,3 +1,4 @@
+import PdfPreviewModal from "./PdfPreviewModal";
 import { renderHelpText } from "./PreviewFlow";
 import { useResponseCollector } from "@/store";
 
@@ -94,6 +95,11 @@ const NumberInput = ({
           +
         </button>
       </div>
+      <PdfPreviewModal
+        selectedPDF={selectedPDF}
+        setSelectedPDF={setSelectedPDF}
+        key={input?._id}
+      />
     </div>
   );
 };
