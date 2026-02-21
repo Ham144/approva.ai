@@ -144,4 +144,35 @@ router.post("/smtp/test", async (req, res) => {
   }
 });
 
+router.get("/app-settings", async (req, res) => {
+  try {
+    const data = await Org.findById(req.user.org)
+      .select("authorizedToDownloadUsers")
+      .populate("authorizedToDownloadUsers", "username displayName");
+    return res.json({
+      message: "berhasil mengambil user authorizedToDownloadUsers",
+      data,
+    });
+  } catch (error) {
+    return res.status(400).json({ message: "internal server error" });
+  }
+});
+
+router.put("/app-settings", async (req, res) => {
+  try {
+    await Org.findOneAndUpdate(
+      { _id: req.user.org },
+      {
+        authorizedToDownloadUsers: req?.body?.authorizedToDownloadUsers,
+      }
+    );
+    return res.json({ message: "success" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: error?.message || "Gagal, internal server error",
+    });
+  }
+});
+
 export default router;

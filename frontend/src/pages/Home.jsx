@@ -6,7 +6,7 @@ import {
   CheckCircle,
   ChevronDown,
 } from "lucide-react";
-import { APP_DESC, APP_NAME } from "@/api/constant";
+import { APP_DESC } from "@/api/constant";
 import { useNavigate } from "react-router-dom";
 import { useUserInfo } from "@/store";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -14,6 +14,7 @@ import flowInstanceApi from "@/api/flowInstanceApi";
 import OrgApi from "@/api/orgApi";
 import { switchOrg } from "@/api/authApi";
 import toast from "react-hot-toast";
+import MyStats from "@/components/My-Stats";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -70,7 +71,7 @@ const Home = () => {
     <div className="relative pb-20 min-h-screen overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
       {/* Background only */}
       <div className="max-w-7xl mx-auto max-w-screen overflow-hidden z-10">
-        {/* Header with tech badge */}
+        {/* Header */}
         <div className="mb-10 text-center">
           <div className="inline-flex items-center gap-2 mb-3 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-gray-200">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -87,6 +88,8 @@ const Home = () => {
           </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">{APP_DESC}</p>
         </div>
+
+        <MyStats />
 
         {/* My Tasks Section - Enhanced Modern Table */}
         <div className="mb-12">
@@ -260,7 +263,9 @@ const Home = () => {
                     Organization Owner
                   </h3>
                   <p className="text-sm text-gray-600 line-clamp-2">
-                    {userInfo?.displayName || userInfo?.username}
+                    {userInfo?.displayName
+                      ? userInfo?.displayName
+                      : userInfo?.username}
                   </p>
                   <span className="inline-block mt-2 text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded-full">
                     Owner Only
@@ -281,7 +286,7 @@ const Home = () => {
                       .replace("bg-", "bg-")
                       .replace(
                         "text-",
-                        "text-"
+                        "text-",
                       )} bg-opacity-10 group-hover:bg-opacity-20 transition-colors`}
                   >
                     {action.icon}

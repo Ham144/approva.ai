@@ -1044,6 +1044,21 @@ router.put("/resetPassword", authenticate, async (req, res) => {
   }
 });
 
+router.get("/searchAccount", authenticate, async (req, res) => {
+  const { searchKey } = req.query;
+
+  if (!searchKey) {
+    return res.json({ success: true, data: [] }); 
+  }
+
+  const users = await UserRefrensi.find({
+    org: req.user.org,
+    username: { $regex: searchKey, $options: "i" },
+  }).select("username email");
+
+  return res.json({ success: true, data: users });
+});
+
 // web
 router.delete(
   "/logout",

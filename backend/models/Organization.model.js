@@ -74,7 +74,13 @@ const organizationSchema = new mongoose.Schema(
       required: true,
       default: false,
     },
-    // start smtp---------------
+    // Setting app
+    authorizedToDownloadUsers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "UserRefrensi",
+      },
+    ],
   },
   {
     timestamps: true,

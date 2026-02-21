@@ -37,7 +37,6 @@ const flowSchema = new mongoose.Schema(
         ref: "UserRefrensi",
       },
     ],
-
     status: [
       {
         uuid: String,
@@ -84,7 +83,7 @@ const flowSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Flow = mongoose.model("FlowAndPoint", flowSchema);

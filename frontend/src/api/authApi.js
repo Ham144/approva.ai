@@ -39,6 +39,17 @@ export const getAllAccount = async () => {
   return response.data;
 };
 
+export const searchAccount = async (search) => {
+  let params = new URLSearchParams();
+  if (search) {
+    params.append("searchKey", search);
+  }
+  const response = await axiosInstance.get("/api/auth/searchAccount", {
+    params,
+  });
+  return response.data?.data;
+};
+
 //mostly update role
 export const updateUser = async (body) => {
   const response = await axiosInstance.put(`/api/auth/updateUser`, body);

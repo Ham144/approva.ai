@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import PengelolaSideBarMenu from "@/components/PengelolasSideBarMenu";
 import configApi from "@/api/configApi";
 import toast from "react-hot-toast";
+import { searchAccount } from "../api/authApi";
+import { Search } from "lucide-react";
 
 const initialSmtp = {
   EMAIL_USER: "",
@@ -25,6 +27,14 @@ export default function Config() {
   // State for SMTP Config
   const [smtpConfig, setSmtpConfig] = useState(initialSmtp);
   const [testRecipient, setTestRecipient] = useState("");
+
+  // State for app-setting
+  const [userSearchKey, setUserSearchKey] = useState("");
+
+  const { data: users } = useQuery({
+    queryKey: ["app-setting", userSearchKey],
+    queryFn: async () => await searchAccount(userSearchKey),
+  });
 
   // Query for AD Config
   const {
@@ -88,6 +98,37 @@ export default function Config() {
     },
   });
 
+  //app-setting area
+  const [appSettingState, setAppsettingState] = useState({
+    authorizedToDownloadUsers: [],
+  });
+
+  const { data: appSettingData, isLoading: isLoadingAppSetting } = useQuery({
+    queryKey: ["app-setting"],
+    queryFn: async () => {
+      const data = await configApi.getAppSettings();
+      setAppsettingState(data);
+      return data;
+    },
+    retetchOnWindowFocus: false,
+    retry: false,
+  });
+
+  const { mutateAsync: handleUpdateappSettings } = useMutation({
+    mutationKey: ["app-setting"],
+    mutationFn: async () =>
+      await configApi.updateAppSetting({
+        authorizedToDownloadUsers: appSettingState.authorizedToDownloadUsers,
+      }),
+    onSuccess: () => {
+      toast.success("berhasil");
+      queryClient.invalidateQueries({ queryKey: ["app-setting"] });
+    },
+    onError: (err) => {
+      toast.error(err?.response?.data?.message ?? "gagal");
+    },
+  });
+
   // Effect to populate form fields when data is loaded
   useEffect(() => {
     if (configData?.data) {
@@ -109,6 +150,12 @@ export default function Config() {
       });
     }
   }, [configSmtp]);
+
+  useEffect(() => {
+    if (appSettingData) {
+      setAppsettingState(appSettingData);
+    }
+  }, [appSettingData]);
 
   const handleSmtpChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -356,6 +403,157 @@ export default function Config() {
         </div>
       ),
     },
+    {
+      title: "app-setting",
+      content: (
+        <div className="p-6 bg-white rounded-lg shadow-md max-w-xl mx-auto mt-8">
+          <h2 className="text-2xl font-bold mb-6 text-gray-800">app-setting</h2>
+          {isLoadingAppSetting && (
+            <span className="loading loading-dots loading-lg"></span>
+          )}
+          {!isLoadingAppSetting && (
+            <>
+              <div className="mb-4">
+                <label
+                  htmlFor="email-user"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Search new User to assign:
+                </label>
+                <div className="relative">
+                  <input
+                    id="user"
+                    type="text"
+                    value={userSearchKey}
+                    onChange={(e) => setUserSearchKey(e.target.value)}
+                    className="input input-bordered w-full"
+                    placeholder="eg:ham"
+                  />
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 font-bold text-gray-400" />
+
+                  {/* User recommendations dropdown */}
+                  {userSearchKey && users?.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                      {users.map((user) => (
+                        <button
+                          key={user.id || user.username}
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                          onClick={() => {
+                            const isAlreadyAdded =
+                              appSettingState.authorizedToDownloadUsers?.some(
+                                (existingUser) =>
+                                  existingUser.username === user.username
+                              );
+
+                            if (!isAlreadyAdded) {
+                              setAppsettingState((prev) => ({
+                                ...prev,
+                                authorizedToDownloadUsers: [
+                                  ...(prev.authorizedToDownloadUsers || []),
+                                  user,
+                                ],
+                              }));
+                            }
+
+                            // Clear search
+                            setUserSearchKey("");
+                          }}
+                        >
+                          <div className="font-medium">{user.username}</div>
+                          {user.displayName && (
+                            <div className="text-sm text-gray-500">
+                              {user.displayName}
+                            </div>
+                          )}
+                          {user.email && (
+                            <div className="text-xs text-gray-400">
+                              {user.email}
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Show message when no users found */}
+                  {userSearchKey && users?.length === 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg p-4 text-gray-500 text-center">
+                      No users found
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Authorized Users:
+                </label>
+                <div className="grid grid-cols-1 gap-2">
+                  {appSettingState?.authorizedToDownloadUsers?.length > 0 ? (
+                    appSettingState.authorizedToDownloadUsers.map(
+                      (user, index) => (
+                        <div
+                          key={user.id || user.username || index}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
+                        >
+                          <div>
+                            <div className="font-medium">
+                              {user.displayName || user.username}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {user.username &&
+                                user.username !== user.displayName &&
+                                `@${user.username}`}
+                            </div>
+                            {user.email && (
+                              <div className="text-xs text-gray-400">
+                                {user.email}
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => {
+                              // Remove user from authorizedToDownloadUsers
+                              setAppsettingState((prev) => ({
+                                ...prev,
+                                authorizedToDownloadUsers:
+                                  prev.authorizedToDownloadUsers.filter(
+                                    (existingUser) =>
+                                      existingUser.id !== user.id &&
+                                      existingUser.username !== user.username
+                                  ),
+                              }));
+                              setUserSearchKey("");
+                            }}
+                            className="btn btn-ghost btn-sm text-error hover:text-error"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )
+                    )
+                  ) : (
+                    <div className="text-center py-4 text-gray-500 border border-dashed rounded-lg">
+                      No authorized users yet
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <button
+                onClick={handleUpdateappSettings}
+                disabled={isLoadingAppSetting}
+                className={`btn text-white btn-primary w-full ${
+                  isLoadingAppSetting ? "loading" : ""
+                }`}
+              >
+                Simpan
+              </button>
+            </>
+          )}
+        </div>
+      ),
+    },
   ];
   return (
     <PengelolaSideBarMenu>
@@ -365,10 +563,10 @@ export default function Config() {
             key={tab.title} // Penting untuk memberikan key pada setiap elemen dalam map
             onClick={() => setCurrentTab(tab.title)}
             className={`
-              btn btn-lg normal-case font-semibold
+              btn  btn-lg normal-case font-semibold
               ${
                 currentTab === tab.title
-                  ? "btn-primary shadow-lg transform scale-105" // Gaya untuk tab aktif
+                  ? "btn-primary shadow-lg transform scale-105 text-white" // Gaya untuk tab aktif
                   : "btn-ghost text-gray-700 hover:bg-blue-100 hover:text-primary transition-all duration-300" // Gaya untuk tab tidak aktif
               }
             `}
@@ -380,6 +578,7 @@ export default function Config() {
 
       {currentTab === "LDAP" && tabs[0].content}
       {currentTab === "SMTP" && tabs[1].content}
+      {currentTab === "app-setting" && tabs[2].content}
     </PengelolaSideBarMenu>
   );
 }

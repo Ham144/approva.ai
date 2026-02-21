@@ -6,7 +6,7 @@ const flowInstanceApi = {
       throw new Error("ID is required");
     }
     const res = await axiosInstance.get(
-      `/api/flowInstance/flowInstanceById/${id}`
+      `/api/flowInstance/flowInstanceById/${id}`,
     );
     return res.data;
   },
@@ -31,7 +31,7 @@ const flowInstanceApi = {
   getFlowInstanceList: async ({ query }) => {
     try {
       const res = await axiosInstance.get(
-        `/api/flowInstance/getFlowInstanceList?${query}`
+        `/api/flowInstance/getFlowInstanceList?${query}`,
       );
       return res.data;
     } catch (error) {
@@ -50,20 +50,20 @@ const flowInstanceApi = {
         instanceTitle,
         overallStatus,
         requestData,
-      }
+      },
     );
     return res.data;
   },
   submitStatusFulfillment: async (instanceId, statuses, selectedAuthorized) => {
     const res = await axiosInstance.post(
       `/api/flowInstance/submitStatusFulfillment/${instanceId}`,
-      { statuses, selectedAuthorized }
+      { statuses, selectedAuthorized },
     );
     return res.data;
   },
   delete: async (instanceId) => {
     const res = await axiosInstance.delete(
-      `/api/flowInstance/delete/${instanceId}`
+      `/api/flowInstance/delete/${instanceId}`,
     );
     return res.data;
   },
@@ -100,7 +100,7 @@ const flowInstanceApi = {
       body,
       {
         responseType: "blob", // ✅ penting untuk download file
-      }
+      },
     );
 
     // Pastikan ini beneran file Excel, bukan JSON error
@@ -144,7 +144,7 @@ const flowInstanceApi = {
       body,
       {
         responseType: "blob", // ✅ penting untuk download file
-      }
+      },
     );
 
     // Pastikan ini beneran file Excel, bukan JSON error
@@ -191,12 +191,17 @@ const flowInstanceApi = {
       `/api/flowInstance/undo/${instanceId}`,
       {
         targetStatusIndex,
-      }
+      },
     );
     return res.data;
   },
   rollback: async (instanceId) => {
     const res = await axiosInstance.put(`/api/flowInstance/undo/${instanceId}`);
+    return res.data;
+  },
+  getMyStats: async ({ startDate, endDate }) => {
+    const query = `startDate=${startDate}&endDate=${endDate}`;
+    const res = await axiosInstance.get(`/api/flowInstance/my-stats?` + query);
     return res.data;
   },
 };

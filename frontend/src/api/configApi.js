@@ -29,6 +29,14 @@ const configApi = {
     const res = await axiosInstance.put("/api/config/organization", body);
     return res.data;
   },
+  getAppSettings: async () => {
+    const res = await axiosInstance.get("/api/config/app-settings");
+    return res.data.data;
+  },
+  updateAppSetting: async (body) => {
+    const res = await axiosInstance.put("/api/config/app-settings", body);
+    return res.data;
+  },
 };
 
 export default configApi;

@@ -131,18 +131,36 @@ router.post("/request/new", async (req, res) => {
       isPrivateAuthorized: template.isPrivateRequest,
     }));
 
-    // 5. Jika semua validasi berhasil, buat instance baru
-    const flowInstance = await FlowInstance.create({
+    // 5. Cegah dokumen MongoDB melebihi batas ukuran (~16MB)
+    // Perkiraan ukuran dokumen yang akan disimpan
+    const docToInsert = {
       instanceTitle: instanceTitle,
       flowTemplate: flowTemplateId,
       requestedBy: userId,
       requestData: requestData,
       overallStatus: overallStatus,
-      statuses: statusesFromTemplate, // Tambahkan status yang sudah diinisialisasi
-      currentStatusIndex: 0, // Mulai dari index 0
+      statuses: statusesFromTemplate,
+      currentStatusIndex: 0,
       org: req.user.org,
       globalIndex: globalIndex,
-    });
+    };
+
+    // 16MB - gunakan margin aman 2MB untuk overhead BSON
+    const MAX_BSON_SIZE = 16 * 1024 * 1024;
+    const SAFETY_MARGIN = 2 * 1024 * 1024;
+    const approxSize = Buffer.byteLength(JSON.stringify(docToInsert), "utf8");
+
+    if (approxSize > MAX_BSON_SIZE - SAFETY_MARGIN) {
+      return res.status(413).json({
+        message:
+          "Gagal membuat request: data yang dikirim terlalu besar untuk disimpan. " +
+          "Mohon kurangi ukuran lampiran atau data (misal base64/file besar) lalu coba lagi.",
+        approxSize,
+      });
+    }
+
+    // 6. Jika semua validasi berhasil dan ukuran aman, buat instance baru
+    const flowInstance = await FlowInstance.create(docToInsert);
 
     // --- Start Email Notification Logic for First Approver (yang dipilih) ---
     try {
@@ -157,7 +175,7 @@ router.post("/request/new", async (req, res) => {
           await sendApprovalRequestEmail(
             nextApprovers,
             flowInstance,
-            req?.user?.username || "System (Initial Request)"
+            req?.user?.username || "System (Initial Request)",
           );
         }
       }
@@ -199,7 +217,7 @@ router.put("/edit/:instanceId", async (req, res) => {
         instanceTitle,
         overallStatus,
         requestData,
-      }
+      },
     );
 
     return res.json({
@@ -511,8 +529,8 @@ router.get("/flowInstanceById/:id", async (req, res) => {
         flowInstance.flowTemplate.status[
           flowInstance.currentStatusIndex
         ]?.requirements.some(
-          (requirement) => String(requirement._id) === logic?.requirementId
-        )
+          (requirement) => String(requirement._id) === logic?.requirementId,
+        ),
     );
 
     if (currentLogicIdx != -1) {
@@ -521,7 +539,7 @@ router.get("/flowInstanceById/:id", async (req, res) => {
 
       if (jumpToStatusUuid) {
         const jumpToStatusUuidExtracted = flowInstance.flowTemplate.status.find(
-          (status) => String(status?.uuid) === jumpToStatusUuid
+          (status) => String(status?.uuid) === jumpToStatusUuid,
         );
 
         const currentAuthorized =
@@ -660,7 +678,7 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
       flowInstance.flowTemplate.status[currentStatusIndex];
 
     const isAuthorizedUser = requirementsTemplate.authorized.some((user) =>
-      user._id.equals(userId)
+      user._id.equals(userId),
     );
     if (!isAuthorizedUser) {
       return res
@@ -726,9 +744,9 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
           (logic) => {
             // Hanya ambil logics yang requirementId-nya ada di status saat ini
             return currentStatus.requirements.some(
-              (requirement) => String(requirement._id) === logic.requirementId
+              (requirement) => String(requirement._id) === logic.requirementId,
             );
-          }
+          },
         );
 
         if (relevantLogics && relevantLogics.length > 0) {
@@ -746,7 +764,7 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
             console.log(
               actual,
               matchingLogicRequirement.value,
-              matchingLogicRequirement.operator
+              matchingLogicRequirement.operator,
             );
             const actualToCheck =
               typeof actual === "object" ? JSON.stringify(actual) : actual;
@@ -759,7 +777,7 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
               const targetLogicIndex =
                 flowInstance.flowTemplate.status.findIndex(
                   (status) =>
-                    status.uuid === matchingLogicRequirement.jumpToStatusUuid
+                    status.uuid === matchingLogicRequirement.jumpToStatusUuid,
                 );
               flowInstance.currentStatusIndex = targetLogicIndex;
               // return res.status(400).json({
@@ -873,7 +891,7 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
             await sendApprovalRequestEmail(
               nextApprovers,
               flowInstance,
-              req?.user?.username
+              req?.user?.username,
             );
           }
         }
@@ -945,7 +963,7 @@ router.put("/rollback/:id", async (req, res) => {
     await sendApprovalRequestEmail(
       flowInstance.flowTemplate.status[0].authorized,
       flowInstance,
-      req.user.username
+      req.user.username,
     );
 
     return res.json({
@@ -1180,11 +1198,11 @@ router.get("/download/:month", async (req, res) => {
       // Set header untuk download
       res.setHeader(
         "Content-Type",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       );
       res.setHeader(
         "Content-Disposition",
-        `attachment; filename="${filename}"`
+        `attachment; filename="${filename}"`,
       );
       res.setHeader("Content-Length", excelBuffer.length);
 
@@ -1211,11 +1229,11 @@ router.get("/download/:month", async (req, res) => {
 
       res.setHeader(
         "Content-Type",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       );
       res.setHeader(
         "Content-Disposition",
-        `attachment; filename="${filename}"`
+        `attachment; filename="${filename}"`,
       );
       res.setHeader("Content-Length", excelBuffer.length);
 
@@ -1225,7 +1243,7 @@ router.get("/download/:month", async (req, res) => {
       try {
         await DownloadedProcess.findOneAndUpdate(
           { month, org: req.user.org },
-          { downloadedAt: new Date() }
+          { downloadedAt: new Date() },
         );
       } catch (dbError) {
         console.error("Failed to update download record:", dbError);
@@ -1426,7 +1444,7 @@ router.post("/download-detail", async (req, res) => {
         if (row && typeof row === "object") {
           // If object already contains the expected keys, pick those
           const hasAnyKey = cols.some((k) =>
-            Object.prototype.hasOwnProperty.call(row, k)
+            Object.prototype.hasOwnProperty.call(row, k),
           );
           if (hasAnyKey) {
             const obj = {};
@@ -1477,7 +1495,10 @@ router.post("/download-detail", async (req, res) => {
             const foundKey =
               rowKeys.find((rk) => rk === k) ||
               rowKeys.find((rk) =>
-                rk.toString().toLowerCase().includes(k.toString().toLowerCase())
+                rk
+                  .toString()
+                  .toLowerCase()
+                  .includes(k.toString().toLowerCase()),
               ) ||
               null;
             obj[k] = foundKey ? row[foundKey] : "";
@@ -1498,7 +1519,7 @@ router.post("/download-detail", async (req, res) => {
     const filterImageColumnsFromTable = (
       tableData,
       keys = [],
-      keysType = []
+      keysType = [],
     ) => {
       if (!Array.isArray(tableData)) return tableData;
       // normalize to objects with expected keys
@@ -1546,7 +1567,7 @@ router.post("/download-detail", async (req, res) => {
           if (r && typeof r === "object") {
             // check if all values are empty string
             return Object.values(r).every(
-              (v) => v === "" || v === null || v === undefined
+              (v) => v === "" || v === null || v === undefined,
             );
           }
           return !r;
@@ -1587,7 +1608,7 @@ router.post("/download-detail", async (req, res) => {
           reqInput.tipe,
           rawVal,
           reqInput.table?.keys,
-          reqInput.table?.keysType
+          reqInput.table?.keysType,
         );
         // optional: tampilkan tipe hanya kalau bukan table, atau hapus sama sekali kalau ga mau debug
         row[tKey] = reqInput.tipe === "table" ? "" : reqInput.tipe;
@@ -1619,7 +1640,7 @@ router.post("/download-detail", async (req, res) => {
             req.tipe,
             rawVal,
             req.table?.keys,
-            req.table?.keysType
+            req.table?.keysType,
           );
           row[rTypeKey] = req.tipe === "table" ? "" : req.tipe;
 
@@ -1642,7 +1663,7 @@ router.post("/download-detail", async (req, res) => {
     const filename = `process-detail-${month}.xlsx`;
     res.setHeader(
       "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
 
@@ -1701,7 +1722,7 @@ router.post("/download-detail-table-column", async (req, res) => {
         if (row && typeof row === "object") {
           const rowKeys = Object.keys(row);
           const hasAnyKey = cols.some((k) =>
-            Object.prototype.hasOwnProperty.call(row, k)
+            Object.prototype.hasOwnProperty.call(row, k),
           );
           if (hasAnyKey) {
             const obj = {};
@@ -1735,7 +1756,10 @@ router.post("/download-detail-table-column", async (req, res) => {
             const foundKey =
               rowKeys.find((rk) => rk === k) ||
               rowKeys.find((rk) =>
-                rk.toString().toLowerCase().includes(k.toString().toLowerCase())
+                rk
+                  .toString()
+                  .toLowerCase()
+                  .includes(k.toString().toLowerCase()),
               ) ||
               null;
             obj[k] = foundKey ? row[foundKey] : "";
@@ -1755,7 +1779,7 @@ router.post("/download-detail-table-column", async (req, res) => {
     const filterImageColumnsFromTable = (
       tableData,
       keys = [],
-      keysType = []
+      keysType = [],
     ) => {
       if (!Array.isArray(tableData)) return [];
       const normalized = normalizeTableRows(tableData, keys);
@@ -1960,7 +1984,7 @@ router.post("/download-detail-table-column", async (req, res) => {
           reqInput.tipe,
           rawVal,
           reqInput.table?.keys,
-          reqInput.table?.keysType
+          reqInput.table?.keysType,
         );
       }
 
@@ -1983,7 +2007,7 @@ router.post("/download-detail-table-column", async (req, res) => {
             req.tipe,
             rawVal,
             req.table?.keys,
-            req.table?.keysType
+            req.table?.keysType,
           );
         }
       }
@@ -1999,7 +2023,7 @@ router.post("/download-detail-table-column", async (req, res) => {
         const rows = filterImageColumnsFromTable(
           rawVal || [],
           t.keys,
-          t.keysType
+          t.keysType,
         );
         return rows;
       });
@@ -2007,7 +2031,7 @@ router.post("/download-detail-table-column", async (req, res) => {
       // Determine max rows across table inputs for this instance (min 1 so we still output 1 row if no table)
       const maxRows = Math.max(
         1,
-        ...tableRowsPerInput.map((r) => (Array.isArray(r) ? r.length : 0))
+        ...tableRowsPerInput.map((r) => (Array.isArray(r) ? r.length : 0)),
       );
 
       // produce rows
@@ -2042,7 +2066,7 @@ router.post("/download-detail-table-column", async (req, res) => {
     const filename = `process-detail-${month}.xlsx`;
     res.setHeader(
       "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
 
@@ -2052,6 +2076,217 @@ router.post("/download-detail-table-column", async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+router.get("/my-stats", async (req, res) => {
+  try {
+    const userId = new mongoose.Types.ObjectId(req.user._id);
+    const orgId = new mongoose.Types.ObjectId(req.user.org);
+
+    // Parameter tanggal
+    const { startDate, endDate } = req.query;
+
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const end = endDate ? new Date(endDate) : new Date();
+
+    end.setHours(23, 59, 59, 999);
+    start.setHours(0, 0, 0, 0);
+
+    console.log("Filter dates:", {
+      start: start.toISOString(),
+      end: end.toISOString(),
+    });
+
+    // ================== AGREGASI 1: Statistik Aktivitas (request & completed) ==================
+    const activityStats = await FlowInstance.aggregate([
+      {
+        $match: {
+          org: orgId,
+          createdAt: { $gte: start, $lte: end },
+        },
+      },
+      {
+        $project: {
+          activities: {
+            $concatArrays: [
+              {
+                $cond: [
+                  { $eq: ["$requestedBy", userId] },
+                  [
+                    {
+                      user: "$requestedBy",
+                      type: "request",
+                      lastActivity: "$updatedAt",
+                    },
+                  ],
+                  [],
+                ],
+              },
+              {
+                $map: {
+                  input: {
+                    $filter: {
+                      input: "$statuses",
+                      as: "s",
+                      cond: {
+                        $and: [
+                          { $eq: ["$$s.completed", true] },
+                          { $eq: ["$$s.completedBy", userId] },
+                        ],
+                      },
+                    },
+                  },
+                  as: "s",
+                  in: {
+                    user: "$$s.completedBy",
+                    type: "completed",
+                    lastActivity: "$$s.completedAt",
+                  },
+                },
+              },
+            ],
+          },
+        },
+      },
+      { $unwind: { path: "$activities", preserveNullAndEmptyArrays: false } },
+      {
+        $group: {
+          _id: "$activities.user",
+          requestCount: {
+            $sum: {
+              $cond: [{ $eq: ["$activities.type", "request"] }, 1, 0],
+            },
+          },
+          completedCount: {
+            $sum: {
+              $cond: [{ $eq: ["$activities.type", "completed"] }, 1, 0],
+            },
+          },
+          lastActivity: { $max: "$activities.lastActivity" },
+        },
+      },
+    ]);
+
+    // ================== AGREGASI 2: Pending di Saya (DENGAN filter tanggal) ==================
+    const pendingStats = await FlowInstance.aggregate([
+      {
+        $match: {
+          overallStatus: "in-progress",
+          org: orgId,
+          // TAMBAHKAN filter createdAt di sini
+          createdAt: { $gte: start, $lte: end },
+        },
+      },
+      {
+        $lookup: {
+          from: "flowandpoints",
+          localField: "flowTemplate",
+          foreignField: "_id",
+          as: "flowTemplateDetails",
+        },
+      },
+      { $unwind: "$flowTemplateDetails" },
+      {
+        $addFields: {
+          currentStatusObject: {
+            $arrayElemAt: [
+              "$flowTemplateDetails.status",
+              "$currentStatusIndex",
+            ],
+          },
+        },
+      },
+      { $unwind: "$currentStatusObject.authorized" },
+      {
+        $match: {
+          "currentStatusObject.authorized": userId,
+        },
+      },
+      {
+        $group: {
+          _id: "$currentStatusObject.authorized",
+          pendingCount: { $sum: 1 },
+          lastPendingActivity: { $max: "$updatedAt" },
+        },
+      },
+    ]);
+
+    // ================== GABUNGKAN DATA ==================
+    const activityData = activityStats[0] || {
+      requestCount: 0,
+      completedCount: 0,
+      lastActivity: null,
+    };
+
+    const pendingData = pendingStats[0] || {
+      pendingCount: 0,
+      lastPendingActivity: null,
+    };
+
+    // Tentukan lastActivity terakhir
+    let lastActivityDate = activityData.lastActivity;
+
+    if (pendingData.lastPendingActivity) {
+      if (
+        !lastActivityDate ||
+        new Date(pendingData.lastPendingActivity) > new Date(lastActivityDate)
+      ) {
+        lastActivityDate = pendingData.lastPendingActivity;
+      }
+    }
+
+    // Format tanggal dan jam
+    let tanggalAktifitasTerakhir, jamAktifitasTerakhir;
+    if (lastActivityDate) {
+      const lastDate = new Date(lastActivityDate);
+      tanggalAktifitasTerakhir = lastDate.toISOString().split("T")[0];
+      const timeStr = lastDate.toLocaleString("id-ID", {
+        timeZone: "Asia/Jakarta",
+        hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      jamAktifitasTerakhir = timeStr.replace(":", ".");
+    } else {
+      const now = new Date();
+      tanggalAktifitasTerakhir = now.toISOString().split("T")[0];
+      const timeStr = now.toLocaleString("id-ID", {
+        timeZone: "Asia/Jakarta",
+        hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      jamAktifitasTerakhir = timeStr.replace(":", ".");
+    }
+
+    // Hitung QTY All
+    const qtyAll =
+      (activityData.requestCount || 0) +
+      (activityData.completedCount || 0) +
+      (pendingData.pendingCount || 0);
+
+    // Susun output
+    const result = {
+      name:
+        req.user.username || req.user.displayName || req.user.name || "Unknown",
+      tanggalAktifitasTerakhir,
+      jamAktifitasTerakhir,
+      "QTY request": activityData.requestCount || 0,
+      "QTY approved&reject": activityData.completedCount || 0,
+      "Pending Di Saya": pendingData.pendingCount || 0,
+      "QTY AlL": qtyAll,
+    };
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Error in my-stats:", error?.message);
+    return res
+      .status(500)
+      .json({ message: error?.message || "Internal Server Error" });
   }
 });
 

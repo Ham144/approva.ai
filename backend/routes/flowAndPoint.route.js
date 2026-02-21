@@ -6,6 +6,7 @@ import UserRefrensi from "../models/User.model.js";
 import mongoose from "mongoose";
 import Department from "../models/Department.model.js";
 import authorize from "../middlewares/authorize.js";
+import Organization from "../models/Organization.model.js";
 
 const router = Router();
 
@@ -840,10 +841,44 @@ router.post("/clone-from-other-org/:id", async (req, res) => {
 
 router.get("/list/forDownload", async (req, res) => {
   try {
+    const isIT = req.user.description === "IT";
+
+    if (isIT) {
+      //kalau IT munculin semua tanpa filer
+      const flowList = await FlowAndPoint.find({ org: req.user.org })
+        .select("title desc mode")
+        .lean();
+      return res.json({
+        data: flowList,
+      });
+    }
+    let where = {};
+
+    /*logic: 
+    -jika akun IT tidak ada filter template
+    -public template yg boleh liat semua
+    -termasuk requestor yang di assign (private), -termasuk dalam departement (department lock) -termasuk dalam salah satu approval step
+    */
+    const userId = req.user._id;
+
+    where = {
+      $or: [
+        { mode: "public" },
+
+        { allowedSpecificUserToRequest: userId },
+
+        { allowedDepartmentToRequest: req.user.department },
+
+        // sebagai approver
+        { "status.authorized": userId },
+      ],
+    };
+
     const flowList = await FlowAndPoint.find({
       org: req.user.org,
+      ...where,
     })
-      .select("title desc")
+      .select("title desc mode")
       .lean();
 
     return res.status(200).json({

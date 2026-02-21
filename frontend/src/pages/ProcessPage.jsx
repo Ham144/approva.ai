@@ -1,12 +1,19 @@
 import { getAllAccount } from "@/api/authApi";
 import flowApi from "@/api/flowApi";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowBigRight,
+  Calendar,
   ChevronDown,
   ChevronUp,
+  Filter,
+  Hash,
+  Search,
   Sliders,
+  User,
+  Users,
+  X,
   XCircle,
 } from "lucide-react"; // Contoh ikon, Anda bisa gunakan library ikon lain
 import { useParams, useSearchParams } from "react-router-dom";
@@ -40,6 +47,10 @@ export default function ProcessPage() {
   const isMyRequestOnlyQuery = searchParams.get("isMyRequestOnlyQuery");
 
   const [isExpanded, setIsExpanded] = useState(true);
+  const [searchCategory, setSearchCategory] = useState("");
+  const [searchRequester, setSearchRequester] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedRequester, setSelectedRequester] = useState("all");
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -48,7 +59,7 @@ export default function ProcessPage() {
   //untuk filter kategori request
   const { data: flowList } = useQuery({
     queryKey: ["flows"],
-    queryFn: () => flowApi.getAllFlowNameAndDescForRequest(),
+    queryFn: () => flowApi.getFlowForDownload(),
     enabled: !instanceId,
   });
 
@@ -108,6 +119,55 @@ export default function ProcessPage() {
     }
   };
 
+  // Filter kategori berdasarkan pencarian
+  const filteredCategories = useMemo(() => {
+    if (!flowList?.data) return [];
+    return flowList.data.filter((flow) =>
+      flow.title.toLowerCase().includes(searchCategory.toLowerCase())
+    );
+  }, [flowList, searchCategory]);
+
+  // Filter pemohon berdasarkan pencarian
+  const filteredRequesters = useMemo(() => {
+    if (!users?.data) return [];
+    return users.data.filter((user) => {
+      const displayName = user?.displayName?.toLowerCase() || "";
+      const username = user?.username?.toLowerCase() || "";
+      const searchTerm = searchRequester.toLowerCase();
+      return displayName.includes(searchTerm) || username.includes(searchTerm);
+    });
+  }, [users, searchRequester]);
+
+  // Handler untuk perubahan kategori
+  const handleCategoryChange = (categoryId) => {
+    setSelectedCategory(categoryId);
+    handleFilterChange({
+      target: {
+        name: "flowTemplateCategory",
+        value: categoryId,
+      },
+    });
+  };
+
+  // Handler untuk perubahan pemohon
+  const handleRequesterChange = (userId) => {
+    setSelectedRequester(userId);
+    handleFilterChange({
+      target: {
+        name: "requestedBy",
+        value: userId,
+      },
+    });
+  };
+  // Reset semua filter termasuk pencarian
+  const handleResetAll = () => {
+    resetFilters();
+    setSearchCategory("");
+    setSearchRequester("");
+    setSelectedCategory("all");
+    setSelectedRequester("all");
+  };
+
   useEffect(() => {
     if (overallStatusquery) {
       setFilter((prev) => ({
@@ -146,131 +206,315 @@ export default function ProcessPage() {
   return (
     <div className="p-4 md:p-6 lg:p-8  min-h-screen">
       <div className="space-y-6 ">
-        <div className="card glass shadow-lg"></div>
-        {!filter?.verboseSearch && (
-          <div className="backdrop  rounded-lg shadow-md mb-6 overflow-hidden">
-            {/* Header Expandable */}
+        <div className="w-full mb-8">
+          {/* Card dengan glassmorphism effect */}
+          <div
+            className="card glass  rounded-2xl overflow-hidden border border-white/30 backdrop-blur-lg"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(173, 216, 230, 0.15) 0%, rgba(176, 224, 230, 0.1) 100%)",
+            }}
+          >
+            {/* Header dengan glass effect yang lebih smooth */}
             <div
-              className="flex items-center justify-between p-4 cursor-pointer  hover:bg-gray-200 transition-colors duration-200"
+              className="flex items-center justify-between p-5 cursor-pointer transition-all duration-300 hover:bg-white/10"
               onClick={toggleExpand}
             >
-              <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                <Sliders className="w-5 h-5 text-blue-600" />
-                Filter Pencarian
-              </h3>
-              {isExpanded ? (
-                <ChevronUp className="w-5 h-5 text-gray-600" />
-              ) : (
-                <ChevronDown className="w-5 h-5 text-gray-600" />
-              )}
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm">
+                  <Filter className="w-6 h-6 text-blue-600" />
+                </div>
+                <div className="flex  md:gap-x-4 max-md:flex-col">
+                  <h3 className="text-xl font-bold text-gray-800">
+                    Filter Pencarian
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Saring data dengan filter yang tersedia
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-white/30 backdrop-blur-sm">
+                  {isExpanded ? (
+                    <ChevronUp className="w-5 h-5 text-blue-700" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-blue-700" />
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Konten Filter - Animasi Expand/Collapse */}
+            {/* Konten Filter dengan animasi yang lebih smooth */}
             <div
               className={`
-          grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 p-4
-          transition-all duration-300 ease-in-out
-          ${
-            isExpanded
-              ? "max-h-screen opacity-100"
-              : "max-h-0 opacity-0 pointer-events-none"
-          }
-        `}
+            transition-all duration-500 ease-in-out overflow-hidden
+            ${isExpanded ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"}
+          `}
             >
-              {/* Kategori Request */}
-              <div className="form-control w-full">
-                <label className="label py-1">
-                  <span className="label-text text-sm font-medium text-gray-700">
-                    Kategori Request
-                  </span>
-                </label>
-                <select
-                  name="flowTemplateCategory"
-                  value={filter?.flowTemplateCategory}
-                  onChange={handleFilterChange}
-                  className="select select-bordered select-sm w-full bg-white border-gray-300 text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="all">Semua Kategori</option>
-                  {flowList?.data?.map((flow) => (
-                    <option key={flow._id} value={flow._id}>
-                      {flow?.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Kategori Request dengan Search */}
+                  <div className="space-y-2">
+                    <label className=" text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <Hash className="w-4 h-4" />
+                      Kategori Request
+                    </label>
 
-              {/* Status */}
-              <div className="form-control w-full">
-                <label className="label py-1">
-                  <span className="label-text text-sm font-medium text-gray-700">
-                    Status
-                  </span>
-                </label>
-                <select
-                  name="overallStatus"
-                  value={filter?.overallStatus}
-                  onChange={handleFilterChange}
-                  className="select select-bordered select-sm w-full bg-white border-gray-300 text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="all">Semua Status</option>
-                  <option value="draft">Draft</option>
-                  <option value="in-progress">In Progress</option>
-                  <option value="completed">completed</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </div>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Cari kategori..."
+                        value={searchCategory}
+                        onChange={(e) => setSearchCategory(e.target.value)}
+                        className="pl-10 pr-4 py-2.5 w-full rounded-xl border border-gray-300/50 bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-300 text-gray-700 placeholder-gray-400"
+                      />
+                    </div>
 
-              {/* Pemohon */}
-              <div className="form-control w-full">
-                <label className="label py-1">
-                  <span className="label-text text-sm font-medium text-gray-700">
-                    Pemohon
-                  </span>
-                </label>
-                <select
-                  name="requestedBy"
-                  value={filter?.requestedBy}
-                  onChange={handleFilterChange}
-                  className="select select-bordered select-sm w-full bg-white border-gray-300 text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="all">Semua Pemohon</option>
-                  {users?.data?.map((u) => (
-                    <option key={u?._id} value={u?._id}>
-                      {u?.displayName}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                    {/* List Kategori dengan Scroll */}
+                    <div className="max-h-60 overflow-y-auto rounded-xl border border-gray-200/50 bg-white/60 backdrop-blur-sm">
+                      <div className="p-2">
+                        <button
+                          onClick={() => handleCategoryChange("all")}
+                          className={`w-full text-left px-4 py-3 rounded-lg mb-2 transition-all duration-300 ${
+                            selectedCategory === "all"
+                              ? "bg-blue-100/80 text-blue-700 font-medium border border-blue-200"
+                              : "hover:bg-gray-100/70 text-gray-700"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span>Semua Kategori</span>
+                            {selectedCategory === "all" && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            )}
+                          </div>
+                        </button>
 
-              {/* Tanggal Request */}
-              <div className="form-control w-full">
-                <label className="label py-1">
-                  <span className="label-text text-sm font-medium text-gray-700">
-                    Tanggal Request
-                  </span>
-                </label>
-                <input
-                  type="date"
-                  name="requestDate"
-                  value={filter?.requestDate}
-                  onChange={handleFilterChange}
-                  className="input input-bordered input-sm w-full bg-white border-gray-300 text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
+                        {filteredCategories.map((flow) => (
+                          <button
+                            key={flow._id}
+                            onClick={() => handleCategoryChange(flow._id)}
+                            className={`w-full text-left px-4 py-3 rounded-lg mb-2 transition-all duration-300 ${
+                              selectedCategory === flow._id
+                                ? "bg-blue-100/80 text-blue-700 font-medium border border-blue-200"
+                                : "hover:bg-gray-100/70 text-gray-700"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="truncate">{flow.title}</span>
+                              <span className="badge badge-primary text-white font-bold">
+                                {flow.mode}
+                              </span>
+                              {selectedCategory === flow._id && (
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
 
-              {/* Tombol Aksi */}
-              <div className="md:col-span-2 flex gap-3 justify-end pt-2">
-                <button
-                  onClick={resetFilters}
-                  className="btn btn-ghost btn-sm text-gray-600 hover:bg-gray-200 transition-colors duration-200 flex items-center gap-1"
-                >
-                  <XCircle className="w-4 h-4" />
-                  Reset
-                </button>
+                  {/* Pemohon dengan Search */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      Pemohon
+                    </label>
+
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Cari pemohon..."
+                        value={searchRequester}
+                        onChange={(e) => setSearchRequester(e.target.value)}
+                        className="pl-10 pr-4 py-2.5 w-full rounded-xl border border-gray-300/50 bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-300 text-gray-700 placeholder-gray-400"
+                      />
+                    </div>
+
+                    {/* List Pemohon dengan Scroll */}
+                    <div className="max-h-60 overflow-y-auto rounded-xl border border-gray-200/50 bg-white/60 backdrop-blur-sm">
+                      <div className="p-2">
+                        <button
+                          onClick={() => handleRequesterChange("all")}
+                          className={`w-full text-left px-4 py-3 rounded-lg mb-2 transition-all duration-300 ${
+                            selectedRequester === "all"
+                              ? "bg-blue-100/80 text-blue-700 font-medium border border-blue-200"
+                              : "hover:bg-gray-100/70 text-gray-700"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span>Semua Pemohon</span>
+                            {selectedRequester === "all" && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            )}
+                          </div>
+                        </button>
+
+                        {filteredRequesters.map((user) => (
+                          <button
+                            key={user._id}
+                            onClick={() => handleRequesterChange(user._id)}
+                            className={`w-full text-left px-4 py-3 rounded-lg mb-2 transition-all duration-300 ${
+                              selectedRequester === user._id
+                                ? "bg-blue-100/80 text-blue-700 font-medium border border-blue-200"
+                                : "hover:bg-gray-100/70 text-gray-700"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate">
+                                  {user?.displayName || user?.username}
+                                </div>
+                                {user?.username && user.displayName && (
+                                  <div className="text-xs text-gray-500 truncate">
+                                    @{user.username}
+                                  </div>
+                                )}
+                              </div>
+                              {selectedRequester === user._id && (
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Filter Tambahan */}
+                  <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-gray-200/50">
+                    {/* Status */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Status
+                      </label>
+                      <select
+                        name="overallStatus"
+                        value={filter?.overallStatus || "all"}
+                        onChange={handleFilterChange}
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300/50 bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-300 text-gray-700"
+                      >
+                        <option value="all">Semua Status</option>
+                        <option value="draft">Draft</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="rejected">Rejected</option>
+                      </select>
+                    </div>
+
+                    {/* Tanggal Request */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        Tanggal Request
+                      </label>
+                      <input
+                        type="date"
+                        name="requestDate"
+                        value={filter?.requestDate || ""}
+                        onChange={handleFilterChange}
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300/50 bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-300 text-gray-700"
+                      />
+                    </div>
+
+                    {/* Tombol Aksi */}
+                    <div className="flex items-end space-x-3">
+                      <button
+                        onClick={handleResetAll}
+                        className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300/50 bg-white/80 backdrop-blur-sm text-gray-700 hover:bg-gray-50/90 hover:border-gray-400/50 transition-all duration-300 flex items-center justify-center gap-2 font-medium"
+                      >
+                        <X className="w-4 h-4" />
+                        Reset All
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Status Filter Aktif */}
+                  <div className="lg:col-span-2">
+                    <div className="flex flex-wrap gap-2 p-4 rounded-xl bg-blue-50/30 backdrop-blur-sm border border-blue-100/50">
+                      <span className="text-sm font-medium text-blue-700">
+                        Filter Aktif:
+                      </span>
+
+                      {selectedCategory !== "all" && (
+                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-100/80 text-blue-700 text-sm">
+                          Kategori:{" "}
+                          {
+                            flowList?.data?.find(
+                              (f) => f._id === selectedCategory
+                            )?.title
+                          }
+                          <button
+                            onClick={() => handleCategoryChange("all")}
+                            className="ml-1 hover:text-blue-900"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+
+                      {selectedRequester !== "all" && (
+                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-100/80 text-blue-700 text-sm">
+                          Pemohon:{" "}
+                          {
+                            users?.data?.find(
+                              (u) => u._id === selectedRequester
+                            )?.displayName
+                          }
+                          <button
+                            onClick={() => handleRequesterChange("all")}
+                            className="ml-1 hover:text-blue-900"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+
+                      {filter?.overallStatus !== "all" && (
+                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-100/80 text-blue-700 text-sm">
+                          Status: {filter?.overallStatus}
+                          <button
+                            onClick={() =>
+                              handleFilterChange({
+                                target: { name: "overallStatus", value: "all" },
+                              })
+                            }
+                            className="ml-1 hover:text-blue-900"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+
+                      {filter?.requestDate && (
+                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-100/80 text-blue-700 text-sm">
+                          Tanggal: {filter.requestDate}
+                          <button
+                            onClick={() =>
+                              handleFilterChange({
+                                target: { name: "requestDate", value: "" },
+                              })
+                            }
+                            className="ml-1 hover:text-blue-900"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
 
         <div className="flex flex-wrap justify-between gap-2">
           <div className="flex flex-wrap gap-y-3 gap-x-4 items-center">
@@ -333,108 +577,105 @@ export default function ProcessPage() {
             </a>
           </div>
 
-          <div className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
-            {/* Search Input */}
-            <div className="relative flex-1 max-w-md">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg
-                  className="h-5 w-5 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </div>
-              <input
-                type="text"
-                placeholder="Cari..."
-                className="pl-10 pr-4 py-2.5 w-full rounded-lg border-2 border-blue-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 shadow-sm"
-                value={filter?.search}
-                onChange={(e) => {
-                  setFilter((prev) => ({
-                    ...prev,
-                    search: e.target.value,
-                  }));
-                }}
-              />
+          <div className="relative flex-1 max-w-md shadow-md shadow-gray-200">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search color="gray" size={20} />
             </div>
-
-            {/* Verbose Search Checkbox */}
-            <div className="flex flex-col gap-3 p-4 bg-white rounded-lg shadow-sm border border-gray-100 ">
-              {/* Toggle Switch */}
-              <div className="flex items-center justify-between">
-                <label className="inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={filter?.verboseSearch || false}
-                    onChange={(e) => {
-                      setFilter((prev) => ({
-                        ...prev,
-                        verboseSearch: e.target.checked,
-                      }));
-                    }}
-                  />
-                  <div className="relative w-12 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
-                  <span className="ml-3 text-sm font-medium text-gray-700">
-                    Verbose Search
-                    <span className="text-blue-600 font-semibold">
-                      {filter?.verboseSearch ? " (ON)" : " (OFF)"}
-                    </span>
-                  </span>
-                </label>
-              </div>
-
-              {/* Warning Message */}
-              {filter?.verboseSearch && (
-                <div className="flex items-start p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800">
-                  <svg
-                    className="flex-shrink-0 h-5 w-5 mr-2 mt-0.5"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <div className="text-sm">
-                    <span className="font-semibold">Perhatian:</span> Verbose
-                    Search akan mencari kata kunci di setiap jawaban dan sangat
-                    lambat. Pastikan Anda mencari dengan{" "}
-                    <span className="font-medium">value</span> bukan{" "}
-                    <span className="font-medium">key</span>.
-                  </div>
-                </div>
-              )}
-            </div>
+            <input
+              type="text"
+              placeholder="Cari..."
+              className="pl-10 pr-4 py-2.5 w-full rounded-lg border-2 border-blue-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 shadow-sm w"
+              value={filter?.search}
+              onChange={(e) => {
+                setFilter((prev) => ({
+                  ...prev,
+                  search: e.target.value,
+                }));
+              }}
+            />
           </div>
         </div>
 
         {/* --- Area Konten / Hasil --- */}
         <div className="space-y-4 overflow-y-auto pb-20 ">
-          <div className="flex gap-x-4 items-center">
-            <h3 className="text-lg font-semibold items-center gap-x-3">
-              Ditemukan: {totalData ?? 0} Proses
-            </h3>
-            <h3 className="text-lg font-semibold items-center gap-x-3">
-              Menampilkan: {flowInstanceData?.data.length ?? 0} Proses
-            </h3>
-            <div
-              className="badge badge-sm mx-3 rounded cursor-pointer"
-              onClick={() => resetFilters()}
-            >
-              Reset Filter
-            </div>
-          </div>
+          <div
+            className="flex flex-wrap items-center gap-4 p-4 rounded-xl mb-6"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(173, 216, 230, 0.1) 0%, rgba(176, 224, 230, 0.05) 100%)",
+              backdropFilter: "blur(10px)",
+              border: "1px solid rgba(173, 216, 230, 0.2)",
+            }}
+          >
+            {/* Informasi Hasil */}
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Total Ditemukan */}
+              <div className="flex items-center gap-2 px-3 py-2 bg-white/50 rounded-lg border border-gray-200/50">
+                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                <span className="text-sm font-medium text-gray-700">
+                  Ditemukan:
+                </span>
+                <span className="font-semibold text-blue-600">
+                  {totalData ?? 0}
+                </span>
+                <span className="text-gray-600">proses</span>
+              </div>
 
+              {/* Sedang Ditampilkan */}
+              <div className="flex items-center gap-2 px-3 py-2 bg-white/50 rounded-lg border border-gray-200/50">
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                <span className="text-sm font-medium text-gray-700">
+                  Menampilkan:
+                </span>
+                <span className="font-semibold text-green-600">
+                  {flowInstanceData?.data.length ?? 0}
+                </span>
+                <span className="text-gray-600">proses</span>
+              </div>
+
+              {/* Indikator Filter Aktif */}
+              {Object.values(filter || {}).some(
+                (v) => v && v !== "all" && v !== ""
+              ) && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50/50 rounded-lg border border-blue-100/50">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs font-medium text-blue-600">
+                      Filter Aktif
+                    </span>
+                  </div>
+                  <span className="text-xs text-blue-700">
+                    {
+                      Object.values(filter || {}).filter(
+                        (v) => v && v !== "all" && v !== ""
+                      ).length
+                    }
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Tombol Reset */}
+            <button
+              onClick={resetFilters}
+              className="ml-auto flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-red-600 transition-colors duration-200 rounded-lg hover:bg-white/70 border border-gray-300/50"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+              Reset Filter
+            </button>
+          </div>
           {isLoadingInstance ? (
             <div className="flex justify-center items-center py-20">
               <span className="loading loading-spinner loading-lg"></span>
