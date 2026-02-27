@@ -10,11 +10,8 @@ import {
   Filter,
   Hash,
   Search,
-  Sliders,
   User,
-  Users,
   X,
-  XCircle,
 } from "lucide-react"; // Contoh ikon, Anda bisa gunakan library ikon lain
 import { useParams, useSearchParams } from "react-router-dom";
 import flowInstanceApi from "@/api/flowInstanceApi";
@@ -28,6 +25,7 @@ const initialFilterState = {
   requestedBy: "all",
   requestDate: "", // Gunakan string kosong untuk input tanggal yang kosong
   isMyRequestOnly: false,
+  isMyDepartmentOnly: true,
   page: 1,
   limit: 25,
   search: "",
@@ -77,7 +75,7 @@ export default function ProcessPage() {
     queryFn: async () => {
       // Buat query string dari filter, skip jika value 'all' atau kosong
       const queryObj = Object.fromEntries(
-        Object.entries(filter).filter(([k, v]) => v !== "all" && v !== "")
+        Object.entries(filter).filter(([k, v]) => v !== "all" && v !== ""),
       );
       const queryString = new URLSearchParams(queryObj).toString();
       return await flowInstanceApi.getFlowInstanceList({
@@ -123,7 +121,7 @@ export default function ProcessPage() {
   const filteredCategories = useMemo(() => {
     if (!flowList?.data) return [];
     return flowList.data.filter((flow) =>
-      flow.title.toLowerCase().includes(searchCategory.toLowerCase())
+      flow.title.toLowerCase().includes(searchCategory.toLowerCase()),
     );
   }, [flowList, searchCategory]);
 
@@ -448,7 +446,7 @@ export default function ProcessPage() {
                           Kategori:{" "}
                           {
                             flowList?.data?.find(
-                              (f) => f._id === selectedCategory
+                              (f) => f._id === selectedCategory,
                             )?.title
                           }
                           <button
@@ -465,7 +463,7 @@ export default function ProcessPage() {
                           Pemohon:{" "}
                           {
                             users?.data?.find(
-                              (u) => u._id === selectedRequester
+                              (u) => u._id === selectedRequester,
                             )?.displayName
                           }
                           <button
@@ -610,16 +608,18 @@ export default function ProcessPage() {
             {/* Informasi Hasil */}
             <div className="flex flex-wrap items-center gap-4">
               {/* Total Ditemukan */}
-              <div className="flex items-center gap-2 px-3 py-2 bg-white/50 rounded-lg border border-gray-200/50">
-                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                <span className="text-sm font-medium text-gray-700">
-                  Ditemukan:
-                </span>
-                <span className="font-semibold text-blue-600">
-                  {totalData ?? 0}
-                </span>
-                <span className="text-gray-600">proses</span>
-              </div>
+              {totalData ? (
+                <div className="flex items-center gap-2 px-3 py-2 bg-white/50 rounded-lg border border-gray-200/50">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                  <span className="text-sm font-medium text-gray-700">
+                    Ditemukan:
+                  </span>
+                  <span className="font-semibold text-blue-600">
+                    {totalData ?? 0}
+                  </span>
+                  <span className="text-gray-600">proses</span>
+                </div>
+              ) : null}
 
               {/* Sedang Ditampilkan */}
               <div className="flex items-center gap-2 px-3 py-2 bg-white/50 rounded-lg border border-gray-200/50">
@@ -635,7 +635,7 @@ export default function ProcessPage() {
 
               {/* Indikator Filter Aktif */}
               {Object.values(filter || {}).some(
-                (v) => v && v !== "all" && v !== ""
+                (v) => v && v !== "all" && v !== "",
               ) && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-blue-50/50 rounded-lg border border-blue-100/50">
                   <div className="flex items-center gap-1">
@@ -647,7 +647,7 @@ export default function ProcessPage() {
                   <span className="text-xs text-blue-700">
                     {
                       Object.values(filter || {}).filter(
-                        (v) => v && v !== "all" && v !== ""
+                        (v) => v && v !== "all" && v !== "",
                       ).length
                     }
                   </span>
@@ -660,20 +660,7 @@ export default function ProcessPage() {
               onClick={resetFilters}
               className="ml-auto flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-red-600 transition-colors duration-200 rounded-lg hover:bg-white/70 border border-gray-300/50"
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
-              </svg>
-              Reset Filter
+              X Reset Filter
             </button>
           </div>
           {isLoadingInstance ? (
@@ -683,14 +670,14 @@ export default function ProcessPage() {
           ) : flowInstanceData?.data.length > 0 ? (
             <>
               {/* tampilan mobile */}
-              <div className="md:hidden flex-wrap text-wrap">
+              <div className="md:hidden flex-wrap text-wrap ">
                 <div className="grid gap-4 md:hidden flex-wrap text-wrap">
                   {flowInstanceData?.data.map((instance) => {
                     const statusLength =
                       instance?.flowTemplate?.status?.length || 1;
                     const currentIndex = instance?.currentStatusIndex ?? 0;
                     const progress = Math.round(
-                      (currentIndex / statusLength) * 100
+                      (currentIndex / statusLength) * 100,
                     );
                     const currentApprovers =
                       instance?.flowTemplate?.status?.[currentIndex]?.authorized
@@ -720,8 +707,8 @@ export default function ProcessPage() {
                                 instance?.overallStatus === "completed"
                                   ? "bg-emerald-50 text-emerald-700"
                                   : instance?.overallStatus === "rejected"
-                                  ? "bg-rose-50 text-rose-700"
-                                  : "bg-blue-50 text-blue-700"
+                                    ? "bg-rose-50 text-rose-700"
+                                    : "bg-blue-50 text-blue-700"
                               }`}
                             >
                               {instance?.overallStatus}
@@ -760,7 +747,7 @@ export default function ProcessPage() {
                                   day: "numeric",
                                   month: "short",
                                   year: "numeric",
-                                }
+                                },
                               )}
                             </p>
                           </div>
@@ -857,7 +844,7 @@ export default function ProcessPage() {
                         instance?.flowTemplate?.status?.length || 1;
                       const currentIndex = instance?.currentStatusIndex ?? 0;
                       const progress = Math.round(
-                        (currentIndex / statusLength) * 100
+                        (currentIndex / statusLength) * 100,
                       );
 
                       return (
@@ -907,7 +894,7 @@ export default function ProcessPage() {
 
                             <span
                               className={`badge ${getStatusBadge(
-                                instance?.overallStatus
+                                instance?.overallStatus,
                               )} text-white font-bold text-xs px-3 py-1 rounded-full shadow-sm w-full`}
                             >
                               {instance?.overallStatus}
@@ -984,7 +971,7 @@ export default function ProcessPage() {
 
           <div className="flex items-center justify-center px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-gray-200 shadow-sm">
             <span className="font-medium text-gray-700">
-              Page {filter?.page} of {totalPage}
+              Page {filter?.page} {totalPage ? `of ${totalPage}` : ""}
             </span>
           </div>
 

@@ -91,12 +91,12 @@ const TableInput = ({
       setRequirement(
         statusIndex,
         input._id,
-        tableRows.filter((_, i) => i !== rowIdx)
+        tableRows.filter((_, i) => i !== rowIdx),
       );
     } else {
       setRequestData(
         input._id,
-        tableRows.filter((_, i) => i !== rowIdx)
+        tableRows.filter((_, i) => i !== rowIdx),
       );
     }
   };
@@ -181,7 +181,7 @@ const TableInput = ({
                                       handleFileChange(
                                         rIdx,
                                         cIdx,
-                                        e.target.files[0]
+                                        e.target.files[0],
                                       )
                                     }
                                   />
@@ -196,7 +196,7 @@ const TableInput = ({
                                     handleFileChange(
                                       rIdx,
                                       cIdx,
-                                      e.target.files[0]
+                                      e.target.files[0],
                                     )
                                   }
                                 />
@@ -204,7 +204,7 @@ const TableInput = ({
                             )}
 
                             {/* Preview gambar */}
-                            {typeof val === "string" && (
+                            {typeof val === "string" && val && (
                               <div className="flex justify-center">
                                 <ZoomableImage
                                   src={val}
@@ -246,7 +246,7 @@ const TableInput = ({
                             }`}
                             value={(() => {
                               const num = Number(
-                                val?.toString().replace(/\./g, "")
+                                val?.toString().replace(/\./g, ""),
                               );
                               return !isNaN(num) && val !== ""
                                 ? num.toLocaleString("id-ID")

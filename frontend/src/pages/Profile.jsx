@@ -212,7 +212,7 @@ const Profile = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto">
-        <div className=" dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8">
+        <div className=" bg-white rounded-xl shadow-lg p-6 sm:p-8">
           {activeTab === "profile" && (
             <div className="space-y-8">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-800 dark:text-gray-200 border-b pb-4 mb-4">

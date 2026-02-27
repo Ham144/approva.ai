@@ -96,5 +96,6 @@
 [x] mod: tombol continue kekecilan
 [x] fix: logic completed if internal server error
 [x] mod: process page bisa di klik kiri (open new tab)
+[x] add: optimasi loading dengan redis
 
 [x] fix: RangeError [ERR_OUT_OF_RANGE]: The value of "offset" is out of range (cause: gambar besar gagal di conver buffer tepatnya di table type image)

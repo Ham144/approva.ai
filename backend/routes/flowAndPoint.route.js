@@ -6,7 +6,6 @@ import UserRefrensi from "../models/User.model.js";
 import mongoose from "mongoose";
 import Department from "../models/Department.model.js";
 import authorize from "../middlewares/authorize.js";
-import Organization from "../models/Organization.model.js";
 
 const router = Router();
 
@@ -48,7 +47,7 @@ router.post("/createFlow", async (req, res) => {
       const { _id, ...rest } = input; // buang _id
       if (input.tipe === "table") {
         const selectTipeIndex = input?.table.keysType.findIndex(
-          (key) => key === "select"
+          (key) => key === "select",
         );
 
         if (selectTipeIndex !== -1 && input.table.sourceDataList.length === 0) {
@@ -326,7 +325,7 @@ router.get("/list/forRequest", async (req, res) => {
 
     const rawList = await FlowAndPoint.find(query)
       .select(
-        "title desc isAllowanceModeRequest designedBy mode allowedDepartmentToRequest allowedSpecificUserToRequest"
+        "title desc isAllowanceModeRequest designedBy mode allowedDepartmentToRequest allowedSpecificUserToRequest",
       ) // ⚠️ HAPUS allowedDepartmentToRequest dari sini
       .populate({
         path: "status",
@@ -359,7 +358,7 @@ router.get("/list/forRequest", async (req, res) => {
         return (
           Array.isArray(template.allowedDepartmentToRequest) &&
           template.allowedDepartmentToRequest.some(
-            (dept) => dept?._id?.toString?.() === userDeptId
+            (dept) => dept?._id?.toString?.() === userDeptId,
           )
         );
       }
@@ -527,7 +526,7 @@ router.put("/update/:id", async (req, res) => {
 
     // Validasi: user saat ini adalah salah satu desainer
     const youAreTheDesigner = existingFlow.designedBy.find(
-      (d) => d.toString() === req.user._id
+      (d) => d.toString() === req.user._id,
     );
     console.log("youAreTheDesigner: ", youAreTheDesigner);
     // Buang _id hanya kalau _id memang tidak valid (misal berasal dari frontend bodoh)
@@ -538,7 +537,7 @@ router.put("/update/:id", async (req, res) => {
 
       if (input.tipe === "table") {
         const selectTipeIndex = input?.table.keysType.findIndex(
-          (key) => key === "select"
+          (key) => key === "select",
         );
 
         if (selectTipeIndex !== -1 && input.table.sourceDataList.length === 0) {
@@ -558,7 +557,7 @@ router.put("/update/:id", async (req, res) => {
             ...restInput,
             updatedAt: new Date(),
           },
-          { new: true }
+          { new: true },
         );
         sanitizedInputs.push(_id); // langsung pakai
       } else {
@@ -593,7 +592,7 @@ router.put("/update/:id", async (req, res) => {
 
         if (requirement.tipe === "table") {
           const selectTipeIndex = requirement?.table.keysType.findIndex(
-            (key) => key === "select"
+            (key) => key === "select",
           );
 
           if (
@@ -616,7 +615,7 @@ router.put("/update/:id", async (req, res) => {
               ...restReq,
               updatedAt: new Date(),
             },
-            { new: true }
+            { new: true },
           );
           requirementIds.push(_id);
         } else {
@@ -652,6 +651,8 @@ router.put("/update/:id", async (req, res) => {
     }
 
     await existingFlow.save();
+    //hapus semua cache
+    await redisService.deleteByPattern(`flow:${req.user.org}:*`);
 
     return res.json({
       message: "Flow berhasil diperbarui.",
@@ -741,7 +742,7 @@ router.post("/clone-from-other-org/:id", async (req, res) => {
   try {
     const existingFlow = await FlowAndPoint.findOne({ _id: id })
       .select(
-        "title desc isAllowanceModeRequest allowedDepartmentToRequest mode designedBy request status org"
+        "title desc isAllowanceModeRequest allowedDepartmentToRequest mode designedBy request status org",
       )
       .populate({
         path: "status.requirements",
@@ -775,7 +776,7 @@ router.post("/clone-from-other-org/:id", async (req, res) => {
           org: req.user.org,
         });
         return newInput._id;
-      })
+      }),
     );
 
     const statuses = await Promise.all(
@@ -798,7 +799,7 @@ router.post("/clone-from-other-org/:id", async (req, res) => {
               org: req.user.org,
             });
             return newRequirement._id;
-          })
+          }),
         );
 
         return {
@@ -808,7 +809,7 @@ router.post("/clone-from-other-org/:id", async (req, res) => {
           authorized: [], // kosongkan saat cloning
           requirements: requirementsIds,
         };
-      })
+      }),
     );
 
     await FlowAndPoint.create({

@@ -10,6 +10,8 @@ import generateExcelFile from "../utils/generateExcelFile.js";
 import UserRefrensi from "../models/User.model.js";
 import checkOperator from "../utils/checkingOperator.js";
 import ExcelJS from "exceljs";
+import flowCacheMiddleware from "../middlewares/redise-middleware.js";
+import redisService from "../utils/RedisService.js";
 
 const router = Router();
 
@@ -162,6 +164,9 @@ router.post("/request/new", async (req, res) => {
     // 6. Jika semua validasi berhasil dan ukuran aman, buat instance baru
     const flowInstance = await FlowInstance.create(docToInsert);
 
+    //hapus cahce
+    await redisService.deleteByPattern(`flow:${req.user.org}:*`);
+
     // --- Start Email Notification Logic for First Approver (yang dipilih) ---
     try {
       if (flowInstance.overallStatus === "in-progress") {
@@ -169,7 +174,7 @@ router.post("/request/new", async (req, res) => {
 
         nextApprovers = await UserRefrensi.find({
           _id: { $in: nextApprovers }, // langsung pakai array ID
-        });
+        }).populate("org", "organizationName");
 
         if (nextApprovers.length > 0) {
           await sendApprovalRequestEmail(
@@ -233,266 +238,221 @@ router.put("/edit/:instanceId", async (req, res) => {
 });
 
 //light mode list
-router.get("/getFlowInstanceList/:instanceId?", async (req, res) => {
-  const { instanceId } = req.params;
-  const {
-    flowTemplateCategory,
-    overallStatus,
-    requestedBy,
-    requestDate,
-    isMyRequestOnly,
-    isMyDepartmentOnly,
-    limit = "10",
-    page = "1",
-    search,
-    verboseSearch,
-  } = req.query;
+router.get(
+  "/getFlowInstanceList/:instanceId?",
+  flowCacheMiddleware,
+  async (req, res) => {
+    const { instanceId } = req.params;
+    const {
+      flowTemplateCategory,
+      overallStatus,
+      requestedBy,
+      requestDate,
+      isMyRequestOnly,
+      isMyDepartmentOnly,
+      limit = "10",
+      page = "1",
+      search,
+    } = req.query;
 
-  const isMyRequest = isMyRequestOnly === "true";
-  const isMyDept = isMyDepartmentOnly === "true";
-  const limitNum = Math.max(1, parseInt(limit) || 10);
-  const pageNum = Math.max(1, parseInt(page) || 1);
+    const isMyRequest = isMyRequestOnly === "true";
+    const isMyDept = isMyDepartmentOnly === "true";
+    const limitNum = Math.max(1, parseInt(limit) || 10);
+    const pageNum = Math.max(1, parseInt(page) || 1);
 
-  try {
-    if (verboseSearch === "true") {
-      const keyword = search || "";
-      const pageNum = parseInt(page) || 1;
-      const limitNum = parseInt(limit) || 25;
-      const skipNum = (pageNum - 1) * limitNum;
-      const pipeline = [
-        {
-          $addFields: {
-            combinedText: {
-              $function: {
-                body: function (reqData, statuses) {
-                  return JSON.stringify(reqData) + JSON.stringify(statuses);
-                },
-                args: ["$requestData", "$statuses"],
-                lang: "js",
-              },
-            },
-          },
-        },
-        { $match: { combinedText: { $regex: keyword, $options: "i" } } },
-        { $skip: skipNum },
-        { $limit: limitNum },
-        { $project: { _id: 1 } },
-      ];
-      const matchedDocs = await FlowInstance.aggregate(pipeline);
-      const ids = matchedDocs.map((doc) => doc._id);
-      if (ids.length === 0) {
-        return res.json({ data: [] });
+    try {
+      // Ambil authorized templates (dipakai bila perlu)
+      const authorizedTemplateIds = await FlowAndPoint.find({
+        org: req.user.org,
+        "status.authorized": req.user._id,
+      }).distinct("_id");
+
+      // Ambil dept templates hanya jika tab dept dipilih
+      let deptTemplateIds = [];
+      if (isMyDept) {
+        const myDept = await Department.findOne({
+          org: req.user.org,
+          members: req.user._id,
+        });
+        if (myDept) {
+          deptTemplateIds = await FlowAndPoint.find({
+            org: req.user.org,
+            allowedDepartmentToRequest: myDept._id,
+          }).distinct("_id");
+        }
+        // jika myDept tidak ada -> deptTemplateIds tetap []
+        if (!deptTemplateIds.length) {
+          // no templates for this department => result pasti kosong
+          return res.status(200).json({ data: [], totalPage: 0, totalData: 0 });
+        }
       }
-      const results = await FlowInstance.find({ _id: { $in: ids } })
+
+      // Jika user kirim requestedBy sebagai username atau id -> resolve ke ObjectId
+      let requestedById = null;
+      if (requestedBy) {
+        if (mongoose.isValidObjectId(requestedBy)) {
+          requestedById = new mongoose.Types.ObjectId(requestedBy);
+        } else {
+          const userRef = await UserRefrensi.findOne({
+            username: requestedBy,
+            org: req.user.org,
+          }).select("_id");
+          if (userRef) requestedById = userRef._id;
+        }
+      }
+
+      // Build initial query berdasarkan tab
+      // Tab precedence: isMyRequest -> isMyDept -> all
+      let finalQuery = { org: req.user.org };
+
+      if (instanceId) {
+        finalQuery._id = new mongoose.Types.ObjectId(instanceId);
+      } else if (isMyRequest) {
+        // Tab "My Request" — forced requestedBy = me (override requestedBy param)
+        finalQuery.requestedBy = new mongoose.Types.ObjectId(req.user._id);
+      } else if (isMyDept) {
+        // Tab "My Department" — hanya templates yg diijinkan dept
+        finalQuery = {
+          ...finalQuery,
+          $or: [
+            { flowTemplate: { $in: deptTemplateIds } },
+            { flowTemplate: { $in: authorizedTemplateIds } },
+          ],
+        };
+      } else {
+        // Tab "All" — mulai dengan org saja (tampil semua dalam org)
+        // If you want "all" to be restricted to authorizedTemplateIds, change this behaviour.
+      }
+
+      // Setelah tab, apply filters yang lebih sempit
+      // 1) flowTemplateCategory (intersect dengan existing flowTemplate if exists)
+      if (
+        flowTemplateCategory &&
+        mongoose.isValidObjectId(flowTemplateCategory)
+      ) {
+        const tplId = new mongoose.Types.ObjectId(flowTemplateCategory);
+        if (finalQuery.flowTemplate) {
+          // sudah ada flowTemplate (misal dari dept) -> jadi intersection
+          // convert to $and to combine properly
+          finalQuery = {
+            $and: [finalQuery, { flowTemplate: tplId }],
+            org: req.user.org,
+          };
+        } else {
+          finalQuery.flowTemplate = tplId;
+        }
+      }
+
+      // 2) overallStatus
+      if (overallStatus) {
+        if (finalQuery.$and) {
+          finalQuery = {
+            $and: [...finalQuery.$and, { overallStatus }],
+            org: req.user.org,
+          };
+        } else {
+          finalQuery.overallStatus = overallStatus;
+        }
+      }
+
+      // 3) requestedBy (hanya apply kalau bukan tab "My Request", karena tab My Request sudah override)
+      if (!isMyRequest && requestedById) {
+        if (finalQuery.$and) {
+          finalQuery = {
+            $and: [...finalQuery.$and, { requestedBy: requestedById }],
+            org: req.user.org,
+          };
+        } else {
+          finalQuery.requestedBy = requestedById;
+        }
+      }
+
+      // 4) requestDate -> filter createdAt range
+      if (requestDate) {
+        const start = new Date(requestDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(requestDate);
+        end.setHours(23, 59, 59, 999);
+        const dateCond = { createdAt: { $gte: start, $lte: end } };
+
+        if (finalQuery.$and) {
+          finalQuery = {
+            $and: [...finalQuery.$and, dateCond],
+            org: req.user.org,
+          };
+        } else {
+          finalQuery = { ...finalQuery, ...dateCond };
+        }
+      }
+
+      // 5) search — terakhir. (simple search: instanceTitle & globalIndex)
+      if (search && String(search).trim() !== "") {
+        const regex = new RegExp(String(search).trim(), "i");
+        const searchCond = {
+          $or: [
+            { instanceTitle: { $regex: regex } },
+            { globalIndex: { $regex: regex } },
+          ],
+        };
+
+        if (finalQuery.$and) {
+          finalQuery = {
+            $and: [...finalQuery.$and, searchCond],
+            org: req.user.org,
+          };
+        } else {
+          // jika finalQuery punya beberapa key, combine dengan $and
+          const keys = Object.keys(finalQuery).filter((k) => k !== "org");
+          if (keys.length > 0) {
+            const existing = { ...finalQuery };
+            delete existing.org;
+            finalQuery = { org: req.user.org, $and: [existing, searchCond] };
+          } else {
+            finalQuery = { ...finalQuery, ...searchCond };
+          }
+        }
+      }
+
+      // lakukan count dan fetch (tanpa populate di count)
+      // const totalData = await FlowInstance.countDocuments(finalQuery);//dihapus untuk optimasi lanjutan
+      // const totalPage = Math.ceil(totalData / limitNum);
+      const totalPage = 10000; //sementara
+      const totalData = 0; //sementara
+
+      const flowInstanceList = await FlowInstance.find(finalQuery)
+        .populate("requestedBy", "username displayName")
         .populate({
           path: "flowTemplate",
-          select: "title desc _id",
+          select: "title desc _id status",
           populate: [
             { path: "request", model: "Input" },
             { path: "status.requirements", model: "Input" },
             {
               path: "status.authorized",
               model: "UserRefrensi",
-              select: "_id username displayName",
+              select: "_id username",
             },
           ],
         })
-        .populate({
-          path: "requestedBy",
-          select: "username displayName",
-        })
-        .select("-requestData logics status requestedBy")
-        .sort({ createdAt: -1 });
+        .select("-requestData")
+        .sort({ createdAt: -1 })
+        .limit(limitNum)
+        .skip((pageNum - 1) * limitNum);
 
-      return res.json({ data: results });
+      const responseData = { data: flowInstanceList, totalPage, totalData };
+      await redisService.set(req.cacheKey, responseData);
+
+      return res
+        .status(200)
+        .json({ data: flowInstanceList, totalPage, totalData });
+    } catch (error) {
+      console.error(error);
+      return res
+        .status(400)
+        .json({ message: "Terjadi kesalahan server", error: error.message });
     }
-
-    // Ambil authorized templates (dipakai bila perlu)
-    const authorizedTemplateIds = await FlowAndPoint.find({
-      org: req.user.org,
-      "status.authorized": req.user._id,
-    }).distinct("_id");
-
-    // Ambil dept templates hanya jika tab dept dipilih
-    let deptTemplateIds = [];
-    if (isMyDept) {
-      const myDept = await Department.findOne({
-        org: req.user.org,
-        members: req.user._id,
-      });
-      if (myDept) {
-        deptTemplateIds = await FlowAndPoint.find({
-          org: req.user.org,
-          allowedDepartmentToRequest: myDept._id,
-        }).distinct("_id");
-      }
-      // jika myDept tidak ada -> deptTemplateIds tetap []
-      if (!deptTemplateIds.length) {
-        // no templates for this department => result pasti kosong
-        return res.status(200).json({ data: [], totalPage: 0, totalData: 0 });
-      }
-    }
-
-    // Jika user kirim requestedBy sebagai username atau id -> resolve ke ObjectId
-    let requestedById = null;
-    if (requestedBy) {
-      if (mongoose.isValidObjectId(requestedBy)) {
-        requestedById = new mongoose.Types.ObjectId(requestedBy);
-      } else {
-        const userRef = await UserRefrensi.findOne({
-          username: requestedBy,
-          org: req.user.org,
-        }).select("_id");
-        if (userRef) requestedById = userRef._id;
-      }
-    }
-
-    // Build initial query berdasarkan tab
-    // Tab precedence: isMyRequest -> isMyDept -> all
-    let finalQuery = { org: req.user.org };
-
-    if (instanceId) {
-      finalQuery._id = new mongoose.Types.ObjectId(instanceId);
-    } else if (isMyRequest) {
-      // Tab "My Request" — forced requestedBy = me (override requestedBy param)
-      finalQuery.requestedBy = new mongoose.Types.ObjectId(req.user._id);
-    } else if (isMyDept) {
-      // Tab "My Department" — hanya templates yg diijinkan dept
-      finalQuery = {
-        ...finalQuery,
-        $or: [
-          { flowTemplate: { $in: deptTemplateIds } },
-          { flowTemplate: { $in: authorizedTemplateIds } },
-        ],
-      };
-    } else {
-      // Tab "All" — mulai dengan org saja (tampil semua dalam org)
-      // If you want "all" to be restricted to authorizedTemplateIds, change this behaviour.
-    }
-
-    // Setelah tab, apply filters yang lebih sempit
-    // 1) flowTemplateCategory (intersect dengan existing flowTemplate if exists)
-    if (
-      flowTemplateCategory &&
-      mongoose.isValidObjectId(flowTemplateCategory)
-    ) {
-      const tplId = new mongoose.Types.ObjectId(flowTemplateCategory);
-      if (finalQuery.flowTemplate) {
-        // sudah ada flowTemplate (misal dari dept) -> jadi intersection
-        // convert to $and to combine properly
-        finalQuery = {
-          $and: [finalQuery, { flowTemplate: tplId }],
-          org: req.user.org,
-        };
-      } else {
-        finalQuery.flowTemplate = tplId;
-      }
-    }
-
-    // 2) overallStatus
-    if (overallStatus) {
-      if (finalQuery.$and) {
-        finalQuery = {
-          $and: [...finalQuery.$and, { overallStatus }],
-          org: req.user.org,
-        };
-      } else {
-        finalQuery.overallStatus = overallStatus;
-      }
-    }
-
-    // 3) requestedBy (hanya apply kalau bukan tab "My Request", karena tab My Request sudah override)
-    if (!isMyRequest && requestedById) {
-      if (finalQuery.$and) {
-        finalQuery = {
-          $and: [...finalQuery.$and, { requestedBy: requestedById }],
-          org: req.user.org,
-        };
-      } else {
-        finalQuery.requestedBy = requestedById;
-      }
-    }
-
-    // 4) requestDate -> filter createdAt range
-    if (requestDate) {
-      const start = new Date(requestDate);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(requestDate);
-      end.setHours(23, 59, 59, 999);
-      const dateCond = { createdAt: { $gte: start, $lte: end } };
-
-      if (finalQuery.$and) {
-        finalQuery = {
-          $and: [...finalQuery.$and, dateCond],
-          org: req.user.org,
-        };
-      } else {
-        finalQuery = { ...finalQuery, ...dateCond };
-      }
-    }
-
-    // 5) search — terakhir. (simple search: instanceTitle & globalIndex)
-    if (search && String(search).trim() !== "") {
-      const regex = new RegExp(String(search).trim(), "i");
-      const searchCond = {
-        $or: [
-          { instanceTitle: { $regex: regex } },
-          { globalIndex: { $regex: regex } },
-        ],
-      };
-
-      if (finalQuery.$and) {
-        finalQuery = {
-          $and: [...finalQuery.$and, searchCond],
-          org: req.user.org,
-        };
-      } else {
-        // jika finalQuery punya beberapa key, combine dengan $and
-        const keys = Object.keys(finalQuery).filter((k) => k !== "org");
-        if (keys.length > 0) {
-          const existing = { ...finalQuery };
-          delete existing.org;
-          finalQuery = { org: req.user.org, $and: [existing, searchCond] };
-        } else {
-          finalQuery = { ...finalQuery, ...searchCond };
-        }
-      }
-    }
-
-    // lakukan count dan fetch (tanpa populate di count)
-    const totalData = await FlowInstance.countDocuments(finalQuery);
-    const totalPage = Math.ceil(totalData / limitNum);
-
-    const flowInstanceList = await FlowInstance.find(finalQuery)
-      .populate("requestedBy", "username displayName")
-      .populate({
-        path: "flowTemplate",
-        select: "title desc _id status",
-        populate: [
-          { path: "request", model: "Input" },
-          { path: "status.requirements", model: "Input" },
-          {
-            path: "status.authorized",
-            model: "UserRefrensi",
-            select: "_id username",
-          },
-        ],
-      })
-      .select("-requestData")
-      .sort({ createdAt: -1 })
-      .limit(limitNum)
-      .skip((pageNum - 1) * limitNum);
-
-    return res
-      .status(200)
-      .json({ data: flowInstanceList, totalPage, totalData });
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(400)
-      .json({ message: "Terjadi kesalahan server", error: error.message });
-  }
-});
+  },
+);
 
 //ini lengkap dapatin template nya beserta instance flow nya
 router.get("/flowInstanceById/:id", async (req, res) => {
@@ -858,6 +818,9 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
 
     await flowInstance.save();
 
+    // HAPUS CACHE DI SINI
+    await redisService.deleteByPattern(`flow:${req.user.org}:*`);
+
     // --- Start Email Notification Logic ---
     if (verdictOfRequirement === "approved") {
       try {
@@ -885,7 +848,7 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
 
           nextApprovers = await UserRefrensi.find({
             _id: { $in: nextApprovers }, // langsung pakai array ID
-          });
+          }).populate("org", "organizationName");
 
           if (nextApprovers.length > 0) {
             await sendApprovalRequestEmail(
@@ -1065,6 +1028,7 @@ router.delete("/delete/:instanceId", async (req, res) => {
       _id: instanceId,
       org: req.user.org,
     });
+    await redisService.deleteByPattern(`flow:${req.user.org}:*`);
     return res.json({
       message: "berhasil menghapus data flow instance",
       data: flowInstance,
@@ -1076,7 +1040,7 @@ router.delete("/delete/:instanceId", async (req, res) => {
 });
 
 // Get tasks assigned to the current user
-router.get("/my-tasks", async (req, res) => {
+router.get("/my-tasks", flowCacheMiddleware, async (req, res) => {
   const userId = req.user._id;
   const orgId = req.user.org;
 
@@ -1159,6 +1123,13 @@ router.get("/my-tasks", async (req, res) => {
         },
       },
     ]);
+
+    // SIMPAN KE CACHE
+    const responseData = {
+      message: "Successfully retrieved your tasks.",
+      data: tasks,
+    };
+    await redisService.set(req.cacheKey, responseData);
 
     return res.json({
       message: "Successfully retrieved your tasks.",
@@ -1309,7 +1280,6 @@ router.post("/download-detail", async (req, res) => {
     // Kolom untuk request (berdasarkan template.request)
     for (const reqInput of flowTemplate.request || []) {
       const valueKey = `req_${reqInput._id}`;
-      const typeKey = `req_${reqInput._id}_type`;
       columns.push({
         header: reqInput.title || valueKey,
         key: valueKey,
@@ -1332,7 +1302,7 @@ router.post("/download-detail", async (req, res) => {
     // Tambahkan separator pertama setelah request data
     if ((flowTemplate.status || []).length > 0) {
       columns.push({
-        header: ` | Next approval | `,
+        header: ` ||| `,
         key: `sep_0`,
         width: 6,
       });
@@ -1345,7 +1315,7 @@ router.post("/download-detail", async (req, res) => {
       // Tambahkan separator sebelum setiap status (kecuali status pertama)
       if (i > 0) {
         columns.push({
-          header: ` | Next approval | `,
+          header: ` ||| `,
           key: `sep_${i}`,
           width: 6,
         });
@@ -1364,7 +1334,6 @@ router.post("/download-detail", async (req, res) => {
 
       for (const req of statusTemplate.requirements || []) {
         const rKey = `st_${i}_req_${req._id}`;
-        const rTypeKey = `st_${i}_req_${req._id}_type`;
         columns.push({ header: req.title || rKey, key: rKey, width: 24 });
         if (req.tipe === "table") {
           // Show all table columns (including image columns, but data will be filtered)
@@ -1877,10 +1846,17 @@ router.post("/download-detail-table-column", async (req, res) => {
         key: `st_${i}_title`,
         width: 24,
       });
+
       columns.push({
         header: `Authorized for ${stTpl.title}`,
         key: `st_${i}_authorized`,
         width: 30,
+      });
+
+      columns.push({
+        header: `Completed At - ${stTpl.title}`,
+        key: `st_${i}_completedAt`,
+        width: 20,
       });
 
       for (const req of stTpl.requirements || []) {
@@ -1997,6 +1973,11 @@ router.post("/download-detail-table-column", async (req, res) => {
           .map((u) => u?.username)
           .filter(Boolean)
           .join(", ");
+        baseMeta[`st_${i}_completedAt`] = stInst.completedAt
+          ? new Date(stInst.completedAt).toLocaleString("id-ID", {
+              timeZone: "Asia/Jakarta",
+            })
+          : "";
 
         for (const req of stTpl.requirements || []) {
           if (req.tipe === "table") continue;

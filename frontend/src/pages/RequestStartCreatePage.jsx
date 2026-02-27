@@ -85,7 +85,7 @@ export default function RequestStartCreatePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-blue-100">
       <div className="mx-auto max-w-4xl px-4 py-6">
         {/* Floating Action Bar - Sticky di atas */}
         <div className="sticky top-0 z-10 mb-4">
@@ -98,7 +98,7 @@ export default function RequestStartCreatePage() {
                   await handleSubmitNewRequest();
                 } else {
                   toast.error(
-                    "Anda belum memilih next approval yang ditujukan langsung"
+                    "Anda belum memilih next approval yang ditujukan langsung",
                   );
                   setAuthorizedOptionBlinking(true);
                 }
@@ -183,7 +183,7 @@ export default function RequestStartCreatePage() {
             {flowData?.data.status[0].authorized.map(
               (authorizedFirstStatus) => {
                 const isSelected = selectedAuthorized?.includes(
-                  authorizedFirstStatus._id
+                  authorizedFirstStatus._id,
                 );
                 return (
                   <button
@@ -214,7 +214,7 @@ export default function RequestStartCreatePage() {
                     )}
                   </button>
                 );
-              }
+              },
             )}
           </div>
         </div>

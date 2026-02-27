@@ -18,7 +18,6 @@ const flowInstanceSchema = new mongoose.Schema(
       required: true,
     },
     requestData: {
-      //response request
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
@@ -99,7 +98,7 @@ const flowInstanceSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true } // createdAt dan updatedAt untuk setiap permintaan
+  { timestamps: true }, // createdAt dan updatedAt untuk setiap permintaan
 );
 
 const FlowInstance = mongoose.model("FlowInstance", flowInstanceSchema);

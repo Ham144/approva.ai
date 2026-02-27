@@ -73,14 +73,17 @@ const Home = () => {
       <div className="max-w-7xl mx-auto max-w-screen overflow-hidden z-10">
         {/* Header */}
         <div className="mb-10 text-center">
-          <div className="inline-flex items-center gap-2 mb-3 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-gray-200">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          <div className="inline-flex items-center gap-2 mb-3 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             <span className="text-xs font-medium text-gray-600">
-              LIVE 1.0.0
+              LIVE 2.0.0
+            </span>
+            <span className="text-xs font-medium text-gray-600">
+              OPTIMIZED ✅
             </span>
           </div>
           <h1 className="text-3xl font-semibold bg-clip-text bg-gradient-to-r from-blue-500 to-blue-700 text-transparent mb-2">
-            E-Form{" "}
+            E-Form
             {
               orgList?.data?.find((org) => org._id === userInfo.org)
                 ?.organizationName
@@ -88,7 +91,6 @@ const Home = () => {
           </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">{APP_DESC}</p>
         </div>
-
         <MyStats />
 
         {/* My Tasks Section - Enhanced Modern Table */}
@@ -154,7 +156,7 @@ const Home = () => {
               </p>
             </div>
           ) : (
-            <div className="glass rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="glass rounded-xl shadow-sm border border-gray-200 overflow-hidden bg-white">
               {/* Table Header */}
               <div className="grid grid-cols-12 bg-gray-50 px-6 py-3 border-b border-gray-200">
                 <div className="col-span-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -249,10 +251,10 @@ const Home = () => {
           <h2 className="text-xl font-semibold text-gray-800 mb-6">
             Aksi Cepat
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 ">
             <button
               onClick={() => navigate("/management/flow")}
-              className=" p-5 rounded-xl border border-gray-200 hover:border-blue-300 transition-all text-left group hover:shadow-md"
+              className=" p-5 rounded-xl border border-gray-200 hover:border-blue-300 transition-all text-left group hover:shadow-md bg-white"
             >
               <div className="flex items-start gap-4">
                 <div className={`p-3 rounded-lg  transition-colors`}>
@@ -278,7 +280,7 @@ const Home = () => {
               <button
                 key={index}
                 onClick={() => navigate(action.path)}
-                className=" p-5 rounded-xl border border-gray-200 hover:border-blue-300 transition-all text-left group hover:shadow-md"
+                className=" p-5 rounded-xl border border-gray-200 hover:border-blue-300 transition-all text-left group hover:shadow-md bg-white"
               >
                 <div className="flex items-start gap-4">
                   <div

@@ -84,7 +84,7 @@ const organizationSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const Org = new mongoose.model("Org", organizationSchema);

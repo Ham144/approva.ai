@@ -14,7 +14,7 @@ async function sendEmail(to, subject, html, flowInstance) {
     if (!org) {
       console.error(
         "Organization not found for flow instance:",
-        flowInstance._id
+        flowInstance._id,
       );
       return;
     }
@@ -62,7 +62,7 @@ async function sendEmail(to, subject, html, flowInstance) {
 export async function sendApprovalRequestEmail(
   nextApprovers,
   flowInstance,
-  previousApproverName
+  previousApproverName,
 ) {
   const instanceId = flowInstance._id;
   const instanceTitle = flowInstance.instanceTitle;
@@ -76,9 +76,15 @@ export async function sendApprovalRequestEmail(
     const rejectLink = `${process.env.FRONTEND}/status/fulfillment/${instanceId}?action=reject`;
     const detailLink = `${process.env.FRONTEND}/status/fulfillment/${instanceId}`;
 
+    let organizationName = user?.org?.organizationName;
+    if (!organizationName) {
+      const org = await Org.findById(user.org);
+      organizationName = org.organizationName;
+    }
+
     const html = `
       <div style="font-family: sans-serif; font-size: 14px; line-height: 1.6;">
-        <h2>📝 Permintaan Approval</h2>
+        <h2>📝 Permintaan Approval Dari Organisasi ${organizationName}</h2>
         <p>Halo <strong>${user.username}</strong>,</p>
   
         <p>
@@ -131,7 +137,7 @@ export async function sendSkippedUserNotification(
   skippedUsers,
   flowInstance,
   approverName,
-  instanceId
+  instanceId,
 ) {
   const instanceTitle = flowInstance.instanceTitle;
   const completedStatus =

@@ -36,7 +36,7 @@ export default function StatusFullfillmentPage() {
       flowInstanceApi.submitStatusFulfillment(
         instanceId,
         statuses[currentStatusIndex],
-        [selectedAuthorized]
+        [selectedAuthorized],
       ),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["instance", instanceId] });
@@ -81,7 +81,7 @@ export default function StatusFullfillmentPage() {
         flowInstanceData.data?.statuses?.map((status, index) => ({
           ...status,
           ...flowInstanceData?.data.flowTemplate?.status[index],
-        }))
+        })),
       );
       setCurrentStatusIndex(flowInstanceData.data.currentStatusIndex);
 
@@ -95,7 +95,7 @@ export default function StatusFullfillmentPage() {
         setTimeout(() => {
           if (isMyTurn === -1 && instanceId) {
             toast.error(
-              "Status ini telah berlalu, mungkin tahap telah didelegasikan kepada orang lain"
+              "Status ini telah berlalu, mungkin tahap telah didelegasikan kepada orang lain",
             );
             setTimeout(() => {
               navigate(`/status/isOnlyPreview/${instanceId}`);
@@ -131,82 +131,122 @@ export default function StatusFullfillmentPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900">
-      {/* HEADER KONTROL (Selalu Tampak) */}
-      <div className="sticky top-0 z-20 bg-gray-100 dark:bg-gray-900 p-2 sm:p-3 shadow-md border-b border-gray-200 dark:border-gray-700 ">
-        <div className="flex gap-x-3">
-          <button
-            onClick={() => {
-              navigate(-1);
-            }}
-            className=" btn  btn-outline text-primary-focus dark:text-primary-content border-primary-focus dark:border-primary-content hover:bg-primary-focus hover:text-white dark:hover:bg-primary-content dark:hover:text-gray-900 rounded py-2 px-4 flex items-center justify-center font-semibold text-sm"
-          >
-            <Trash size={18} className="mr-1" /> Bersihkan Input
-          </button>
-          <button
-            onClick={() => {
-              toast("Belum tersedia");
-            }}
-            className=" btn  btn-outline text-primary-focus dark:text-primary-content border-primary-focus dark:border-primary-content hover:bg-primary-focus hover:text-white dark:hover:bg-primary-content dark:hover:text-gray-900 rounded py-2 px-4 flex items-center justify-center font-semibold text-sm"
-          >
-            <History size={18} className="mr-1" /> Meminta Rollback
-          </button>
-        </div>
-      </div>
-
+    <div className="flex flex-col h-screen bg-blue-100 dark:bg-gray-900">
       {/* Konten Utama yang Bisa di-Scroll */}
       <div className="flex-1  overflow-y-auto px-2 pb-36 pt-2 custom-scrollbar">
         {" "}
         {/* Added custom-scrollbar class */}
         <div className="mx-auto max-w-4xl space-y-4">
           {/* Informasi Sistem */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="relative rounded-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border border-blue-100/50 dark:border-blue-800/30 shadow-sm overflow-hidden">
+            {/* Header */}
             <button
               onClick={() => setOpenSystemInfo(!openSystemInfo)}
-              className="w-full flex items-center justify-between px-4 py-3 text-left text-gray-800 dark:text-gray-200 font-semibold text-base hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+              className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-blue-50/30 dark:hover:bg-blue-900/20 transition-colors duration-200"
             >
-              Informasi Sistem
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                  <svg
+                    className="w-4 h-4 text-blue-600 dark:text-blue-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <span className="font-medium text-gray-800 dark:text-gray-200">
+                  Informasi Sistem
+                </span>
+              </div>
               {openSystemInfo ? (
-                <ChevronUp size={18} />
+                <ChevronUp size={18} className="text-gray-500" />
               ) : (
-                <ChevronDown size={18} />
+                <ChevronDown size={18} className="text-gray-500" />
               )}
             </button>
 
+            {/* Content */}
             {openSystemInfo && (
-              <div className="px-4 pb-4 text-sm text-gray-700 dark:text-gray-300 grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
-                <p className="font-medium">Requested By:</p>
-                <p className="break-all">
-                  {flowInstanceData.data.requestedBy?.username}
-                </p>
+              <div className="px-4 pb-4 text-sm border-t border-blue-100/50 dark:border-blue-800/30 pt-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
+                  <p className="text-blue-600 dark:text-blue-400 font-medium">
+                    Global Index:
+                  </p>
+                  <p className="text-gray-700 dark:text-gray-300 break-all">
+                    {flowInstanceData.data.globalIndex || "-"}
+                  </p>
 
-                <p className="font-medium">Overall Status:</p>
-                <p>{flowInstanceData.data.overallStatus}</p>
+                  <p className="text-blue-600 dark:text-blue-400 font-medium">
+                    Requested By:
+                  </p>
+                  <p className="text-gray-700 dark:text-gray-300 break-all">
+                    {flowInstanceData.data.requestedBy?.username}
+                  </p>
 
-                <p className="font-medium">Current Due:</p>
-                <p>
-                  {flowTemplate?.status[
-                    flowInstanceData.data.currentStatusIndex
-                  ]?.authorized
-                    ?.map((user) => user.username)
-                    .join("/")}
-                </p>
+                  <p className="text-blue-600 dark:text-blue-400 font-medium">
+                    Overall Status:
+                  </p>
+                  <p className="text-gray-700 dark:text-gray-300">
+                    <span
+                      className={`inline-block px-2 py-0.5 rounded-full text-xs ${
+                        flowInstanceData.data.overallStatus === "approved"
+                          ? "bg-green-100 text-green-700"
+                          : flowInstanceData.data.overallStatus === "pending"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-blue-100 text-blue-700"
+                      }`}
+                    >
+                      {flowInstanceData.data.overallStatus}
+                    </span>
+                  </p>
 
-                <p className="font-medium">Private:</p>
-                <p>{flowInstanceData?.data.isPrivateRequest ? "Yes" : "No"}</p>
+                  <p className="text-blue-600 dark:text-blue-400 font-medium">
+                    Current Due:
+                  </p>
+                  <p className="text-gray-700 dark:text-gray-300">
+                    {flowTemplate?.status[
+                      flowInstanceData.data.currentStatusIndex
+                    ]?.authorized
+                      .map((user) => user.username)
+                      .join(" & ")}
+                  </p>
 
-                <p className="font-medium">Status Length:</p>
-                <p>{flowTemplate.status.length || "-"}</p>
+                  <p className="text-blue-600 dark:text-blue-400 font-medium">
+                    Private:
+                  </p>
+                  <p
+                    className={`font-medium ${flowInstanceData?.data.isPrivateRequest ? "text-amber-600" : "text-emerald-600"}`}
+                  >
+                    {flowInstanceData?.data.isPrivateRequest ? "Yes" : "No"}
+                  </p>
 
-                <p className="font-medium">Current Index:</p>
-                <p>
-                  {flowInstanceData?.data?.currentStatusIndex} (note: urutan
-                  dimulai dari 0)
-                </p>
+                  <p className="text-blue-600 dark:text-blue-400 font-medium">
+                    Total Status:
+                  </p>
+                  <p className="text-gray-700 dark:text-gray-300">
+                    {flowTemplate.status.length || "-"}
+                  </p>
+
+                  <p className="text-blue-600 dark:text-blue-400 font-medium">
+                    Current Index:
+                  </p>
+                  <p className="text-gray-700 dark:text-gray-300">
+                    {flowInstanceData?.data?.currentStatusIndex} dari{" "}
+                    {flowTemplate.status.length - 1}
+                    <span className="text-xs text-gray-500 ml-1">
+                      (dimulai dari 0)
+                    </span>
+                  </p>
+                </div>
               </div>
             )}
           </div>
-
           {/* PreviewFlow Component */}
           <PreviewFlow
             isForApproval={true}

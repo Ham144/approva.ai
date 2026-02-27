@@ -121,7 +121,7 @@ const MyStats = () => {
   }
 
   return (
-    <>
+    <div className="pb-12">
       {/* Pie Chart Section */}
       <div className="mt-8 bg-white rounded-xl shadow-lg p-6 border border-gray-100">
         {/* Header with Title and Month Filter */}
@@ -317,7 +317,7 @@ const MyStats = () => {
           </p>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
