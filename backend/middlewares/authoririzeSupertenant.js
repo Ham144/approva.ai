@@ -22,6 +22,7 @@ const authorizeSupertenant = async (req, res, next) => {
     }
 
     // Opsional: Validasi role jika hanya pemilik/owner yang boleh lihat
+    console.log(userDB);
     if (userDB.role !== "supertenant") {
       return res.status(403).json({
         success: false,

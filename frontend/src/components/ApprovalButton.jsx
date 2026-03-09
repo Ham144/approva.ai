@@ -17,7 +17,6 @@ export default function ApprovalButton({
   } = useResponseCollector();
   const verdict = statuses[currentStatusIndex]?.verdict;
   const rejectedReason = statuses[currentStatusIndex]?.rejectedReason;
-  const [isApprovalButtonVisible, setIsApprovalButtonVisible] = useState(false);
 
   const [searchParams] = useSearchParams();
   const action = searchParams.get("action");
@@ -62,8 +61,8 @@ export default function ApprovalButton({
               verdict === "approved"
                 ? "bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800"
                 : verdict === "rejected"
-                ? "bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800"
-                : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600 italic"
+                  ? "bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600 italic"
             }
           `}
         >
@@ -83,7 +82,7 @@ export default function ApprovalButton({
         /* Tampilan Pilihan (isOnlyPreview false) */ <div className="dropdown dropdown-top w-full">
           <label
             tabIndex={0}
-            className="max-md:h-6 h-10 cursor-pointer text-center bg-primary rounded-md flex items-center justify-center text-white w-full sm:w-auto"
+            className="max-md:h-6 h-10 cursor-pointer text-center bg-primary rounded-md flex items-center justify-center text-white w-full sm:w-auto "
           >
             Continue
           </label>
@@ -140,7 +139,7 @@ export default function ApprovalButton({
                             {statuses[currentStatusIndex + 1]?.authorized?.map(
                               (authorized) => {
                                 const isSelected = selectedAuthorized?.includes(
-                                  authorized._id
+                                  authorized._id,
                                 );
                                 return (
                                   <button
@@ -167,7 +166,7 @@ export default function ApprovalButton({
                                     )}
                                   </button>
                                 );
-                              }
+                              },
                             )}
                           </div>
                         </div>

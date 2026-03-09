@@ -174,7 +174,7 @@ const Home = () => {
                 <div className="col-span-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Global Index
                 </div>
-                <div className="col-span-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div className="col-span-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Template
                 </div>
               </div>

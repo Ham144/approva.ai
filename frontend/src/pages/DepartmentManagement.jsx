@@ -8,7 +8,6 @@ import { FolderSearch, Pencil, Plus, Trash2 } from "lucide-react";
 
 const DepartmentManagement = () => {
   const queryClient = useQueryClient();
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [name, setName] = useState("");
   const [members, setMembers] = useState([]);
@@ -35,7 +34,7 @@ const DepartmentManagement = () => {
       toast.error(
         er?.response?.data?.message +
           `: ${er?.response?.data?.usedMembers.map((u) => u.username)}` ||
-          "Gagal register"
+          "Gagal register",
       );
     },
   });
@@ -51,7 +50,7 @@ const DepartmentManagement = () => {
       toast.error(
         er?.response?.data?.message +
           `: ${er?.response?.data?.usedMembers.map((u) => u.username)}` ||
-          "Gagal register"
+          "Gagal register",
       );
     },
   });
@@ -98,7 +97,7 @@ const DepartmentManagement = () => {
     setMembers((prevMembers) =>
       prevMembers.includes(userId)
         ? prevMembers.filter((id) => id !== userId)
-        : [...prevMembers, userId]
+        : [...prevMembers, userId],
     );
   };
 

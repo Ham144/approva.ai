@@ -16,6 +16,8 @@ import authorize from "./middlewares/authorize.js";
 import departmentRoutes from "./routes/department.route.js";
 import bulkRoutes from "./routes/bulk.route.js";
 import fs from "fs";
+import authorizeSupertenant from "./middlewares/authoririzeSupertenant.js";
+import supertTenantRoutes from "./routes/super-tenant.route.js";
 
 const __dirname = path.resolve();
 
@@ -41,7 +43,7 @@ app.use(
   cors({
     origin: corsOrigin,
     credentials: true,
-  })
+  }),
 );
 
 // Serve static files from uploads directory
@@ -67,6 +69,13 @@ app.use("/api/org", orgRoutes);
 app.use("/api/file", authenticate, fileRoutes);
 app.use("/api/department", authenticate, departmentRoutes);
 app.use("/api/bulk", authenticate, authorize, bulkRoutes);
+//danger area
+app.use(
+  "/api/superadmin",
+  authenticate,
+  authorizeSupertenant,
+  supertTenantRoutes,
+);
 
 // Untuk SPA fallback (route selain API, dsb.): letakkan terakhir untuk tidak menangkap /api
 app.get("*", (req, res) => {

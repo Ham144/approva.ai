@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
-import { Trash, ChevronUp, ChevronDown, History } from "lucide-react";
+import { Trash, ChevronUp, ChevronDown, History, Menu } from "lucide-react";
 import PreviewFlow from "./PreviewFlow";
 import { useResponseCollector, useUserInfo } from "@/store";
 import flowInstanceApi from "@/api/flowInstanceApi";
 import toast from "react-hot-toast";
 import ApprovalButton from "./ApprovalButton";
+import ProcessActionOption from "./ProcessActionOption";
 
 export default function StatusFullfillmentPage() {
   const navigate = useNavigate();
@@ -261,14 +262,42 @@ export default function StatusFullfillmentPage() {
       {/* FOOTER KONTROL (ApprovalButton - Selalu Tampak) */}
       <div className="fixed bottom-14 left-0 right-0 z-20 dark:bg-gray-800 p-3 sm:p-4 shadow-lg  border-gray-200 dark:border-gray-700">
         <div className="mx-auto max-w-4xl">
-          <ApprovalButton
-            handleSubmitStatus={handleSubmitStatus}
-            isOnlyPreview={false}
-            isLoadinghandleSubmitStatus={isLoadinghandleSubmitStatus}
-            key={"approval-button"}
-          />
+          <div className="grid grid-cols-5 gap-3 items-center bg-white p-2 rounded-xl shadow-sm border border-gray-100">
+            {/* Menu Button - 1 kolom (20%) */}
+            <button
+              onClick={() =>
+                document.getElementById("modalprocessaction").showModal()
+              }
+              className="col-span-1 flex items-center justify-center gap-2 px-4 py-2.5 
+               bg-gradient-to-r from-gray-50 to-gray-100 
+               hover:from-gray-100 hover:to-gray-200
+               text-gray-700 rounded-lg transition-all duration-200
+               border border-gray-200 shadow-sm hover:shadow
+               group"
+            >
+              <Menu className="w-5 h-5 text-gray-500 group-hover:text-gray-700 transition-colors" />
+              <span className="text-sm font-medium hidden sm:inline">Menu</span>
+            </button>
+
+            {/* Approval Button Container - 4 kolom (80%) */}
+            <div className="col-span-4">
+              <div className="w-full max-w-full">
+                <ApprovalButton
+                  handleSubmitStatus={handleSubmitStatus}
+                  isOnlyPreview={false}
+                  isLoadinghandleSubmitStatus={isLoadinghandleSubmitStatus}
+                  key={"approval-button"}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      <ProcessActionOption
+        key={"modalprocessaction"}
+        selectedInstance={flowInstanceData?.data}
+      />
     </div>
   );
 }

@@ -28,6 +28,7 @@ import SuperTenantPage from "./pages/SuperTenantPage";
 import DepartmentManagement from "./pages/DepartmentManagement";
 import LibraryManagement from "./pages/LibraryManagement";
 import DownloadProcessPage from "./pages/DownloadProcessPage";
+import DepartmentStatistics from "./pages/DepartmentStatistics";
 // import RegisterPage from "./pages/RegisterPage";
 
 const router = createBrowserRouter(
@@ -77,7 +78,11 @@ const router = createBrowserRouter(
           path="/management/department"
           element={<DepartmentManagement />}
         />
-        <Route path="/supertenant/management" element={<SuperTenantPage />} />
+        <Route path="/superadmin/management" element={<SuperTenantPage />} />
+        <Route
+          path="/superadmin/department-stats"
+          element={<DepartmentStatistics />}
+        />
         <Route
           path="/management/sourceData/options"
           element={<SourceDataOption />}
@@ -97,8 +102,8 @@ const router = createBrowserRouter(
       {/* <Route index={true} path="/register" element={<RegisterPage />} /> */}
 
       <Route path="*" element={<NotFound />} />
-    </Route>
-  )
+    </Route>,
+  ),
 );
 
 const queryClient = new QueryClient();
@@ -106,5 +111,5 @@ const queryClient = new QueryClient();
 createRoot(document.getElementById("root")).render(
   <QueryClientProvider client={queryClient}>
     <RouterProvider router={router} />
-  </QueryClientProvider>
+  </QueryClientProvider>,
 );

@@ -8,7 +8,6 @@ import {
   List,
   Users2,
   Crown,
-  Plus,
   Hotel,
   ShoppingBag,
 } from "lucide-react";
@@ -30,7 +29,8 @@ export default function PengelolaSideBarMenu({ children }) {
     { name: "User Manager", path: "/management/user", icon: Users2 },
     { name: "Config Manager", path: "/management/config/app", icon: Cog },
     { name: "department", path: "/management/department", icon: Hotel },
-    { name: "supertenant", path: "/supertenant/management", icon: Crown },
+    { name: "organizations", path: "/superadmin/management", icon: Crown },
+    { name: "supertenant", path: "/superadmin/department-stats", icon: Crown },
   ];
 
   const { userInfo } = useUserInfo();
@@ -120,9 +120,7 @@ export default function PengelolaSideBarMenu({ children }) {
                   to={path}
                   className={({ isActive }) =>
                     `flex items-center p-2 rounded-lg transition-all duration-200 ${
-                      userInfo.role != "supertenant" &&
-                      name == "supertenant" &&
-                      "hidden"
+                      userInfo.role != "supertenant"
                     } ${
                       isActive
                         ? "bg-blue-50 text-blue-700 font-medium"

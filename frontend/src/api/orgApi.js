@@ -7,20 +7,27 @@ const OrgApi = {
   },
   getAllOrgSuperTenant: async (q) => {
     const response = await axiosInstance.get(
-      `/api/org/getAllOrgSuperTenant?search=${q}`
+      `/api/superadmin/getAllOrgSuperTenant?search=${q}`,
     );
     return response.data;
   },
   disableOrg: async (_id) => {
-    const response = await axiosInstance.delete(`/api/org/disableOrg/${_id}`);
+    const response = await axiosInstance.delete(
+      `/api/superadmin/disableOrg/${_id}`,
+    );
     return response.data;
   },
   deleteOrg: async (_id) => {
-    const response = await axiosInstance.delete(`/api/org/deleteOrg/${_id}`);
+    const response = await axiosInstance.delete(
+      `/api/superadmin/deleteOrg/${_id}`,
+    );
     return response.data;
   },
   createOrgApi: async (body) => {
-    const response = await axiosInstance.post("/api/org/createOrg", body);
+    const response = await axiosInstance.post(
+      "/api/superadmin/createOrg",
+      body,
+    );
     return response.data;
   },
   getMyOrg: async (_id) => {
