@@ -92,6 +92,67 @@ const Home = () => {
           <p className="text-gray-600 max-w-2xl mx-auto">{APP_DESC}</p>
         </div>
         <MyStats />
+        
+        {/* Quick Actions - Startup Style */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-800 mb-6">
+            Aksi Cepat
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 ">
+            <button
+              onClick={() => navigate("/management/flow")}
+              className=" p-5 rounded-xl border border-gray-200 hover:border-blue-300 transition-all text-left group hover:shadow-md bg-white"
+            >
+              <div className="flex items-start gap-4">
+                <div className={`p-3 rounded-lg  transition-colors`}>
+                  <Crown className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-1">
+                    Organization Owner
+                  </h3>
+                  <p className="text-sm text-gray-600 line-clamp-2">
+                    {userInfo?.displayName
+                      ? userInfo?.displayName
+                      : userInfo?.username}
+                  </p>
+                  <span className="inline-block mt-2 text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded-full">
+                    Owner Only
+                  </span>
+                </div>
+              </div>
+            </button>
+
+            {quickActions.map((action, index) => (
+              <button
+                key={index}
+                onClick={() => navigate(action.path)}
+                className=" p-5 rounded-xl border border-gray-200 hover:border-blue-300 transition-all text-left group hover:shadow-md bg-white"
+              >
+                <div className="flex items-start gap-4">
+                  <div
+                    className={`p-3 rounded-lg ${action.color
+                      .replace("bg-", "bg-")
+                      .replace(
+                        "text-",
+                        "text-",
+                      )} bg-opacity-10 group-hover:bg-opacity-20 transition-colors`}
+                  >
+                    {action.icon}
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-gray-900 mb-1">
+                      {action.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 line-clamp-2">
+                      {action.description}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* My Tasks Section - Enhanced Modern Table */}
         <div className="mb-12">
@@ -246,66 +307,6 @@ const Home = () => {
           )}
         </div>
 
-        {/* Quick Actions - Startup Style */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">
-            Aksi Cepat
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 ">
-            <button
-              onClick={() => navigate("/management/flow")}
-              className=" p-5 rounded-xl border border-gray-200 hover:border-blue-300 transition-all text-left group hover:shadow-md bg-white"
-            >
-              <div className="flex items-start gap-4">
-                <div className={`p-3 rounded-lg  transition-colors`}>
-                  <Crown className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-1">
-                    Organization Owner
-                  </h3>
-                  <p className="text-sm text-gray-600 line-clamp-2">
-                    {userInfo?.displayName
-                      ? userInfo?.displayName
-                      : userInfo?.username}
-                  </p>
-                  <span className="inline-block mt-2 text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded-full">
-                    Owner Only
-                  </span>
-                </div>
-              </div>
-            </button>
-
-            {quickActions.map((action, index) => (
-              <button
-                key={index}
-                onClick={() => navigate(action.path)}
-                className=" p-5 rounded-xl border border-gray-200 hover:border-blue-300 transition-all text-left group hover:shadow-md bg-white"
-              >
-                <div className="flex items-start gap-4">
-                  <div
-                    className={`p-3 rounded-lg ${action.color
-                      .replace("bg-", "bg-")
-                      .replace(
-                        "text-",
-                        "text-",
-                      )} bg-opacity-10 group-hover:bg-opacity-20 transition-colors`}
-                  >
-                    {action.icon}
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900 mb-1">
-                      {action.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 line-clamp-2">
-                      {action.description}
-                    </p>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );

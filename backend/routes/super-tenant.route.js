@@ -1,4 +1,7 @@
 import { Router } from "express";
+import Org from "../models/Organization.model.js"
+import mongoose from "mongoose";
+import FlowInstance from "../models/FlowInstance.model.js";
 
 const router = Router();
 
@@ -26,7 +29,7 @@ router.get("/getAllOrgSuperTenant", async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({
-      message: "internal server error",
+      message: error?.message || "Inerval server error",
     });
   }
 });
@@ -162,62 +165,68 @@ router.delete("/deleteOrg/:_id", async (req, res) => {
 });
 
 router.get("/department-stats", async (req, res) => {
-  const { selectedDepartment } = req.query;
-  const userInfo = req.user;
+  const { departmendId, orgId, startDate, endDate } = req.query;
 
   try {
-    const userId = new mongoose.Types.ObjectId(req.user._id);
-    const orgId = new mongoose.Types.ObjectId(req.user.org);
-
-    // Parameter tanggal
-    const { startDate, endDate } = req.query;
-
     const start = startDate
       ? new Date(startDate)
       : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
     const end = endDate ? new Date(endDate) : new Date();
 
-    end.setHours(23, 59, 59, 999);
     start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
 
-    // ================== AGREGASI 1: Statistik Aktivitas (request & completed) ==================
-    const activityStats = await FlowInstance.aggregate([
-      {
-        $match: {
-          org: orgId,
-          createdAt: { $gte: start, $lte: end },
-        },
-      },
+    const isAllDepartment = !departmendId || departmendId === "all";
+
+    let memberIds = [];
+    let departmentName = "All Department";
+
+    // ================== AMBIL MEMBER DEPARTMENT ==================
+    if (!isAllDepartment) {
+      const department = await Department.findById(departmendId).select(
+        "members name"
+      );
+
+      if (!department) {
+        return res.status(404).json({ message: "Department not found" });
+      }
+
+      memberIds = department.members || [];
+      departmentName = department.name;
+    }
+
+    // ================== ACTIVITY PIPELINE ==================
+    const activityMatch = {
+      org: new mongoose.Types.ObjectId(orgId),
+      createdAt: { $gte: start, $lte: end },
+    };
+
+    if (!isAllDepartment) {
+      activityMatch.requestedBy = { $in: memberIds };
+    }
+
+    const activityPipeline = [
+      { $match: activityMatch },
+
       {
         $project: {
           activities: {
             $concatArrays: [
-              {
-                $cond: [
-                  { $eq: ["$requestedBy", userId] },
-                  [
-                    {
-                      user: "$requestedBy",
-                      type: "request",
-                      lastActivity: "$updatedAt",
-                    },
-                  ],
-                  [],
-                ],
-              },
+              [
+                {
+                  user: "$requestedBy",
+                  type: "request",
+                  lastActivity: "$createdAt",
+                },
+              ],
               {
                 $map: {
                   input: {
                     $filter: {
                       input: "$statuses",
                       as: "s",
-                      cond: {
-                        $and: [
-                          { $eq: ["$$s.completed", true] },
-                          { $eq: ["$$s.completedBy", userId] },
-                        ],
-                      },
+                      cond: { $eq: ["$$s.completed", true] },
                     },
                   },
                   as: "s",
@@ -232,35 +241,47 @@ router.get("/department-stats", async (req, res) => {
           },
         },
       },
-      { $unwind: { path: "$activities", preserveNullAndEmptyArrays: false } },
-      {
-        $group: {
-          _id: "$activities.user",
-          requestCount: {
-            $sum: {
-              $cond: [{ $eq: ["$activities.type", "request"] }, 1, 0],
-            },
-          },
-          completedCount: {
-            $sum: {
-              $cond: [{ $eq: ["$activities.type", "completed"] }, 1, 0],
-            },
-          },
-          lastActivity: { $max: "$activities.lastActivity" },
-        },
-      },
-    ]);
 
-    // ================== AGREGASI 2: Pending di Saya (DENGAN filter tanggal) ==================
-    const pendingStats = await FlowInstance.aggregate([
-      {
+      { $unwind: "$activities" },
+    ];
+
+    if (!isAllDepartment) {
+      activityPipeline.push({
         $match: {
-          overallStatus: "in-progress",
-          org: orgId,
-          // TAMBAHKAN filter createdAt di sini
-          createdAt: { $gte: start, $lte: end },
+          "activities.user": { $in: memberIds },
         },
+      });
+    }
+
+    activityPipeline.push({
+      $group: {
+        _id: null,
+        requestCount: {
+          $sum: {
+            $cond: [{ $eq: ["$activities.type", "request"] }, 1, 0],
+          },
+        },
+        completedCount: {
+          $sum: {
+            $cond: [{ $eq: ["$activities.type", "completed"] }, 1, 0],
+          },
+        },
+        lastActivity: { $max: "$activities.lastActivity" },
       },
+    });
+
+    const activityStats = await FlowInstance.aggregate(activityPipeline);
+
+    // ================== PENDING PIPELINE ==================
+    const pendingMatch = {
+      overallStatus: "in-progress",
+      org: new mongoose.Types.ObjectId(orgId),
+      createdAt: { $gte: start, $lte: end },
+    };
+
+    const pendingPipeline = [
+      { $match: pendingMatch },
+
       {
         $lookup: {
           from: "flowandpoints",
@@ -269,7 +290,9 @@ router.get("/department-stats", async (req, res) => {
           as: "flowTemplateDetails",
         },
       },
+
       { $unwind: "$flowTemplateDetails" },
+
       {
         $addFields: {
           currentStatusObject: {
@@ -280,22 +303,29 @@ router.get("/department-stats", async (req, res) => {
           },
         },
       },
-      { $unwind: "$currentStatusObject.authorized" },
-      {
-        $match: {
-          "currentStatusObject.authorized": userId,
-        },
-      },
-      {
-        $group: {
-          _id: "$currentStatusObject.authorized",
-          pendingCount: { $sum: 1 },
-          lastPendingActivity: { $max: "$updatedAt" },
-        },
-      },
-    ]);
 
-    // ================== GABUNGKAN DATA ==================
+      { $unwind: "$currentStatusObject.authorized" },
+    ];
+
+    if (!isAllDepartment) {
+      pendingPipeline.push({
+        $match: {
+          "currentStatusObject.authorized": { $in: memberIds },
+        },
+      });
+    }
+
+    pendingPipeline.push({
+      $group: {
+        _id: null,
+        pendingCount: { $sum: 1 },
+        lastPendingActivity: { $max: "$updatedAt" },
+      },
+    });
+
+    const pendingStats = await FlowInstance.aggregate(pendingPipeline);
+
+    // ================== GABUNGKAN ==================
     const activityData = activityStats[0] || {
       requestCount: 0,
       completedCount: 0,
@@ -307,7 +337,6 @@ router.get("/department-stats", async (req, res) => {
       lastPendingActivity: null,
     };
 
-    // Tentukan lastActivity terakhir
     let lastActivityDate = activityData.lastActivity;
 
     if (pendingData.lastPendingActivity) {
@@ -319,40 +348,46 @@ router.get("/department-stats", async (req, res) => {
       }
     }
 
-    // Format tanggal dan jam
-    let tanggalAktifitasTerakhir, jamAktifitasTerakhir;
+    // ================== FORMAT TANGGAL ==================
+    let tanggalAktifitasTerakhir;
+    let jamAktifitasTerakhir;
+
     if (lastActivityDate) {
       const lastDate = new Date(lastActivityDate);
+
       tanggalAktifitasTerakhir = lastDate.toISOString().split("T")[0];
+
       const timeStr = lastDate.toLocaleString("id-ID", {
         timeZone: "Asia/Jakarta",
         hour12: false,
         hour: "2-digit",
         minute: "2-digit",
       });
+
       jamAktifitasTerakhir = timeStr.replace(":", ".");
     } else {
       const now = new Date();
+
       tanggalAktifitasTerakhir = now.toISOString().split("T")[0];
+
       const timeStr = now.toLocaleString("id-ID", {
         timeZone: "Asia/Jakarta",
         hour12: false,
         hour: "2-digit",
         minute: "2-digit",
       });
+
       jamAktifitasTerakhir = timeStr.replace(":", ".");
     }
 
-    // Hitung QTY All
+    // ================== HITUNG TOTAL ==================
     const qtyAll =
       (activityData.requestCount || 0) +
       (activityData.completedCount || 0) +
       (pendingData.pendingCount || 0);
 
-    // Susun output
     const result = {
-      name:
-        req.user.username || req.user.displayName || req.user.name || "Unknown",
+      name: departmentName,
       tanggalAktifitasTerakhir,
       jamAktifitasTerakhir,
       "QTY request": activityData.requestCount || 0,
@@ -363,7 +398,7 @@ router.get("/department-stats", async (req, res) => {
 
     return res.json(result);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res
       .status(500)
       .json({ message: error?.message || "Internal Server Error" });

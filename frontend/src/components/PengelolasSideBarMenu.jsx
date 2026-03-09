@@ -10,6 +10,7 @@ import {
   Crown,
   Hotel,
   ShoppingBag,
+  PieChart,
 } from "lucide-react";
 import { useUserInfo } from "@/store";
 
@@ -30,7 +31,7 @@ export default function PengelolaSideBarMenu({ children }) {
     { name: "Config Manager", path: "/management/config/app", icon: Cog },
     { name: "department", path: "/management/department", icon: Hotel },
     { name: "organizations", path: "/superadmin/management", icon: Crown },
-    { name: "supertenant", path: "/superadmin/department-stats", icon: Crown },
+    { name: "supertenant", path: "/superadmin/department-stats", icon: PieChart },
   ];
 
   const { userInfo } = useUserInfo();

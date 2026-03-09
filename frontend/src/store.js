@@ -23,7 +23,7 @@ export const useEditor = create((set) => {
     currentEditingInputID: "",
     flow: defaultFlow,
     setCurrentEditingInputID: (id) =>
-      set((state) => ({ currentEditingInputID: id })),
+      set(() => ({ currentEditingInputID: id })),
     setFlow: (updater) =>
       set((state) => ({
         flow:

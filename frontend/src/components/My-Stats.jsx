@@ -5,33 +5,33 @@ import React, { useState } from "react";
 import {
   PieChart,
   Pie,
-  Cell,
   Tooltip,
   Legend,
   ResponsiveContainer,
 } from "recharts";
 import { Calendar, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Cell } from "jspdf-autotable";
+
+// Daftar bulan dalam setahun
+export const months = [
+  { value: 0, label: "Januari" },
+  { value: 1, label: "Februari" },
+  { value: 2, label: "Maret" },
+  { value: 3, label: "April" },
+  { value: 4, label: "Mei" },
+  { value: 5, label: "Juni" },
+  { value: 6, label: "Juli" },
+  { value: 7, label: "Agustus" },
+  { value: 8, label: "September" },
+  { value: 9, label: "Oktober" },
+  { value: 10, label: "November" },
+  { value: 11, label: "Desember" },
+];
 
 const MyStats = () => {
   const { userInfo } = useUserInfo();
-
-  // Daftar bulan dalam setahun
-  const months = [
-    { value: 0, label: "Januari" },
-    { value: 1, label: "Februari" },
-    { value: 2, label: "Maret" },
-    { value: 3, label: "April" },
-    { value: 4, label: "Mei" },
-    { value: 5, label: "Juni" },
-    { value: 6, label: "Juli" },
-    { value: 7, label: "Agustus" },
-    { value: 8, label: "September" },
-    { value: 9, label: "Oktober" },
-    { value: 10, label: "November" },
-    { value: 11, label: "Desember" },
-  ];
-
-  const currentYear = new Date().getFullYear();
+;
+const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth();
 
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);

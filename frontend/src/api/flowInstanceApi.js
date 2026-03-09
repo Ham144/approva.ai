@@ -204,6 +204,11 @@ const flowInstanceApi = {
     const res = await axiosInstance.get(`/api/flowInstance/my-stats?` + query);
     return res.data;
   },
+  getDepartmentStats: async ({ orgId, startDate, endDate, departmentId = "all" }) => {
+    const query = `orgId=${orgId}&startDate=${startDate}&endDate=${endDate}&departmendId=${departmentId}`;
+    const res = await axiosInstance.get(`/api/superadmin/department-stats?` + query);
+    return res.data;
+  },
 };
 
 export default flowInstanceApi;
