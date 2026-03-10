@@ -71,7 +71,6 @@ const Profile = () => {
     queryKey: ["org"],
     queryFn: async () => {
       const res = await OrgApi.getMyOrg(userInfo?.org);
-      console.log(res);
       return res?.data;
     },
     enabled: !!userInfo?.org,

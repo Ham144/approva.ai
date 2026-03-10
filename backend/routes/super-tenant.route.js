@@ -2,11 +2,15 @@ import { Router } from "express";
 import Org from "../models/Organization.model.js"
 import mongoose from "mongoose";
 import FlowInstance from "../models/FlowInstance.model.js";
+import Department from "../models/Department.model.js"
+import redisServer from "../utils/RedisService.js"
+import redisMiddleWare from "../middlewares/redise-middleware.js"
 
 const router = Router();
 
 router.get("/getAllOrgSuperTenant", async (req, res) => {
   const { search, limit, skip } = req.query;
+
 
   let query = {};
   if (search) {
@@ -164,7 +168,8 @@ router.delete("/deleteOrg/:_id", async (req, res) => {
   }
 });
 
-router.get("/department-stats", async (req, res) => {
+// redis ✅
+router.get("/department-stats",  async (req, res) => {
   const { departmendId, orgId, startDate, endDate } = req.query;
 
   try {
@@ -396,7 +401,26 @@ router.get("/department-stats", async (req, res) => {
       "QTY AlL": qtyAll,
     };
 
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    // Awal bulan ini
+    const startOfCurrentMonth = new Date(currentYear, currentMonth, 1);
+    startOfCurrentMonth.setHours(0, 0, 0, 0);
+
+    // Jika END date < awal bulan ini, berarti data historis (bulan lalu ke bawah)
+    if (end < startOfCurrentMonth) {
+      // Data hanya dari bulan-bulan sebelumnya - aman di-cache
+      console.log('✅ Caching historical data (previous months)');
+      await redisServer.set(req.cacheKey, result);
+    } else {
+      // Data mencakup bulan ini - jangan cache karena masih berjalan
+      console.log('⚠️ Skipping cache - includes current month data');
+    }
+
     return res.json(result);
+
   } catch (error) {
     console.error(error);
     return res

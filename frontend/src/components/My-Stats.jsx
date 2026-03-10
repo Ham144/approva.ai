@@ -8,9 +8,9 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  Cell
 } from "recharts";
 import { Calendar, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { Cell } from "jspdf-autotable";
 
 // Daftar bulan dalam setahun
 export const months = [

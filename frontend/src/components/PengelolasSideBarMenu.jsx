@@ -16,22 +16,22 @@ import { useUserInfo } from "@/store";
 
 export default function PengelolaSideBarMenu({ children }) {
   const menuItems = [
-    { name: "Flow Manager", path: "/management/flow", icon: GitPullRequest },
+    { name: "Flow Manager", path: "/management/flow", icon: GitPullRequest, forSuperAdmin:false },
     {
       name: "Library",
       path: "/management/LibraryManagement",
       icon: ShoppingBag,
-    },
+    forSuperAdmin:false },
     {
       name: "Flexibse Source Data Options",
       path: "/management/sourceData/options",
       icon: List,
-    },
-    { name: "User Manager", path: "/management/user", icon: Users2 },
-    { name: "Config Manager", path: "/management/config/app", icon: Cog },
-    { name: "department", path: "/management/department", icon: Hotel },
-    { name: "organizations", path: "/superadmin/management", icon: Crown },
-    { name: "supertenant", path: "/superadmin/department-stats", icon: PieChart },
+    forSuperAdmin:false },
+    { name: "User Manager", path: "/management/user", icon: Users2, forSuperAdmin:false },
+    { name: "Config Manager", path: "/management/config/app", icon: Cog, forSuperAdmin:false },
+    { name: "department", path: "/management/department", icon: Hotel, forSuperAdmin:false },
+    { name: "organizations", path: "/superadmin/management", icon: Crown, forSuperAdmin:true},
+    { name: "supertenant", path: "/superadmin/department-stats", icon: PieChart, forSuperAdmin:true },
   ];
 
   const { userInfo } = useUserInfo();
@@ -40,6 +40,7 @@ export default function PengelolaSideBarMenu({ children }) {
   const [sidebarWidth, setSidebarWidth] = useState(64);
   const [startX, setStartX] = useState(0);
   const [startWidth, setStartWidth] = useState(64);
+  const isSuperAdmin = userInfo?.role == "supertenant"
 
   const toggleSidebar = () => {
     const newWidth = isOpen ? 64 : 256;
@@ -115,32 +116,38 @@ export default function PengelolaSideBarMenu({ children }) {
 
         <nav className="flex-1 overflow-y-auto">
           <ul className="space-y-1">
-            {menuItems.map(({ name, icon: Icon, path }, i) => (
-              <li key={name}>
-                <NavLink
-                  to={path}
-                  className={({ isActive }) =>
-                    `flex items-center p-2 rounded-lg transition-all duration-200 ${
-                      userInfo.role != "supertenant"
-                    } ${
-                      isActive
-                        ? "bg-blue-50 text-blue-700 font-medium"
-                        : "text-gray-600 hover:bg-gray-100"
-                    }`
-                  }
-                  title={!isOpen ? name : ""}
-                >
-                  <Icon className="w-5 h-5 flex-shrink-0" />
-                  <span
-                    className={`ml-3 truncate transition-opacity duration-300 ${
-                      isOpen ? "opacity-100" : "opacity-0 hidden"
-                    }`}
+            {menuItems.map(({ name, icon: Icon, path, forSuperAdmin }, i) => {
+              if(forSuperAdmin && !isSuperAdmin) {
+                return null
+              }else{
+                return (
+                  <li key={name}>
+                  <NavLink
+                    to={path}
+                    className={({ isActive }) =>
+                      `flex items-center p-2 rounded-lg transition-all duration-200 ${
+                        userInfo.role != "supertenant"
+                      } ${
+                        isActive
+                          ? "bg-blue-50 text-blue-700 font-medium"
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`
+                    }
+                    title={!isOpen ? name : ""}
                   >
-                    {name}
-                  </span>
-                </NavLink>
-              </li>
-            ))}
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <span
+                      className={`ml-3 truncate transition-opacity duration-300 ${
+                        isOpen ? "opacity-100" : "opacity-0 hidden"
+                      }`}
+                    >
+                      {name}
+                    </span>
+                  </NavLink>
+                </li>
+                )
+              }
+            })}
           </ul>
         </nav>
 

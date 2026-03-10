@@ -6,7 +6,14 @@ import { useUserInfo } from "@/store";
 import DepartmentApi from "@/api/DepartmentApi";
 import OrgApi from "@/api/orgApi";
 import PengelolaSideBarMenu from "@/components/PengelolasSideBarMenu";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
+const formatDateYYYYMMDD = (date) => {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
 
 const DepartmentStatistics = () => {
   const currentYear = new Date().getFullYear();
@@ -14,7 +21,6 @@ const DepartmentStatistics = () => {
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  
 
   const { userInfo } = useUserInfo();
 
@@ -24,24 +30,25 @@ const DepartmentStatistics = () => {
 
   // Query untuk departments dan organizations (hanya untuk supertenant)
   const isSupertenant = userInfo?.role === "supertenant";
-  
 
   const getDateRange = useCallback(() => {
     const startDate = new Date(selectedYear, selectedMonth, 1);
     const endDate = new Date(selectedYear, selectedMonth + 1, 0);
     
     return {
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0]
+      // Hindari `toISOString()` karena menggeser tanggal (timezone) dan bisa salah tahun/bulan
+      startDate: formatDateYYYYMMDD(startDate),
+      endDate: formatDateYYYYMMDD(endDate),
     };
   }, [selectedYear, selectedMonth]);
 
   // Queries for supertenant
   const { data: organizations } = useQuery({
-    queryKey: ['organizations'],
-    queryFn: OrgApi.getAllOrg,
-    enabled: isSupertenant
+    queryKey: ["orgList"],
+    queryFn: () => OrgApi.getAllOrg("*"),
+    enabled: !!userInfo._id,
   });
+
 
   const { data: departments } = useQuery({
     queryKey: ['departments'],
@@ -59,20 +66,16 @@ const DepartmentStatistics = () => {
         orgId: selectedOrgId,
         startDate,
         endDate,
+        departmentId: selectedDeptId
       };
-      
-      // Only add departmentId if not "all"
-      if (selectedDeptId && selectedDeptId !== "all") {
-        params.departmendId = selectedDeptId;
-      }
-      
+
       const response = await flowInstanceApi.getDepartmentStats(params);
-      console.log('Response:', response);
       return response;
     },
     enabled: !!selectedOrgId && (!isSupertenant || !!selectedDeptId)
   });
 
+  
 
   // Handle month change
   const handleMonthSelect = (monthValue) => {
@@ -88,6 +91,12 @@ const DepartmentStatistics = () => {
     } else {
       setSelectedMonth(selectedMonth - 1);
     }
+  };
+  
+  // Format date range untuk display
+  const getDateRangeText = () => {
+    const monthName = months.find((m) => m.value === selectedMonth)?.label;
+    return `${monthName} ${selectedYear}`;
   };
 
   // Handle next month
@@ -158,102 +167,76 @@ const DepartmentStatistics = () => {
           </h1>
 
           {/* Dropdown bulan dan tahun */}
-          <div className="flex items-center space-x-2">
+            <div className="relative">
+
+  <div className="flex items-center gap-2">
+            {/* Previous Month Button */}
             <button
               onClick={handlePrevMonth}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Bulan sebelumnya"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
+              <ChevronLeft className="w-4 h-4 text-gray-600" />
             </button>
 
+            {/* Month Dropdown */}
             <div className="relative">
-              {/* Dropdown bulan dan tahun */}
-<div className="flex items-center space-x-2">
-  <button
-    onClick={handlePrevMonth}
-    className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-  >
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-    </svg>
-  </button>
-
-  <div className="relative">
-    <button
-      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-      className="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm flex items-center space-x-2 hover:bg-gray-50"
-    >
-      <span className="font-medium">
-        {/* Perbaikan: ambil label dari object bulan */}
-        {months.find(m => m.value === selectedMonth)?.label || months[selectedMonth]?.label} {selectedYear}
-      </span>
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-      </svg>
-    </button>
-
-    {isDropdownOpen && (
-      <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
-        <div className="p-2">
-          {months.map((month) => (
-            <button
-              key={month.value}
-              onClick={() => handleMonthSelect(month.value)}
-              className={`w-full text-left px-3 py-2 rounded-md text-sm ${
-                selectedMonth === month.value
-                  ? "bg-blue-50 text-blue-600"
-                  : "hover:bg-gray-50"
-              }`}
-            >
-              {month.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    )}
-  </div>
-
-  <button
-    onClick={handleNextMonth}
-    className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-  >
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-    </svg>
-  </button>
-</div>
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200 text-sm min-w-[160px] justify-between"
+              >
+                <span>📅</span>
+                <span className="font-medium">{getDateRangeText()}</span>
+                <ChevronDown className="w-4 h-4" />
+              </button>
 
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
-                  <div className="p-2">
-                    {months.map((month, index) => (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 p-2 z-50">
+                  <div className="grid grid-cols-2 gap-1">
+                    {months.map((month) => (
                       <button
-                        key={index}
-                        onClick={() => handleMonthSelect(index)}
-                        className={`w-full text-left px-3 py-2 rounded-md text-sm ${
-                          selectedMonth === index
-                            ? "bg-blue-50 text-blue-600"
-                            : "hover:bg-gray-50"
+                        key={month.value}
+                        onClick={() => handleMonthSelect(month.value)}
+                        className={`px-2 py-1.5 text-xs rounded hover:bg-blue-50 transition-colors ${
+                          selectedMonth === month.value
+                            ? "bg-blue-100 text-blue-600 font-medium"
+                            : "text-gray-700"
                         }`}
                       >
-                        {month}
+                        {month.label}
                       </button>
                     ))}
+                  </div>
+
+                  {/* Year selector */}
+                  <div className="mt-2 pt-2 border-t border-gray-100">
+                    <input
+                      type="number"
+                      value={selectedYear}
+                      onChange={(e) =>
+                        setSelectedYear(parseInt(e.target.value) || currentYear)
+                      }
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                      min="2020"
+                      max={currentYear + 5}
+                    />
                   </div>
                 </div>
               )}
             </div>
 
+            {/* Next Month Button */}
             <button
               onClick={handleNextMonth}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Bulan berikutnya"
+              disabled={
+                selectedYear === currentYear && selectedMonth === currentMonth
+              }
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+              <ChevronRight className="w-4 h-4 text-gray-600" />
             </button>
+          </div>
           </div>
         </div>
 
@@ -286,7 +269,7 @@ const DepartmentStatistics = () => {
                 onChange={(e) => setSelectedDeptId(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="">Pilih Departemen</option>
+                <option value="all">Pilih Departemen</option>
                 {departments?.data?.map((dept) => (
                   <option key={dept._id} value={dept._id}>
                     {dept.name}
@@ -301,19 +284,19 @@ const DepartmentStatistics = () => {
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-sm text-blue-600 font-medium">QTY Request</p>
+              <p className="text-sm text-blue-600 font-medium">Request Count</p>
               <p className="text-2xl font-bold text-blue-700">{stats["QTY request"] || 0}</p>
             </div>
             <div className="bg-green-50 p-4 rounded-lg">
-              <p className="text-sm text-green-600 font-medium">QTY Approved & Reject</p>
+              <p className="text-sm text-green-600 font-medium">Approved & Reject</p>
               <p className="text-2xl font-bold text-green-700">{stats["QTY approved&reject"] || 0}</p>
             </div>
             <div className="bg-yellow-50 p-4 rounded-lg">
-              <p className="text-sm text-yellow-600 font-medium">Pending Di Saya</p>
+              <p className="text-sm text-yellow-600 font-medium">Tugas Pending</p>
               <p className="text-2xl font-bold text-yellow-700">{stats["Pending Di Saya"] || 0}</p>
             </div>
             <div className="bg-purple-50 p-4 rounded-lg">
-              <p className="text-sm text-purple-600 font-medium">QTY All</p>
+              <p className="text-sm text-purple-600 font-medium">Jumlah Semua</p>
               <p className="text-2xl font-bold text-purple-700">{stats["QTY AlL"] || 0}</p>
             </div>
           </div>
