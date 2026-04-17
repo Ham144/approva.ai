@@ -6,6 +6,7 @@ import UserRefrensi from "../models/User.model.js";
 import mongoose from "mongoose";
 import Department from "../models/Department.model.js";
 import authorize from "../middlewares/authorize.js";
+import redisService from "../utils/RedisService.js";
 
 const router = Router();
 

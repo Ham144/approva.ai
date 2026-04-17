@@ -721,11 +721,6 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
 
           //mulai logic routing
           if (matchingLogicRequirement?.logicType === "jumpTo") {
-            console.log(
-              actual,
-              matchingLogicRequirement.value,
-              matchingLogicRequirement.operator,
-            );
             const actualToCheck =
               typeof actual === "object" ? JSON.stringify(actual) : actual;
             const isOperatorSatisfied = checkOperator({

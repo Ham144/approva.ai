@@ -17,7 +17,7 @@ export default function LogicModal({
   // Validasi ringan
   if (!currentRequirementId || !currentStatus) return null;
   const currentStatusIndex = flow.status.findIndex(
-    (status) => status._id === currentStatus._id
+    (status) => status._id === currentStatus._id,
   );
 
   const [logicTemp, setLogicTemp] = useState({
@@ -105,7 +105,7 @@ export default function LogicModal({
               <span className="font-medium text-gray-800 dark:text-gray-200">
                 {currentStatus?.title || "Unknown Status"} -{" "}
                 {currentStatus?.requirements?.find(
-                  (req) => (req._id || req.id) === currentRequirementId
+                  (req) => (req._id || req.id) === currentRequirementId,
                 )?.title || "Unknown Requirement"}
               </span>
             </div>
@@ -168,9 +168,6 @@ export default function LogicModal({
               <span className="label-text font-medium">Operator</span>
             </label>
             <select
-              disabled={
-                input?.tipe === "select" || input?.tipe === "multipleCheckbox"
-              }
               value={logicTemp.operator || ""}
               onChange={(e) =>
                 setLogicTemp((prev) => ({
@@ -187,6 +184,11 @@ export default function LogicModal({
               <option value="is not equal to (String/Number/Date)">
                 is not equal to (String/Number/Date)
               </option>
+              {["multipleCheckbox", "select"].includes(input?.tipe) && (
+                <option value="one of these (multipleCheckbox/select)">
+                  one of these (multipleCheckbox/select)
+                </option>
+              )}
               <option value="contains (String)">contains (String)</option>
               <option value="does not contain (String)">
                 does not contain (String)
@@ -234,7 +236,7 @@ export default function LogicModal({
               <span className="label-text font-medium">Nilai Pembanding</span>
             </label>
             {["text", "number", "textArea", "checkbox", "table"].includes(
-              input.tipe
+              input.tipe,
             ) && (
               <input
                 type="text"
@@ -250,13 +252,62 @@ export default function LogicModal({
               />
             )}
 
-            {["select"].includes(input.tipe) && (
-              <div id={input._id} className="space-y-1">
-                <SelectInputForLogicMatching
-                  input={input}
-                  logicTemp={logicTemp}
-                  setLogicTemp={setLogicTemp}
-                />
+            {["select", "multipleCheckbox"].includes(input.tipe) && (
+              <div id={input._id} className="space-y-2">
+                {logicTemp.operator === "one of these (multipleCheckbox/select)" ? (
+                  (() => {
+                    const valuesArray = logicTemp.value ? logicTemp.value.split(',') : [''];
+                    return (
+                      <div className="space-y-2">
+                        {valuesArray.map((val, idx) => (
+                          <div key={idx} className="flex gap-2 items-center">
+                            <div className="flex-1">
+                              <SelectInputForLogicMatching
+                                input={input}
+                                logicTemp={{ value: val }}
+                                setLogicTemp={(action) => {
+                                  const simulatedPrev = { value: val };
+                                  const simulatedNext = typeof action === 'function' ? action(simulatedPrev) : action;
+                                  const newArray = [...valuesArray];
+                                  newArray[idx] = simulatedNext.value;
+                                  setLogicTemp(prev => ({ ...prev, value: newArray.join(',') }));
+                                }}
+                              />
+                            </div>
+                            {valuesArray.length > 1 && (
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-error btn-square"
+                                onClick={() => {
+                                  const newArray = valuesArray.filter((_, i) => i !== idx);
+                                  setLogicTemp(prev => ({ ...prev, value: newArray.join(',') }));
+                                }}
+                              >
+                                X
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline btn-primary mt-2"
+                          onClick={() => {
+                            const newArray = [...valuesArray, ''];
+                            setLogicTemp(prev => ({ ...prev, value: newArray.join(',') }));
+                          }}
+                        >
+                          + Tambah Nilai
+                        </button>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <SelectInputForLogicMatching
+                    input={input}
+                    logicTemp={logicTemp}
+                    setLogicTemp={setLogicTemp}
+                  />
+                )}
               </div>
             )}
 

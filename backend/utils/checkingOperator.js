@@ -223,6 +223,21 @@ function checkOperator({ operator, actual, expected, options = {} }) {
     }
   }
 
+  if (op.includes("one of these")) {
+    console.log("masuk logic one of these");
+    if (isEmpty(actual) || isEmpty(expected)) return false;
+
+    const expectedValues = toStr(exp).split(",").map(s => s.trim());
+    const actualValues = Array.isArray(act) ? act.map(v => toStr(v).trim()) : [toStr(act).trim()];
+
+    if (!caseSensitive) {
+      const lowerExpected = expectedValues.map(v => v.toLowerCase());
+      return actualValues.some(a => lowerExpected.includes(a.toLowerCase()));
+    } else {
+      return actualValues.some(a => expectedValues.includes(a));
+    }
+  }
+
   // Generic equal / not equal (try to infer type)
   if (op.includes("is equal") || op.includes("is not equal")) {
     console.log("masuk logic generic [is equal, is not equal]");
