@@ -286,6 +286,8 @@ export default function StatusFullfillmentPage() {
                   handleSubmitStatus={handleSubmitStatus}
                   isOnlyPreview={false}
                   isLoadinghandleSubmitStatus={isLoadinghandleSubmitStatus}
+                  logics={flowTemplate?.logics}
+                  allStatuses={statuses}
                   key={"approval-button"}
                 />
               </div>

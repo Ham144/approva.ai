@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useResponseCollector } from "@/store";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
+import checkOperator from "@/utils/checkOperator";
 
 export default function ApprovalButton({
   isOnlyPreview,
   handleSubmitStatus,
   isLoadinghandleSubmitStatus,
+  logics,
+  allStatuses,
 }) {
   const {
     statuses,
@@ -20,6 +23,77 @@ export default function ApprovalButton({
 
   const [searchParams] = useSearchParams();
   const action = searchParams.get("action");
+
+  // Logic evaluation for met conditions
+  const metLogic = useMemo(() => {
+    const currentStatus = statuses[currentStatusIndex];
+    if (!currentStatus || !logics) return null;
+
+    const relevantLogic = logics.find((logic) =>
+      currentStatus.requirements?.some(
+        (req) => String(req._id || req) === String(logic.requirementId),
+      ),
+    );
+
+    if (relevantLogic) {
+      const actualValue =
+        currentStatus.requirementsData?.[relevantLogic.requirementId];
+      const isMet = checkOperator({
+        operator: relevantLogic.operator,
+        actual: actualValue,
+        expected: relevantLogic.value,
+      });
+
+      if (isMet) return relevantLogic;
+    }
+
+    return null;
+  }, [statuses, currentStatusIndex, logics]);
+
+  const approveLabel = useMemo(() => {
+    if (metLogic) {
+      if (metLogic.logicType === "jumpTo") {
+        const targetStatus = allStatuses?.find(
+          (s) => s.uuid === metLogic.jumpToStatusUuid,
+        );
+        return `Approve & Jump to ${targetStatus?.title || targetStatus?.statusTitle || "Target"}`;
+      } else if (metLogic.logicType === "completedIf") {
+        return "Approve & Complete";
+      } else if (metLogic.logicType === "rejectedIf") {
+        return "Approve & Reject (Auto)";
+      }
+    }
+
+    return "Approve";
+  }, [metLogic, allStatuses]);
+
+  const nextStatusForRecipient = useMemo(() => {
+    if (metLogic?.logicType === "jumpTo") {
+      return allStatuses?.find((s) => s.uuid === metLogic.jumpToStatusUuid);
+    }
+    // If it's regular next step, return currentStatusIndex + 1
+    if (currentStatusIndex < statuses.length - 1) {
+      return statuses[currentStatusIndex + 1];
+    }
+    return null;
+  }, [metLogic, statuses, currentStatusIndex, allStatuses]);
+
+  const showRecipientSelection = useMemo(() => {
+    if (verdict === "rejected") return false;
+    if (metLogic) {
+      if (
+        metLogic.logicType === "completedIf" ||
+        metLogic.logicType === "rejectedIf"
+      )
+        return false;
+    }
+    return nextStatusForRecipient !== null;
+  }, [verdict, metLogic, nextStatusForRecipient]);
+
+  // Clear selection if the target recipient status changes
+  useEffect(() => {
+    setSelectedAuthorized([]);
+  }, [nextStatusForRecipient?.uuid, setSelectedAuthorized]);
 
   function handleSelect(verdict) {
     const statusesCopy = [...statuses];
@@ -93,92 +167,96 @@ export default function ApprovalButton({
           >
             <div className="card-body w-full space-y-4 bg-white">
               {/* Bagian Deskripsi dan Info Badge */}
-              {verdict != "rejected" &&
-                currentStatusIndex < statuses.length - 1 && (
-                  <div className="text-gray-700 dark:text-gray-300 text-sm sm:text-base leading-relaxed">
-                    {/* Untuk memilih authorized User  */}
-                    <div className="mb-6">
-                      {/* Toggle Button */}
-                      <button
-                        onClick={() => setIsVisible(!isVisible)}
-                        className="flex items-center gap-2 mb-2 text-blue-600 hover:text-blue-800 transition-colors"
+              {showRecipientSelection && (
+                <div className="text-gray-700 dark:text-gray-300 text-sm sm:text-base leading-relaxed">
+                  {/* Untuk memilih authorized User  */}
+                  <div className="mb-6">
+                    {/* Toggle Button */}
+                    <button
+                      onClick={() => setIsVisible(!isVisible)}
+                      className="flex items-center gap-2 mb-2 text-blue-600 hover:text-blue-800 transition-colors"
+                    >
+                      <span className="font-medium">
+                        {isVisible ? "Sembunyikan" : "Tampilkan"} Pilihan
+                        Pemberitahuan
+                        {metLogic?.logicType === "jumpTo" && (
+                          <span className="ml-2 badge badge-sm badge-info">
+                            Jump Active
+                          </span>
+                        )}
+                      </span>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className={`h-5 w-5 transition-transform ${
+                          isVisible ? "rotate-180" : ""
+                        }`}
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
                       >
-                        <span className="font-medium">
-                          {isVisible ? "Sembunyikan" : "Tampilkan"} Pilihan
-                          Pemberitahuan
-                        </span>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className={`h-5 w-5 transition-transform ${
-                            isVisible ? "rotate-180" : ""
-                          }`}
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </button>
+                        <path
+                          fillRule="evenodd"
+                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
 
-                      {/* Content */}
-                      {isVisible && (
-                        <div className="flex flex-col p-2 bg-white rounded-xl shadow-lg border border-gray-200 transition-all duration-300 overflow-y-auto ">
-                          <p className="text-lg font-medium text-gray-700 mb-4 px-2">
-                            Berikut Pilihan yang telah ditetapkan untuk
-                            pemberitahuan langsung
-                            <span className="block text-sm text-gray-500 mt-1 font-normal">
-                              (yang tidak dipilih juga dapat mengisi persetujuan
-                              sebagai alternatif)
-                            </span>
-                          </p>
+                    {/* Content */}
+                    {isVisible && (
+                      <div className="flex flex-col p-2 bg-white rounded-xl shadow-lg border border-gray-200 transition-all duration-300 overflow-y-auto ">
+                        <p className="text-lg font-medium text-gray-700 mb-4 px-2">
+                          {metLogic?.logicType === "jumpTo"
+                            ? `Pilihan Pemberitahuan untuk Status: ${nextStatusForRecipient?.title || nextStatusForRecipient?.statusTitle}`
+                            : "Berikut Pilihan yang telah ditetapkan untuk pemberitahuan langsung"}
+                          <span className="block text-sm text-gray-500 mt-1 font-normal">
+                            (yang tidak dipilih juga dapat mengisi persetujuan
+                            sebagai alternatif)
+                          </span>
+                        </p>
 
-                          <div className="flex flex-wrap gap-3 p-2">
-                            {statuses[currentStatusIndex + 1]?.authorized?.map(
-                              (authorized) => {
-                                const isSelected = selectedAuthorized?.includes(
-                                  authorized._id,
-                                );
-                                return (
-                                  <button
-                                    key={authorized._id}
-                                    className={`cursor-pointer px-5 py-2.5 rounded-full shadow-sm transition-all duration-300 flex-shrink-0 
+                        <div className="flex flex-wrap gap-3 p-2">
+                          {nextStatusForRecipient?.authorized?.map(
+                            (authorized) => {
+                              const isSelected = selectedAuthorized?.includes(
+                                authorized._id,
+                              );
+                              return (
+                                <button
+                                  key={authorized._id}
+                                  className={`cursor-pointer px-5 py-2.5 rounded-full shadow-sm transition-all duration-300 flex-shrink-0 
                 flex items-center space-x-2 border-2
                 ${
                   isSelected
                     ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-700 shadow-md transform scale-105"
                     : "bg-white text-gray-700 hover:bg-blue-50 border-gray-200 hover:border-blue-300"
                 }`}
-                                    onClick={() => {
-                                      setSelectedAuthorized(authorized._id);
-                                    }}
-                                  >
-                                    <span className="font-medium">
-                                      {authorized.displayName ||
-                                        authorized.username}
+                                  onClick={() => {
+                                    setSelectedAuthorized(authorized._id);
+                                  }}
+                                >
+                                  <span className="font-medium">
+                                    {authorized.displayName ||
+                                      authorized.username}
+                                  </span>
+                                  {isSelected && (
+                                    <span className="bg-white text-blue-600 rounded-full p-0.5">
+                                      ✓
                                     </span>
-                                    {isSelected && (
-                                      <span className="bg-white text-blue-600 rounded-full p-0.5">
-                                        ✓
-                                      </span>
-                                    )}
-                                  </button>
-                                );
-                              },
-                            )}
-                          </div>
+                                  )}
+                                </button>
+                              );
+                            },
+                          )}
                         </div>
-                      )}
-                    </div>
-
-                    <p className="mb-2 font-medium">
-                      Pilih keputusan akhir untuk melanjutkan proses atau
-                      menolak.
-                    </p>
+                      </div>
+                    )}
                   </div>
-                )}
+
+                  <p className="mb-2 font-medium">
+                    Pilih keputusan akhir untuk melanjutkan proses atau menolak.
+                  </p>
+                </div>
+              )}
 
               {/* Loader */}
               {isLoadinghandleSubmitStatus && (
@@ -215,7 +293,7 @@ export default function ApprovalButton({
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 className="w-4 h-4" /> Approve
+                      <CheckCircle2 className="w-4 h-4" /> {approveLabel}
                     </>
                   )}
                 </button>

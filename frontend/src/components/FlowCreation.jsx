@@ -70,20 +70,40 @@ export default function FlowCreation() {
     setFlow({ ...flow, status: newStatusList });
   };
 
-  const handleMoveRequest = (itsCurrentIndex, direction) => {
+  const handleMoveRequest = (itsCurrentIndex, direction, statusIndex = null) => {
     const directionToNum = direction === "UP" ? -1 : 1;
     const newIndex = itsCurrentIndex + directionToNum;
 
-    // Cegah keluar batas array
-    if (newIndex < 0 || newIndex >= flow.request.length) return;
+    if (statusIndex !== null && statusIndex !== undefined) {
+      // Pindahkan requirement di dalam status tertentu (child)
+      const updatedStatusList = [...flow.status];
+      const requirementsArr = [...updatedStatusList[statusIndex].requirements];
 
-    const requestArr = [...flow.request];
-    [requestArr[itsCurrentIndex], requestArr[newIndex]] = [
-      requestArr[newIndex],
-      requestArr[itsCurrentIndex],
-    ];
+      if (newIndex < 0 || newIndex >= requirementsArr.length) return;
 
-    setFlow({ ...flow, request: requestArr });
+      [requirementsArr[itsCurrentIndex], requirementsArr[newIndex]] = [
+        requirementsArr[newIndex],
+        requirementsArr[itsCurrentIndex],
+      ];
+
+      updatedStatusList[statusIndex] = {
+        ...updatedStatusList[statusIndex],
+        requirements: requirementsArr,
+      };
+
+      setFlow({ ...flow, status: updatedStatusList });
+    } else {
+      // Pindahkan request di tingkat utama
+      if (newIndex < 0 || newIndex >= flow.request.length) return;
+
+      const requestArr = [...flow.request];
+      [requestArr[itsCurrentIndex], requestArr[newIndex]] = [
+        requestArr[newIndex],
+        requestArr[itsCurrentIndex],
+      ];
+
+      setFlow({ ...flow, request: requestArr });
+    }
   };
 
   const handleAddAuthorizedUser = (statusIndex, userId) => {

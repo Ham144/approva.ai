@@ -99,3 +99,7 @@
 [x] add: optimasi loading dengan redis
 
 [x] fix: RangeError [ERR_OUT_OF_RANGE]: The value of "offset" is out of range (cause: gambar besar gagal di conver buffer tepatnya di table type image)
+20-04-2026
+[x] fix: arrow naik turun child tidak berfungsi dengan baik
+[x] add: bisa copy-paste child ke parent lain
+[x] add: bisa copy-paste parent ke flow lain
