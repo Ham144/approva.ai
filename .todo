@@ -104,3 +104,6 @@
 [x] add: bisa copy-paste child ke parent lain
 [x] add: bisa copy-paste parent ke flow lain
 [x] mod: approval option berubah sesuai logic
+
+[x] add: bisa auto switch organization jika dikirimi link organisasi berbeda
+[x] add: tombol download pada tiap review pdf

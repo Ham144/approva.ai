@@ -235,7 +235,7 @@ router.post(
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
           },
-        }
+        },
       );
 
       if (!result.data.success) {
@@ -355,13 +355,13 @@ router.post(
       if (userDB.email !== userLDAP["mail"]) {
         await UserRefrensi.findOneAndUpdate(
           { username },
-          { $set: { email: userLDAP["mail"] } }
+          { $set: { email: userLDAP["mail"] } },
         );
       }
       if (userDB.displayName !== userLDAP["displayName"]) {
         await UserRefrensi.findOneAndUpdate(
           { username },
-          { $set: { displayName: userLDAP["displayName"] } }
+          { $set: { displayName: userLDAP["displayName"] } },
         );
       }
 
@@ -376,7 +376,7 @@ router.post(
         myPreviousDepartment.name !== departementDB.name
       ) {
         const toDeleteMemberIdx = myPreviousDepartment.members.findIndex(
-          (dep) => String(dep) === String(userDB._id)
+          (dep) => String(dep) === String(userDB._id),
         );
 
         if (toDeleteMemberIdx !== -1) {
@@ -386,7 +386,7 @@ router.post(
         //jika departement sebelumnya ga ada tapi departement yang dimaksud sudah terdaftar maka add
         if (!myPreviousDepartment && departementDB) {
           const duplicateId = departementDB.members.some(
-            (f) => f._id === userDB._id
+            (f) => f._id === userDB._id,
           );
           if (!duplicateId) {
             departementDB.members.push(userDB._id);
@@ -426,7 +426,7 @@ router.post(
         message: error.message,
       });
     }
-  })
+  }),
 );
 
 // login app ✅
@@ -453,7 +453,7 @@ router.post(
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
           },
-        }
+        },
       );
 
       if (!result.data.success) {
@@ -515,7 +515,7 @@ router.post(
     if (username == "SUPERTENANT" && OrgDB._id != selectedOrg) {
       await UserRefrensi.findOneAndUpdate(
         { username },
-        { $set: { org: OrgDB._id } }
+        { $set: { org: OrgDB._id } },
       );
       console.log("org terhubung ke supertenant telah berganti");
     }
@@ -555,7 +555,7 @@ router.post(
       message: "Selamat datang.",
       data: userWithoutPassword,
     });
-  })
+  }),
 );
 
 //update user ✅
@@ -631,7 +631,7 @@ router.put(
     } else if (role === "member" || role === "viewer") {
       // Hapus dari owners jika ada
       orgDB.owners = orgDB.owners.filter(
-        (ownerId) => ownerId.toString() !== user._id.toString()
+        (ownerId) => ownerId.toString() !== user._id.toString(),
       );
     }
 
@@ -649,7 +649,7 @@ router.put(
       success: true,
       message: "User berhasil diperbarui.",
     });
-  })
+  }),
 );
 
 //ini untuk memperbarui userInfo karena di authenticate payload cuma di decode
@@ -693,7 +693,7 @@ router.get(
       success: true,
       userInfo: userDB,
     });
-  })
+  }),
 );
 
 //get user info complete ✅
@@ -723,7 +723,7 @@ router.get(
       message: "Informasi user lengkap berhasil diambil.",
       data: userDB,
     });
-  })
+  }),
 );
 
 router.get(
@@ -740,7 +740,7 @@ router.get(
       message: "Semua akun berhasil diambil.",
       data: userDBs,
     });
-  })
+  }),
 );
 
 //ini untuk membuat user yang tidak terikat dengan LDAP
@@ -1048,7 +1048,7 @@ router.get("/searchAccount", authenticate, async (req, res) => {
   const { searchKey } = req.query;
 
   if (!searchKey) {
-    return res.json({ success: true, data: [] }); 
+    return res.json({ success: true, data: [] });
   }
 
   const users = await UserRefrensi.find({
@@ -1072,7 +1072,7 @@ router.delete(
       success: true,
       message: "Berhasil logout.",
     });
-  })
+  }),
 );
 
 export default router;

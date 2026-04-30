@@ -95,11 +95,6 @@ const NumberInput = ({
           +
         </button>
       </div>
-      {/* <PdfPreviewModal
-        selectedPDF={selectedPDF}
-        setSelectedPDF={setSelectedPDF}
-        key={input?._id}
-      /> */}
     </div>
   );
 };

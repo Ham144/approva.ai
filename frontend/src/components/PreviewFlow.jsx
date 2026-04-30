@@ -291,6 +291,9 @@ export default function PreviewFlow({
       case "pdf":
       case "image":
         const isDisabled = baseProps?.disabled;
+        const currentValue = isRequirementInput
+          ? (statuses[statusIndex]?.requirementsData || {})[input._id]
+          : requestData[input._id];
 
         return (
           <div
@@ -302,74 +305,46 @@ export default function PreviewFlow({
 
             {isDisabled ? (
               <>
-                {input.tipe === "image" &&
-                  (requestData[input._id] ||
-                    (statuses[statusIndex]?.requirementsData || {})[
-                      input._id
-                    ]) && (
-                    <img
-                      src={
-                        requestData[input._id] ||
-                        (statuses[statusIndex]?.requirementsData || {})[
-                          input._id
-                        ] ||
-                        ""
-                      }
-                      alt="Preview"
-                      className="object-contain rounded-lg mx-auto p-2 max-h-60 border border-base-300"
-                    />
-                  )}
+                {input.tipe === "image" && currentValue && (
+                  <img
+                    src={currentValue}
+                    alt="Preview"
+                    className="object-contain rounded-lg mx-auto p-2 max-h-60 border border-base-300"
+                  />
+                )}
 
-                {input.tipe === "pdf" &&
-                  (requestData[input._id] ||
-                    (statuses[statusIndex]?.requirementsData || {})[
-                      input._id
-                    ]) && (
-                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-base-200 to-base-100 rounded-lg border border-base-300 shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gradient-to-br from-error/20 to-error/10 rounded-lg">
-                          <FileText className="w-5 h-5 text-error" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-base-content truncate text-wrap max-md:w-32">
-                            {requestData[input._id] ||
-                              (statuses[statusIndex]?.requirementsData || {})[
-                                input._id
-                              ] ||
-                              ""}
-                          </div>
-                          <div className="text-xs text-base-content/60 flex items-center gap-1">
-                            <FileText className="w-3 h-3" />
-                            PDF Document
-                          </div>
-                        </div>
+                {input.tipe === "pdf" && currentValue && (
+                  <div className="flex items-center justify-between p-3 bg-gradient-to-r from-base-200 to-base-100 rounded-lg border border-base-300 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-gradient-to-br from-error/20 to-error/10 rounded-lg">
+                        <FileText className="w-5 h-5 text-error" />
                       </div>
-
-                      <div className="flex gap-1">
-                        {/* Download */}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleDownloadPDF(
-                              requestData[input._id] ||
-                                (statuses[statusIndex]?.requirementsData || {})[
-                                  input._id
-                                ],
-                            )
-                          }
-                          className="btn btn-sm btn-ghost text-success hover:bg-success/10"
-                          title="Download PDF"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
+                      <div>
+                        <div className="font-semibold text-base-content truncate text-wrap max-md:w-32">
+                          {currentValue}
+                        </div>
+                        <div className="text-xs text-base-content/60 flex items-center gap-1">
+                          <FileText className="w-3 h-3" />
+                          PDF Document
+                        </div>
                       </div>
                     </div>
-                  )}
 
-                {!(
-                  requestData[input._id] ||
-                  (statuses[statusIndex]?.requirementsData || {})[input._id]
-                ) && (
+                    <div className="flex gap-1">
+                      {/* Download */}
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadPDF(currentValue)}
+                        className="btn btn-sm btn-ghost text-success hover:bg-success/10"
+                        title="Download PDF"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {!currentValue && (
                   <p className="text-sm text-base-content/50 italic">
                     Belum ada file.
                   </p>
@@ -389,11 +364,11 @@ export default function PreviewFlow({
                       className="hidden"
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
-                        if (!file && isRequirementInput) {
-                          if (isForRequest) {
-                            setRequestData(input._id, null);
-                          } else {
+                        if (!file) {
+                          if (isRequirementInput) {
                             setRequirement(currentStatusIndex, input._id, null);
+                          } else {
+                            setRequestData(input._id, null);
                           }
                           return;
                         }
@@ -407,29 +382,13 @@ export default function PreviewFlow({
                           const fileUrl = res.url;
 
                           if (isRequirementInput) {
-                            if (isForRequest) {
-                              setRequirement(
-                                currentStatusIndex,
-                                input._id,
-                                fileUrl,
-                              );
-                            } else {
-                              setRequirement(
-                                currentStatusIndex,
-                                input._id,
-                                fileUrl,
-                              );
-                            }
+                            setRequirement(
+                              currentStatusIndex,
+                              input._id,
+                              fileUrl,
+                            );
                           } else {
-                            if (isForRequest) {
-                              setRequestData(input._id, fileUrl);
-                            } else {
-                              setRequirement(
-                                currentStatusIndex,
-                                input._id,
-                                null,
-                              );
-                            }
+                            setRequestData(input._id, fileUrl);
                           }
                         } catch (err) {
                           toast.error("Gagal upload file.");
@@ -452,7 +411,15 @@ export default function PreviewFlow({
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) {
-                            setRequestData(input._id, null);
+                            if (isRequirementInput) {
+                              setRequirement(
+                                currentStatusIndex,
+                                input._id,
+                                null,
+                              );
+                            } else {
+                              setRequestData(input._id, null);
+                            }
                             return;
                           }
 
@@ -484,22 +451,42 @@ export default function PreviewFlow({
                 </div>
 
                 {/* Preview */}
-                {input.tipe === "image" && requestData[input._id] && (
-                  <img
-                    src={requestData[input._id]}
-                    alt="Preview"
-                    className="object-contain rounded-lg mx-auto p-2 max-h-60 border border-base-300"
-                  />
+                {input.tipe === "image" && currentValue && (
+                  <div className="relative group w-fit mx-auto">
+                    <img
+                      src={currentValue}
+                      alt="Preview"
+                      className="object-contain rounded-lg mx-auto p-2 max-h-60 border border-base-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadPDF(currentValue)}
+                      className="absolute top-4 right-4 btn btn-sm btn-circle btn-primary shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Download Image"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                  </div>
                 )}
 
                 {input.tipe === "pdf" &&
-                  requestData[input._id] &&
-                  typeof requestData[input._id] === "string" && (
-                    <div className="flex items-center gap-2 text-sm text-base-content/80 bg-base-200 p-2 rounded-md">
-                      <span className="i-ph-file-pdf-duotone text-error"></span>
-                      <span>
-                        File dipilih: <strong>{requestData[input._id]}</strong>
-                      </span>
+                  currentValue &&
+                  typeof currentValue === "string" && (
+                    <div className="flex items-center justify-between gap-2 text-sm text-base-content/80 bg-base-200 p-2 rounded-md">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <span className="i-ph-file-pdf-duotone text-error flex-shrink-0"></span>
+                        <span className="truncate">
+                          File dipilih: <strong>{currentValue}</strong>
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadPDF(currentValue)}
+                        className="btn btn-sm btn-ghost text-success hover:bg-success/10 flex-shrink-0"
+                        title="Download PDF"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
                     </div>
                   )}
               </div>

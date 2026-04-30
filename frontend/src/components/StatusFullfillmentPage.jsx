@@ -72,8 +72,11 @@ export default function StatusFullfillmentPage() {
     enabled: !!instanceId,
   });
 
-  const { userInfo } = useUserInfo();
+  const { userInfo, setUserInfo } = useUserInfo();
   useEffect(() => {
+    if (flowInstanceData?.userInfo) {
+      setUserInfo(flowInstanceData.userInfo);
+    }
     if (flowInstanceData?.data?.requestData) {
       setFullRequestData(flowInstanceData.data.requestData);
       setOveralStatus(flowInstanceData.data.overallStatus);
@@ -81,7 +84,7 @@ export default function StatusFullfillmentPage() {
       setStatuses(
         flowInstanceData.data?.statuses?.map((status, index) => ({
           ...status,
-          ...flowInstanceData?.data.flowTemplate?.status[index],
+          ...flowInstanceData?.data?.flowTemplate?.status[index],
         })),
       );
       setCurrentStatusIndex(flowInstanceData.data.currentStatusIndex);
@@ -135,7 +138,6 @@ export default function StatusFullfillmentPage() {
     <div className="flex flex-col h-screen bg-blue-100 dark:bg-gray-900">
       {/* Konten Utama yang Bisa di-Scroll */}
       <div className="flex-1  overflow-y-auto px-2 pb-36 pt-2 custom-scrollbar">
-        {" "}
         {/* Added custom-scrollbar class */}
         <div className="mx-auto max-w-4xl space-y-4">
           {/* Informasi Sistem */}

@@ -12,6 +12,9 @@ import checkOperator from "../utils/checkingOperator.js";
 import ExcelJS from "exceljs";
 import flowCacheMiddleware from "../middlewares/redise-middleware.js";
 import redisService from "../utils/RedisService.js";
+import Org from "../models/Organization.model.js";
+import generateTokenJWT from "../utils/generateTokenJWT.js";
+
 
 const router = Router();
 
@@ -243,6 +246,7 @@ router.get(
   flowCacheMiddleware,
   async (req, res) => {
     const { instanceId } = req.params;
+    console.log(instanceId);
     const {
       flowTemplateCategory,
       overallStatus,
@@ -464,9 +468,8 @@ router.get("/flowInstanceById/:id", async (req, res) => {
   }
 
   try {
-    const flowInstance = await FlowInstance.findOne({
+    let flowInstance = await FlowInstance.findOne({
       _id: id,
-      org: req.user.org,
     })
       .populate({
         path: "flowTemplate",
@@ -483,18 +486,61 @@ router.get("/flowInstanceById/:id", async (req, res) => {
       .populate("statuses.completedBy", "username")
       .populate("requestedBy", "username");
 
+    if (!flowInstance) {
+      return res.status(404).json({ message: "Flow Instance tidak ditemukan" });
+    }
+
+    if (flowInstance.org.toString() !== req.user.org.toString()) {
+      const existingUserOtherOrg = await UserRefrensi.findOne({
+        username: req.user.username,
+        org: flowInstance.org,
+      }).select("-password");
+
+      if (existingUserOtherOrg) {
+        const OrgDB = await Org.findById(flowInstance.org);
+        const departementDB = await Department.findOne({
+          org: flowInstance.org,
+          members: { $in: [existingUserOtherOrg._id] },
+        });
+
+        const payload = {
+          _id: existingUserOtherOrg._id.toString(),
+          username: existingUserOtherOrg.username,
+          org: OrgDB._id,
+          role: existingUserOtherOrg.role,
+          department: departementDB?._id,
+        };
+
+        const token = await generateTokenJWT(payload);
+
+        res.cookie("token", token, {
+          httpOnly: true,
+          secure: false,
+          sameSite: "Lax",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
+        req.user = payload;
+      } else if (req.user.role !== "supertenant") {
+        return res.status(403).json({
+          message: "Anda tidak terdaftar di organisasi pemilik flow ini",
+        });
+      }
+    }
+
+
     //jika currentStatusIndex saat ini memliki logic jumpTo maka merge authorized dengan status.authorized dengan target status jumpTo
-    const currentLogicIdx = flowInstance.flowTemplate.logics.findIndex(
+    const currentLogicIdx = flowInstance?.flowTemplate?.logics.findIndex(
       (logic) =>
-        flowInstance.flowTemplate.status[
-          flowInstance.currentStatusIndex
+        flowInstance?.flowTemplate?.status[
+          flowInstance?.currentStatusIndex
         ]?.requirements.some(
           (requirement) => String(requirement._id) === logic?.requirementId,
         ),
     );
 
     if (currentLogicIdx != -1) {
-      const currentLogic = flowInstance.flowTemplate.logics[currentLogicIdx];
+      const currentLogic = flowInstance?.flowTemplate?.logics[currentLogicIdx];
       const jumpToStatusUuid = currentLogic?.jumpToStatusUuid;
 
       if (jumpToStatusUuid) {
@@ -516,7 +562,7 @@ router.get("/flowInstanceById/:id", async (req, res) => {
     //untuk mencegah error karena flowTemplate status bertambah
     let isDiff = false;
     if (
-      flowInstance.statuses.length != flowInstance.flowTemplate.status.length
+      flowInstance?.statuses.length != flowInstance?.flowTemplate?.status.length
     ) {
       for (let i = 0; i < flowInstance.flowTemplate.status.length; i++) {
         // Jika status belum ada, buat baru
@@ -547,6 +593,7 @@ router.get("/flowInstanceById/:id", async (req, res) => {
         ? "Terjadi perbedaan status dengan template dan telah disesuikan"
         : "berhasil mengambil data flow instance",
       data: flowInstance,
+      userInfo: req.user,
     });
   } catch (error) {
     console.log(error);
