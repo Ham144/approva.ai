@@ -189,7 +189,9 @@ export default function StatusFullfillmentPage() {
                     Requested By:
                   </p>
                   <p className="text-gray-700 dark:text-gray-300 break-all">
-                    {flowInstanceData.data.requestedBy?.username}
+                    {flowInstanceData.data.requestedBy?.displayName ||
+                      flowInstanceData.data.requestedBy?.username ||
+                      "Stranger"}
                   </p>
 
                   <p className="text-blue-600 dark:text-blue-400 font-medium">
@@ -290,6 +292,8 @@ export default function StatusFullfillmentPage() {
                   isLoadinghandleSubmitStatus={isLoadinghandleSubmitStatus}
                   logics={flowTemplate?.logics}
                   allStatuses={statuses}
+                  isPrioritizeRequestor={flowTemplate?.isPrioritizeRequestor}
+                  requestedBy={flowInstanceData?.data?.requestedBy}
                   key={"approval-button"}
                 />
               </div>

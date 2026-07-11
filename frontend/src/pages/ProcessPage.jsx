@@ -733,7 +733,7 @@ export default function ProcessPage() {
                             <p className="text-sm text-gray-800 line-clamp-1">
                               {instance?.requestedBy?.displayName ||
                                 instance?.requestedBy?.username ||
-                                "-"}
+                                "Stranger"}
                             </p>
                           </div>
                           <div className="space-y-0.5">
@@ -873,7 +873,7 @@ export default function ProcessPage() {
                           <td className="text-gray-600 py-4 px-6">
                             {instance?.requestedBy?.displayName ||
                               instance?.requestedBy?.username ||
-                              "-"}
+                              "Stranger"}
                           </td>
                           <td className="text-gray-600 py-4 px-6">
                             {new Date(instance.createdAt).toLocaleDateString()}

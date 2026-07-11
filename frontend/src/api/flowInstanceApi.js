@@ -209,6 +209,15 @@ const flowInstanceApi = {
     const res = await axiosInstance.get(`/api/superadmin/department-stats?` + query);
     return res.data;
   },
+  getFlowTemplateForRequest: async (id) => {
+    if (!id) {
+      throw new Error("ID is required");
+    }
+    const res = await axiosInstance.get(
+      `/api/flowInstance/flowTemplate/${id}`,
+    );
+    return res.data;
+  },
 };
 
 export default flowInstanceApi;

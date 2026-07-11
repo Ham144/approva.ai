@@ -1,8 +1,11 @@
-import React, { useEffect, useState, useRef } from "react"; // Tambahkan useEffect, useState, useRef
-import { useResponseCollector } from "@/store"; // Pastikan path benar
+import React, { useEffect, useState } from "react";
+import { useResponseCollector } from "@/store";
 import ZoomableImage from "./ZoomableImage";
 import SelectInputInsideTable from "./SelectInputInsideTable";
 import TextModal from "./TextModal";
+import FileApi from "@/api/fileApi";
+import toast from "react-hot-toast";
+import { FileText, Download } from "lucide-react";
 
 const TableInput = ({
   input,
@@ -59,22 +62,47 @@ const TableInput = ({
     }
   };
 
-  const handleFileChange = (rowIdx, colIdx, file) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const updatedRows = [...tableRows];
-      if (!updatedRows[rowIdx]) return;
-      updatedRows[rowIdx].values ??= keys.map(() => "");
-      updatedRows[rowIdx].values[colIdx] = e.target.result;
+  const handleFileUpload = async (rowIdx, colIdx, file, colType) => {
+    if (!file) {
+      handleChange(rowIdx, colIdx, null);
+      return;
+    }
 
-      if (isRequirementInput) {
-        setRequirement(statusIndex, input._id, updatedRows);
-      } else {
-        setRequestData(input._id, updatedRows);
-      }
-    };
-    reader.readAsDataURL(file);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("tipe", colType);
+
+    try {
+      const res = await FileApi.uploadImage(formData);
+      handleChange(rowIdx, colIdx, res.url);
+    } catch {
+      toast.error("Gagal upload file.");
+    }
+  };
+
+  const handleDownloadFile = async (fileName) => {
+    if (!fileName) {
+      toast.error("File tidak ditemukan");
+      return;
+    }
+
+    try {
+      const filename = fileName.includes("/")
+        ? fileName.split("/").pop()
+        : fileName;
+      const blob = await FileApi.downloadFile(filename);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast.success("File berhasil didownload");
+    } catch {
+      toast.error("Gagal mendownload file");
+    }
   };
 
   const addRow = () => {
@@ -164,60 +192,137 @@ const TableInput = ({
 
                     return (
                       <td key={cIdx} className="px-4 py-3 align-top">
-                        {colType === "image" ? (
-                          <div className="space-y-3">
-                            {!baseProps?.disabled && (
-                              <div className="flex flex-col gap-2">
-                                <label className="btn btn-secondary btn-sm w-fit cursor-pointer">
-                                  <span className="i-ph-camera-duotone mr-2" />
-                                  Ambil Foto
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    capture="environment"
-                                    {...baseProps}
-                                    className="hidden"
-                                    onChange={(e) =>
-                                      handleFileChange(
-                                        rIdx,
-                                        cIdx,
-                                        e.target.files[0],
-                                      )
-                                    }
-                                  />
-                                </label>
+                        {colType === "image" || colType === "pdf" ? (
+                          <div className="space-y-3 max-w-40 text-wrap">
+                            {baseProps?.disabled ? (
+                              <>
+                                {colType === "image" && val && (
+                                  <div className="flex justify-center">
+                                    <ZoomableImage
+                                      src={val}
+                                      className="max-h-28 rounded-lg border shadow-sm"
+                                    />
+                                  </div>
+                                )}
 
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  {...baseProps}
-                                  className="file-input file-input-bordered file-input-primary w-full max-w-xs"
-                                  onChange={(e) =>
-                                    handleFileChange(
-                                      rIdx,
-                                      cIdx,
-                                      e.target.files[0],
-                                    )
-                                  }
-                                />
+                                {colType === "pdf" && val && (
+                                  <div className="flex items-center justify-between p-3 bg-gradient-to-r from-base-200 to-base-100 rounded-lg border border-base-300 shadow-sm">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      <div className="p-2 bg-gradient-to-br from-error/20 to-error/10 rounded-lg flex-shrink-0">
+                                        <FileText className="w-5 h-5 text-error" />
+                                      </div>
+                                      <div className="min-w-0">
+                                        <div className="font-semibold text-base-content truncate">
+                                          {val}
+                                        </div>
+                                        <div className="text-xs text-base-content/60 flex items-center gap-1">
+                                          <FileText className="w-3 h-3" />
+                                          PDF Document
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDownloadFile(val)}
+                                      className="btn btn-sm btn-ghost text-success hover:bg-success/10 flex-shrink-0"
+                                      title="Download PDF"
+                                    >
+                                      <Download className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                )}
+
+                                {!val && (
+                                  <p className="text-sm text-base-content/50 italic text-center">
+                                    Belum ada file.
+                                  </p>
+                                )}
+                              </>
+                            ) : (
+                              <div className="flex flex-col gap-3">
+                                <div className="flex flex-wrap gap-2">
+                                  <label className="btn btn-primary btn-sm cursor-pointer text-white rounded-md">
+                                    <span className="i-ph-upload-simple-duotone mr-2" />
+                                    Upload File
+                                    <input
+                                      type="file"
+                                      accept={
+                                        colType === "image" ? "image/*" : ".pdf"
+                                      }
+                                      {...baseProps}
+                                      className="hidden"
+                                      onChange={(e) =>
+                                        handleFileUpload(
+                                          rIdx,
+                                          cIdx,
+                                          e.target.files?.[0],
+                                          colType,
+                                        )
+                                      }
+                                    />
+                                  </label>
+
+                                  {colType === "image" && (
+                                    <label className="btn btn-secondary btn-sm cursor-pointer">
+                                      <span className="i-ph-camera-duotone mr-2" />
+                                      Ambil Foto
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        capture="environment"
+                                        {...baseProps}
+                                        className="hidden"
+                                        onChange={(e) =>
+                                          handleFileUpload(
+                                            rIdx,
+                                            cIdx,
+                                            e.target.files?.[0],
+                                            colType,
+                                          )
+                                        }
+                                      />
+                                    </label>
+                                  )}
+                                </div>
+
+                                {colType === "image" && val && (
+                                  <div className="relative group w-fit mx-auto">
+                                    <ZoomableImage
+                                      src={val}
+                                      className="max-h-28 rounded-lg border shadow-sm"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDownloadFile(val)}
+                                      className="absolute top-2 right-2 btn btn-sm btn-circle btn-primary shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                      title="Download Image"
+                                    >
+                                      <Download className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                )}
+
+                                {colType === "pdf" &&
+                                  val &&
+                                  typeof val === "string" && (
+                                    <div className="flex items-center justify-between gap-2 text-sm text-base-content/80 bg-base-200 p-2 rounded-md">
+                                      <div className="flex items-center gap-2 overflow-hidden min-w-0">
+                                        <span className="i-ph-file-pdf-duotone text-error flex-shrink-0" />
+                                        <span className="truncate">
+                                          File dipilih: <strong>{val}</strong>
+                                        </span>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDownloadFile(val)}
+                                        className="btn btn-sm btn-ghost text-success hover:bg-success/10 flex-shrink-0"
+                                        title="Download PDF"
+                                      >
+                                        <Download className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  )}
                               </div>
-                            )}
-
-                            {/* Preview gambar */}
-                            {typeof val === "string" && val && (
-                              <div className="flex justify-center">
-                                <ZoomableImage
-                                  src={val}
-                                  className="max-h-28 rounded-lg border shadow-sm"
-                                />
-                              </div>
-                            )}
-
-                            {/* Empty state */}
-                            {!val && baseProps?.disabled && (
-                              <p className="text-sm text-gray-400 italic text-center">
-                                Tidak ada gambar
-                              </p>
                             )}
                           </div>
                         ) : colType === "select" ? (

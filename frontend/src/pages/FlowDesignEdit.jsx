@@ -5,15 +5,7 @@ import { useEditor } from "@/store";
 import toast from "react-hot-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import flowApi from "@/api/flowApi";
-import {
-  Trash,
-  StepBack,
-  Globe,
-  ListStart,
-  FileCode,
-  CircleCheckBig,
-  CircleCheck,
-} from "lucide-react";
+import { Trash, StepBack, Globe } from "lucide-react";
 import { useNavigate } from "react-router";
 import React, { useEffect, useState } from "react";
 import FlowEditing from "@/components/FlowEditing";
@@ -25,7 +17,6 @@ export default function FlowDesignEdit() {
   const navigate = useNavigate();
   const { flow, setFlow } = useEditor();
   const queryClient = useQueryClient();
-  const [tabNavigation, setTabNavigation] = useState();
 
   useQuery({
     queryKey: ["flow", id],

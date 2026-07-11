@@ -15,6 +15,10 @@ import {
   BookHeart,
   Search,
   Copy,
+  KeyRound,
+  AlertTriangle,
+  UserRoundX,
+  Zap,
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { useEditor } from "../store";
@@ -169,7 +173,11 @@ export default function FlowEditing() {
     setFlow({ ...flow, status: tempStatusArr });
   };
 
-  const handleMoveRequest = (itsCurrentIndex, direction, statusIndex = null) => {
+  const handleMoveRequest = (
+    itsCurrentIndex,
+    direction,
+    statusIndex = null,
+  ) => {
     const directionToNum = direction === "UP" ? -1 : 1;
     const newIndex = itsCurrentIndex + directionToNum;
 
@@ -215,6 +223,7 @@ export default function FlowEditing() {
 
     const newStatus = {
       _id: uuidv4(),
+      uuid: uuidv4(),
       title: newStatusList[idx].title,
       desc: newStatusList[idx].desc,
       authorized: newStatusList[idx].authorized,
@@ -222,6 +231,29 @@ export default function FlowEditing() {
     };
     newStatusList.splice(idx + 1, 0, newStatus);
     setFlow({ ...flow, status: newStatusList });
+  };
+
+  const missingUuidCount =
+    flow?.status?.filter((stat) => !stat?.uuid)?.length ?? 0;
+
+  const handleGenerateStatusUuid = (statusIndex) => {
+    setFlow((prev) => {
+      const updatedStatuses = [...prev.status];
+      updatedStatuses[statusIndex] = {
+        ...updatedStatuses[statusIndex],
+        uuid: uuidv4(),
+      };
+      return { ...prev, status: updatedStatuses };
+    });
+  };
+
+  const handleGenerateAllMissingUuids = () => {
+    setFlow((prev) => ({
+      ...prev,
+      status: prev.status.map((stat) =>
+        stat?.uuid ? stat : { ...stat, uuid: uuidv4() },
+      ),
+    }));
   };
 
   useEffect(() => {
@@ -337,6 +369,97 @@ export default function FlowEditing() {
               </button>
             </div>
 
+            <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <input
+                type="checkbox"
+                className="toggle toggle-warning toggle-sm"
+                checked={!!flow?.isPrioritizeRequestor}
+                onChange={(e) =>
+                  setFlow({
+                    ...flow,
+                    isPrioritizeRequestor: e.target.checked,
+                  })
+                }
+              />
+              <div>
+                <span className="font-medium text-gray-800 dark:text-gray-200">
+                  Prioritize Requestor
+                </span>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Jika requestor ada di approver step berikutnya, hanya
+                  requestor yang bisa dipilih untuk notifikasi langsung.
+                </p>
+              </div>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <input
+                type="checkbox"
+                className="toggle toggle-warning toggle-sm"
+                checked={!!flow?.isDisabled}
+                onChange={(e) =>
+                  setFlow({
+                    ...flow,
+                    isDisabled: e.target.checked,
+                  })
+                }
+              />
+              <div>
+                <span className="font-medium text-gray-800 dark:text-gray-200">
+                  Disable this template
+                </span>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Jika flow template ini disabled, maka tidak akan bisa di
+                  inisiasi request baru
+                </p>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <input
+                type="checkbox"
+                className="toggle toggle-info toggle-sm"
+                checked={!!flow?.isStrangerMode}
+                onChange={(e) =>
+                  setFlow({
+                    ...flow,
+                    isStrangerMode: e.target.checked,
+                  })
+                }
+              />
+              <div>
+                <span className="font-medium text-gray-800 dark:text-gray-200 flex items-center gap-1">
+                  <UserRoundX size={16} /> Stranger Mode
+                </span>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Jika diaktifkan, siapa pun bisa mengisi form ini tanpa perlu
+                  login.
+                </p>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <input
+                type="checkbox"
+                className="toggle toggle-success toggle-sm"
+                checked={!!flow?.noApprovalNeeded}
+                onChange={(e) =>
+                  setFlow({
+                    ...flow,
+                    noApprovalNeeded: e.target.checked,
+                  })
+                }
+              />
+              <div>
+                <span className="font-medium text-gray-800 dark:text-gray-200 flex items-center gap-1">
+                  <Zap size={16} /> Auto Completion
+                </span>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Jika diaktifkan, hasil request overallStatus untuk flow ini
+                  akan otomatis completed tanpa memerlukan approval tambahan.
+                </p>
+              </div>
+            </label>
+
             {/* Private Mode Content */}
             {flow.mode === "private" && (
               <div className="card bg-base-100 shadow-sm">
@@ -385,7 +508,7 @@ export default function FlowEditing() {
                           ?.filter((user) =>
                             user.username
                               .toLowerCase()
-                              .includes(searchTerm.toLowerCase())
+                              .includes(searchTerm.toLowerCase()),
                           )
                           ?.map((user) => (
                             <label
@@ -407,17 +530,17 @@ export default function FlowEditing() {
                               <input
                                 type="checkbox"
                                 checked={flow.allowedSpecificUserToRequest?.includes(
-                                  user._id.toString()
+                                  user._id.toString(),
                                 )}
                                 onChange={() => {
                                   setFlow((prevFlow) => ({
                                     ...prevFlow,
                                     allowedSpecificUserToRequest:
                                       prevFlow?.allowedSpecificUserToRequest?.includes(
-                                        user._id.toString()
+                                        user._id.toString(),
                                       )
                                         ? prevFlow?.allowedSpecificUserToRequest?.filter(
-                                            (id) => id !== user._id.toString()
+                                            (id) => id !== user._id.toString(),
                                           )
                                         : [
                                             ...(prevFlow?.allowedSpecificUserToRequest ||
@@ -501,7 +624,7 @@ export default function FlowEditing() {
                           ?.filter((dept) =>
                             dept.name
                               .toLowerCase()
-                              .includes(searchTerm.toLowerCase())
+                              .includes(searchTerm.toLowerCase()),
                           )
                           ?.map((dept) => (
                             <label
@@ -526,17 +649,17 @@ export default function FlowEditing() {
                               <input
                                 type="checkbox"
                                 checked={flow.allowedDepartmentToRequest?.includes(
-                                  dept._id.toString()
+                                  dept._id.toString(),
                                 )}
                                 onChange={() => {
                                   setFlow((prevFlow) => ({
                                     ...prevFlow,
                                     allowedDepartmentToRequest:
                                       prevFlow.allowedDepartmentToRequest?.includes(
-                                        dept._id.toString()
+                                        dept._id.toString(),
                                       )
                                         ? prevFlow.allowedDepartmentToRequest?.filter(
-                                            (id) => id !== dept._id.toString()
+                                            (id) => id !== dept._id.toString(),
                                           )
                                         : [
                                             ...(prevFlow.allowedDepartmentToRequest ||
@@ -603,7 +726,28 @@ export default function FlowEditing() {
       >
         + Tambah Input
       </button>
+      {!flow?.noApprovalNeeded && (
+        <>
       <div className="divider">Flow Status</div>
+      {missingUuidCount > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg border border-amber-300 bg-amber-50 text-amber-900">
+          <div className="flex items-start gap-2 text-sm">
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>
+              {missingUuidCount} status belum punya UUID. Status tanpa UUID
+              tidak bisa dipilih sebagai target Jump To di logika.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleGenerateAllMissingUuids}
+            className="btn btn-sm btn-warning shrink-0"
+          >
+            <KeyRound className="w-4 h-4" />
+            Generate Semua UUID
+          </button>
+        </div>
+      )}
       <div className="flex flex-col gap-2 p-6 bg-gradient-to-r bg-indigo-300 rounded-md unded-lg">
         {flow.status?.map((stat, i) => (
           <div
@@ -611,14 +755,38 @@ export default function FlowEditing() {
             key={stat?._id || i}
             className="border  p-4 mb-4 glass rounded-lg"
           >
-            <div className="flex justify-between">
-              <h2 className="font-bold">{stat.title || `Status #${i + 1}`}</h2>
-              <div className="flex gap-2">
+            <div className="flex justify-between gap-2">
+              <div className="min-w-0 space-y-1">
+                <h2 className="font-bold">
+                  {stat.title || `Status #${i + 1}`}
+                </h2>
+                {stat.uuid ? (
+                  <span className="badge badge-sm badge-success badge-outline font-mono text-xs">
+                    UUID OK
+                  </span>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="badge badge-sm badge-warning gap-1">
+                      <AlertTriangle className="w-3 h-3" />
+                      UUID belum ada
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateStatusUuid(i)}
+                      className="btn btn-xs btn-warning"
+                    >
+                      <KeyRound className="w-3 h-3" />
+                      Generate UUID
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 shrink-0">
                 {/* Delete Button */}
                 <button
                   onClick={() => {
                     const isConfirm = window.confirm(
-                      "Are You Sure To Delete This Process?"
+                      "Are You Sure To Delete This Process?",
                     );
                     if (isConfirm) {
                       setFlow((prev) => {
@@ -703,7 +871,7 @@ export default function FlowEditing() {
                         user.username
                           ?.toLowerCase()
                           .includes(stat.authorizedSearch.toLowerCase()) &&
-                        !stat.authorized.includes(user._id)
+                        !stat.authorized.includes(user._id),
                     )
                     .slice(0, 5)
                     ?.map((user) => (
@@ -723,7 +891,7 @@ export default function FlowEditing() {
               <div className="flex flex-wrap gap-2 mt-2">
                 {stat.authorized?.map((userId) => {
                   const user = userList?.data?.find(
-                    (u) => u._id === userId || userId._id === u._id
+                    (u) => u._id === userId || userId._id === u._id,
                   );
                   return (
                     <div
@@ -802,6 +970,8 @@ export default function FlowEditing() {
           + Add Status
         </button>
       </div>
+        </>
+      )}
       <ModalCreateSourceData />
     </div>
   );

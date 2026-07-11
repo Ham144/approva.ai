@@ -17,10 +17,13 @@ router.post("/createFlow", async (req, res) => {
     request,
     status,
     isAllowanceModeRequest,
+    isPrioritizeRequestor,
     allowedDepartmentToRequest,
     allowedSpecificUserToRequest,
     mode,
     logics, //todo
+    isStrangerMode,
+    noApprovalNeeded,
   } = req.body;
 
   if (!title || !desc) {
@@ -33,7 +36,7 @@ router.post("/createFlow", async (req, res) => {
       .json({ message: "Form request setidaknya 1 input aktif" });
   }
 
-  if (!status || status.length === 0) {
+  if (!status || (status.length === 0 && !noApprovalNeeded)) {
     return res
       .status(400)
       .json({ message: "Status setidaknya 1 status aktif" });
@@ -232,6 +235,9 @@ router.post("/createFlow", async (req, res) => {
     newFlowAndPoint.request = inputRequest;
     newFlowAndPoint.status = statuses;
     newFlowAndPoint.logics = logics;
+    newFlowAndPoint.isPrioritizeRequestor = !!isPrioritizeRequestor;
+    newFlowAndPoint.isStrangerMode = !!isStrangerMode;
+    newFlowAndPoint.noApprovalNeeded = !!noApprovalNeeded;
     const userId = req.user._id;
 
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
@@ -324,9 +330,12 @@ router.get("/list/forRequest", async (req, res) => {
       query.title = { $regex: searchKey, $options: "i" };
     }
 
-    const rawList = await FlowAndPoint.find(query)
+    const rawList = await FlowAndPoint.find({
+      ...query,
+      $or: [{ isDisabled: false }, { isDisabled: { $exists: false } }],
+    })
       .select(
-        "title desc isAllowanceModeRequest designedBy mode allowedDepartmentToRequest allowedSpecificUserToRequest",
+        "title desc isAllowanceModeRequest designedBy mode allowedDepartmentToRequest allowedSpecificUserToRequest isStrangerMode",
       ) // ⚠️ HAPUS allowedDepartmentToRequest dari sini
       .populate({
         path: "status",
@@ -466,10 +475,14 @@ router.put("/update/:id", async (req, res) => {
     request,
     status,
     isAllowanceModeRequest,
+    isPrioritizeRequestor,
     allowedDepartmentToRequest,
     allowedSpecificUserToRequest,
     mode,
     logics,
+    isDisabled,
+    isStrangerMode,
+    noApprovalNeeded,
   } = req.body;
 
   // Validasi input dasar
@@ -483,7 +496,7 @@ router.put("/update/:id", async (req, res) => {
     });
   }
 
-  if (!status || status.length === 0) {
+  if (!status || (status.length === 0 && !noApprovalNeeded)) {
     return res.status(400).json({
       message: "Harus ada setidaknya 1 status dalam flow.",
     });
@@ -529,7 +542,6 @@ router.put("/update/:id", async (req, res) => {
     const youAreTheDesigner = existingFlow.designedBy.find(
       (d) => d.toString() === req.user._id,
     );
-    console.log("youAreTheDesigner: ", youAreTheDesigner);
     // Buang _id hanya kalau _id memang tidak valid (misal berasal dari frontend bodoh)
     const sanitizedInputs = [];
 
@@ -645,7 +657,10 @@ router.put("/update/:id", async (req, res) => {
     existingFlow.request = sanitizedInputs;
     existingFlow.status = updatedStatuses;
     existingFlow.logics = logics;
-
+    existingFlow.isPrioritizeRequestor = !!isPrioritizeRequestor;
+    existingFlow.isDisabled = isDisabled;
+    existingFlow.isStrangerMode = !!isStrangerMode;
+    existingFlow.noApprovalNeeded = !!noApprovalNeeded;
     // Tambahkan desainer baru jika belum ada
     if (!youAreTheDesigner) {
       existingFlow.designedBy.push(req.user._id);
@@ -696,10 +711,12 @@ router.post("/duplicate/:_id", async (req, res) => {
       status: existingFlow.status,
       designedBy: [req.user._id],
       isAllowanceModeRequest: existingFlow.isAllowanceModeRequest,
+      isPrioritizeRequestor: existingFlow.isPrioritizeRequestor,
       allowedDepartmentToRequest: existingFlow.allowedDepartmentToRequest,
       org: req.user.org,
       mode: existingFlow?.mode,
       logics: existingFlow?.logics,
+      isDisabled: existingFlow?.isDisabled,
     });
 
     return res.json({

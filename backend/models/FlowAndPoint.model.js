@@ -19,6 +19,9 @@ const flowSchema = new mongoose.Schema(
       },
     ],
     isAllowanceModeRequest: Boolean, //jika true maka akan cek apakah hanya untuk deparment tertentu. yg coba create request dengan flow template ini terdaftar di allowedDepartmentToRequest
+    isPrioritizeRequestor: Boolean, // jika true maka jika requestor ada sebagai salah satu approver, maka requestor itu saja kelihatan tanpa opsi untuk nofit email user lain walau sebenarnya ada user lain yang bisa approve.
+    isRecurringNotification: Boolean, // mode notifikasi berkala aktif jika tidak kunjung dikerjakan prosesnya
+    recurringNotificationInterval: Number,
     mode: {
       //harusnya ini aja bisa gantikan field diatas tapi tunda dulu
       type: String,
@@ -81,6 +84,18 @@ const flowSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Org",
       required: true,
+    },
+    isStrangerMode: {
+      type: Boolean,
+      default: false,
+    },
+    noApprovalNeeded: {
+      type: Boolean,
+      default: false,
+    },
+    isDisabled: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true },

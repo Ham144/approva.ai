@@ -111,13 +111,18 @@ export default function PreviewFlow({
   }, [jsonFlow]);
 
   useEffect(() => {
-    if (currentEditingInputID && inputRefs.current[currentEditingInputID]) {
-      inputRefs.current[currentEditingInputID].scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
+    if (
+      !forEditing ||
+      !currentEditingInputID ||
+      !inputRefs.current[currentEditingInputID]
+    ) {
+      return;
     }
-  }, [currentEditingInputID]);
+    inputRefs.current[currentEditingInputID].scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
+  }, [currentEditingInputID, forEditing]);
 
   //isDisabled untuk membedakan request dan status
   const renderInput = (input, isDisabled, isRequirementInput, statusIndex) => {
@@ -565,9 +570,14 @@ export default function PreviewFlow({
     return <div className="loading loading-spinner loading-lg"></div>;
 
   if (!jsonFlow) return <span></span>;
+
+  const scrollContainerClass = forEditing
+    ? "space-y-6 flex flex-col overflow-y-auto max-h-[90vh] pr-2 pb-20"
+    : "space-y-6 flex flex-col";
+
   return (
     <div className="space-y-6 w-full max-md:pb-20">
-      <div className="space-y-6 flex flex-col overflow-y-auto max-h-[90vh] pr-2  pb-20">
+      <div className={scrollContainerClass}>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <h1 className="text-2xl font-bold text-gray-800">
             {jsonFlow?.title}
@@ -615,8 +625,8 @@ export default function PreviewFlow({
             ))}
           </div>
         </div>
-        {/* Status */}
-        {!isForRequest && (
+        {/* Status — hidden jika noApprovalNeeded aktif */}
+        {!isForRequest && !jsonFlow?.noApprovalNeeded && (
           <>
             <div className="divider">Responses Flow</div>
             {jsonFlow?.status?.map((stat, i) => (

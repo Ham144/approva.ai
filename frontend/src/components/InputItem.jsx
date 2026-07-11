@@ -30,8 +30,10 @@ import {
   ClipboardPaste,
 } from "lucide-react"; // Impor ikon dari Lucide React
 import ModalCreateSourceData from "./ModalCreateSourceData";
+import ModalEditSourceData from "./ModalEditSourceData";
 import LogicModal from "./LogicModal";
 import { useEditor } from "@/store";
+import { inputKeysType } from "@/api/constant";
 
 function InputItem({
   input,
@@ -361,11 +363,6 @@ function InputItem({
                             }}
                           />
                           <div className="relative w-full">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
-                              {getInputTypeIcon(
-                                input.table.keysType?.[idx] || "text",
-                              )}
-                            </span>
                             <select
                               className="select select-bordered w-full select-sm pl-9"
                               value={input.table.keysType?.[idx] || "text"}
@@ -383,13 +380,7 @@ function InputItem({
                                 });
                               }}
                             >
-                              {[
-                                "text",
-                                "number",
-                                "date",
-                                "image",
-                                "select",
-                              ].map((typeOpt) => (
+                              {inputKeysType.map((typeOpt) => (
                                 <option key={typeOpt} value={typeOpt}>
                                   {typeOpt.charAt(0).toUpperCase() +
                                     typeOpt.slice(1)}
@@ -587,8 +578,18 @@ function InputItem({
 
           {input.sourceData && (
             <div className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 shadow-sm space-y-3">
-              <div className="font-bold text-lg text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                <Eye size={20} /> Pratinjau Opsi Terpilih
+              <div className="font-bold text-lg text-gray-900 dark:text-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Eye size={20} /> Pratinjau Opsi Terpilih
+                </div>
+                <button
+                  onClick={() =>
+                    document.getElementById("modaleditsourcedata")?.showModal()
+                  }
+                  className="btn btn-sm btn-outline btn-primary"
+                >
+                  Edit
+                </button>
               </div>
               <div className="italic text-gray-600 dark:text-gray-400 text-sm">
                 {sourceDataPreview?.data?.desc || "Tidak ada deskripsi."}
@@ -789,6 +790,11 @@ function InputItem({
 
       {ModalShowTips && <ModalShowTips />}
       <ModalCreateSourceData key={"modalSourceData"} />
+      <ModalEditSourceData
+        key={"modalEditSourceData-" + input?.sourceData}
+        sourceDataId={input?.sourceData}
+        initialData={sourceDataPreview?.data}
+      />
     </div>
   );
 }

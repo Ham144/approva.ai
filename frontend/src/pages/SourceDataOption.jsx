@@ -19,6 +19,7 @@ export default function SourceDataOption() {
   const [editData, setEditData] = useState(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
+  const [editViews, setEditViews] = useState("standard");
   const queryClient = useQueryClient();
 
   const {
@@ -41,6 +42,7 @@ export default function SourceDataOption() {
     setEditData(opt);
     setEditTitle(opt.title);
     setEditDesc(opt.desc);
+    setEditViews(opt.views || "standard");
   };
   const { mutate: mutateEdit, isLoading: isLoadingEdit } = useMutation({
     mutationFn: (updatedData) =>
@@ -60,14 +62,12 @@ export default function SourceDataOption() {
 
     if (!editData) return;
 
-    const updatedData = {
+    mutateEdit({
       ...editData,
       title: editTitle,
       desc: editDesc,
-    };
-
-    // jalankan mutasi manual
-    mutateEdit(updatedData);
+      views: editViews,
+    });
   };
 
   const openCreateNew = () => {
@@ -234,6 +234,24 @@ export default function SourceDataOption() {
                   onChange={(e) => setEditDesc(e.target.value)}
                   required
                 />
+              </div>
+              <div>
+                <label
+                  htmlFor="edit-views"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1"
+                >
+                  Display Mode (Tampilan)
+                </label>
+                <select
+                  id="edit-views"
+                  className="select select-bordered w-full px-4 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  value={editViews}
+                  onChange={(e) => setEditViews(e.target.value)}
+                >
+                  <option value="standard">Standard (Dropdown biasa)</option>
+                  <option value="big">Big (Kotak besar dengan emoji)</option>
+                  <option value="small">Small (Badge kecil mendatar)</option>
+                </select>
               </div>
             </div>
 

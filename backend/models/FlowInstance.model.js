@@ -15,7 +15,6 @@ const flowInstanceSchema = new mongoose.Schema(
     requestedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserRefrensi",
-      required: true,
     },
     requestData: {
       type: mongoose.Schema.Types.Mixed,

@@ -15,8 +15,16 @@ import redisService from "../utils/RedisService.js";
 import Org from "../models/Organization.model.js";
 import generateTokenJWT from "../utils/generateTokenJWT.js";
 
-
 const router = Router();
+
+// Helper: memastikan user sudah login. Dipakai di route yang WAJIB auth.
+function requireAuth(req, res) {
+  if (!req.user) {
+    res.status(401).json({ message: "No Authentication" });
+    return false;
+  }
+  return true;
+}
 
 export async function checkDuplidateGlobalIndex(globalIndex) {
   const duplicatedGlobalIndex = await FlowInstance.findOne({
@@ -31,6 +39,7 @@ export async function checkDuplidateGlobalIndex(globalIndex) {
 }
 
 //flow instance untuk start flow baru dengan template yang dipilih
+// Mendukung stranger mode: jika template.isStrangerMode === true, tidak perlu login
 router.post("/request/new", async (req, res) => {
   const {
     instanceTitle,
@@ -39,12 +48,6 @@ router.post("/request/new", async (req, res) => {
     requestData,
     selectedAuthorized,
   } = req.body;
-
-  if (!selectedAuthorized?.length) {
-    return res.status(400).json({
-      message: "selectedAuthorized setidaknya satu diisi.",
-    });
-  }
 
   // 1. Validasi awal untuk keberadaan data utama
   if (!instanceTitle || !flowTemplateId || !overallStatus || !requestData) {
@@ -55,102 +58,120 @@ router.post("/request/new", async (req, res) => {
   }
 
   try {
-    const userId = req.user._id;
-    const globalIndex = await generateGlobalIndex(req, "globalIndex");
-
-    //cari department saya
-    const myDepartment = await Department.findOne({
-      org: req.user.org,
-      members: { $in: [userId] },
-    });
-
-    const isDeparmentInclude = await FlowAndPoint.findOne({
-      _id: flowTemplateId,
-      org: req.user.org,
-      allowedDepartmentToRequest: { $in: [myDepartment._id] },
-    }).lean();
-
-    const isUserPrivateInclude = await FlowAndPoint.findOne({
-      _id: flowTemplateId,
-      org: req.user.org,
-      allowedSpecificUserToRequest: { $in: [userId] },
-    });
-
+    // Cek template dulu untuk menentukan apakah stranger mode aktif
     const template = await FlowAndPoint.findOne({
       _id: flowTemplateId,
-      org: req.user.org,
     }).populate([
-      { path: "request" }, // Populate dokumen Input di dalam array request
-      { path: "status.authorized" }, // Populate user refrensi jika perlu
+      { path: "request" },
+      { path: "status.authorized" },
     ]);
 
     if (!template) {
       return res.status(400).json({ message: "Flow template tidak ditemukan" });
     }
-    //validasi apakah si user boleh untuk buat request
-    if (template.isAllowanceModeRequest) {
-      if (template.mode === "private") {
-        if (!isUserPrivateInclude) {
-          return res.status(400).json({
-            message:
-              "Flow template ini private dan anda tidak memiliki autorisasi untuk melakukan request ini",
-          });
-        }
+
+    const isStranger = !req.user;
+
+    // Jika bukan stranger, lakukan validasi auth normal
+    if (isStranger && !template.isStrangerMode) {
+      return res.status(401).json({ message: "No Authentication" });
+    }
+
+    // Validasi selectedAuthorized hanya jika BUKAN noApprovalNeeded dan BUKAN stranger
+    if (!template.noApprovalNeeded && !isStranger) {
+      if (!selectedAuthorized?.length) {
+        return res.status(400).json({
+          message: "selectedAuthorized setidaknya satu diisi.",
+        });
       }
-      if (template.mode == "department") {
-        if (!isDeparmentInclude) {
-          return res.status(400).json({
-            message:
-              "Departmement anda tidak terdaftar untuk melakukan request ini",
+    }
+
+    const userId = isStranger ? null : req.user._id;
+    const userOrg = isStranger ? template.org : req.user.org;
+    const globalIndex = isStranger
+      ? `STR-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`
+      : await generateGlobalIndex(req, "globalIndex");
+
+    // Validasi department/private hanya untuk user yang sudah login
+    if (!isStranger) {
+      const myDepartment = await Department.findOne({
+        org: req.user.org,
+        members: { $in: [userId] },
+      });
+
+      if (template.isAllowanceModeRequest) {
+        if (template.mode === "private") {
+          const isUserPrivateInclude = await FlowAndPoint.findOne({
+            _id: flowTemplateId,
+            org: req.user.org,
+            allowedSpecificUserToRequest: { $in: [userId] },
           });
+          if (!isUserPrivateInclude) {
+            return res.status(400).json({
+              message:
+                "Flow template ini private dan anda tidak memiliki autorisasi untuk melakukan request ini",
+            });
+          }
+        }
+        if (template.mode == "department") {
+          const isDeparmentInclude = await FlowAndPoint.findOne({
+            _id: flowTemplateId,
+            org: req.user.org,
+            allowedDepartmentToRequest: { $in: [myDepartment?._id] },
+          }).lean();
+          if (!isDeparmentInclude) {
+            return res.status(400).json({
+              message:
+                "Departmement anda tidak terdaftar untuk melakukan request ini",
+            });
+          }
         }
       }
     }
-    // 3. PENYELESAIAN MASALAH UTAMA: Gunakan loop `for...of` untuk validasi
-    // Loop `for...of` akan 'menunggu' (pause) pada setiap `await` di dalamnya.
-    // Kita juga langsung menggunakan hasil populate, tidak perlu query ke DB lagi.
+
+    // 3. Validasi input required
     for (const inputField of template.request) {
-      // `inputField` sekarang adalah dokumen 'Input' yang lengkap, bukan hanya ID.
       if (!inputField.isNullable) {
-        // Cek jika field yang wajib diisi tidak ada di requestData atau nilainya kosong
         const value = requestData[inputField._id.toString()];
         if (value === undefined || value === null || value === "") {
-          // Berikan pesan error yang lebih jelas menggunakan judul dari template
           return res.status(400).json({
-            message: `Input '${
-              inputField.title || inputField._id
-            }' wajib diisi.`,
+            message: `Input '${inputField.title || inputField._id}' wajib diisi.`,
           });
         }
       }
     }
 
-    // 4. PENINGKATAN: Inisialisasi array `statuses` untuk FlowInstance baru
-    // Berdasarkan `status` dari `flowTemplate`
+    // 4. Inisialisasi statuses
     const statusesFromTemplate = template.status.map((s) => ({
       statusTitle: s.title,
       statusDesc: s.desc,
-      requirementsData: {}, // Default kosong
-      completed: false,
-      verdict: "pending",
+      requirementsData: {},
+      completed: template.noApprovalNeeded ? true : false,
+      verdict: template.noApprovalNeeded ? "approved" : "pending",
       isPrivateAuthorized: template.isPrivateRequest,
     }));
 
-    // 5. Cegah dokumen MongoDB melebihi batas ukuran (~16MB)
-    // Perkiraan ukuran dokumen yang akan disimpan
+    // Tentukan overallStatus: jika noApprovalNeeded, langsung completed
+    const finalOverallStatus = template.noApprovalNeeded
+      ? "completed"
+      : overallStatus;
+
+    // 5. Siapkan dokumen
     const docToInsert = {
       instanceTitle: instanceTitle,
       flowTemplate: flowTemplateId,
-      requestedBy: userId,
+      requestedBy: userId, // null jika stranger
       requestData: requestData,
-      overallStatus: overallStatus,
+      overallStatus: finalOverallStatus,
       statuses: statusesFromTemplate,
-      currentStatusIndex: 0,
-      org: req.user.org,
+      currentStatusIndex: template.noApprovalNeeded
+        ? template.status.length
+        : 0,
+      org: userOrg,
       globalIndex: globalIndex,
     };
 
-    // 16MB - gunakan margin aman 2MB untuk overhead BSON
+    // Cegah dokumen MongoDB melebihi batas ukuran (~16MB)
     const MAX_BSON_SIZE = 16 * 1024 * 1024;
     const SAFETY_MARGIN = 2 * 1024 * 1024;
     const approxSize = Buffer.byteLength(JSON.stringify(docToInsert), "utf8");
@@ -164,42 +185,41 @@ router.post("/request/new", async (req, res) => {
       });
     }
 
-    // 6. Jika semua validasi berhasil dan ukuran aman, buat instance baru
+    // 6. Buat instance baru
     const flowInstance = await FlowInstance.create(docToInsert);
 
-    //hapus cahce
-    await redisService.deleteByPattern(`flow:${req.user.org}:*`);
-
-    // --- Start Email Notification Logic for First Approver (yang dipilih) ---
-    try {
-      if (flowInstance.overallStatus === "in-progress") {
-        let nextApprovers = selectedAuthorized;
-
-        nextApprovers = await UserRefrensi.find({
-          _id: { $in: nextApprovers }, // langsung pakai array ID
-        }).populate("org", "organizationName");
-
-        if (nextApprovers.length > 0) {
-          await sendApprovalRequestEmail(
-            nextApprovers,
-            flowInstance,
-            req?.user?.username || "System (Initial Request)",
-          );
-        }
-      }
-
-      // --- End Email Notification Logic ---
-      return res
-        .status(201) // Gunakan 201 Created untuk resource baru
-        .json({ message: "Flow instance berhasil dibuat", data: flowInstance });
-    } catch (emailError) {
-      return res.status(500).json({
-        message: "Terjadi kesalahan saat mengirim email",
-        error: emailError,
-      });
+    // Hapus cache (hanya jika ada org context)
+    if (userOrg) {
+      await redisService.deleteByPattern(`flow:${userOrg}:*`);
     }
+
+    // --- Email Notification (hanya untuk user yang login dan bukan noApprovalNeeded) ---
+    if (!isStranger && !template.noApprovalNeeded) {
+      try {
+        if (flowInstance.overallStatus === "in-progress") {
+          let nextApprovers = selectedAuthorized;
+
+          nextApprovers = await UserRefrensi.find({
+            _id: { $in: nextApprovers },
+          }).populate("org", "organizationName");
+
+          if (nextApprovers.length > 0) {
+            await sendApprovalRequestEmail(
+              nextApprovers,
+              flowInstance,
+              req?.user?.username || "System (Initial Request)",
+            );
+          }
+        }
+      } catch (emailError) {
+        console.error("Email notification failed:", emailError);
+      }
+    }
+
+    return res
+      .status(201)
+      .json({ message: "Flow instance berhasil dibuat", data: flowInstance });
   } catch (error) {
-    // Tangani kemungkinan error duplikasi `instanceTitle` jika ada unique index
     if (error.code === 11000) {
       return res.status(409).json({
         message: `Instance dengan judul '${instanceTitle}' sudah ada.`,
@@ -213,14 +233,32 @@ router.post("/request/new", async (req, res) => {
   }
 });
 
-//untuk edit flow yg telah dibuat
+//untuk edit flow yg telah dibuat (mendukung stranger mode)
 router.put("/edit/:instanceId", async (req, res) => {
   const { instanceId } = req.params;
   const { instanceTitle, overallStatus, requestData } = req.body;
 
   try {
+    // Cek instance dulu
+    const existingInstance = await FlowInstance.findById(instanceId).populate("flowTemplate");
+    if (!existingInstance) {
+      return res.status(404).json({ message: "Flow instance tidak ditemukan" });
+    }
+
+    const isStranger = !req.user;
+
+    // Jika stranger, cek apakah template mengizinkan stranger mode
+    if (isStranger && !existingInstance.flowTemplate?.isStrangerMode) {
+      return res.status(401).json({ message: "No Authentication" });
+    }
+
+    // Jika bukan stranger, pastikan org cocok
+    const query = isStranger
+      ? { _id: instanceId }
+      : { _id: instanceId, org: req.user.org };
+
     const flowInstance = await FlowInstance.findOneAndUpdate(
-      { _id: instanceId, org: req.user.org },
+      query,
       {
         instanceTitle,
         overallStatus,
@@ -245,8 +283,8 @@ router.get(
   "/getFlowInstanceList/:instanceId?",
   flowCacheMiddleware,
   async (req, res) => {
+    if (!requireAuth(req, res)) return;
     const { instanceId } = req.params;
-    console.log(instanceId);
     const {
       flowTemplateCategory,
       overallStatus,
@@ -460,6 +498,7 @@ router.get(
 
 //ini lengkap dapatin template nya beserta instance flow nya
 router.get("/flowInstanceById/:id", async (req, res) => {
+  if (!requireAuth(req, res)) return;
   const id = req.params.id;
   if (!id) {
     return res.status(400).json({
@@ -527,7 +566,6 @@ router.get("/flowInstanceById/:id", async (req, res) => {
         });
       }
     }
-
 
     //jika currentStatusIndex saat ini memliki logic jumpTo maka merge authorized dengan status.authorized dengan target status jumpTo
     const currentLogicIdx = flowInstance?.flowTemplate?.logics.findIndex(
@@ -603,6 +641,7 @@ router.get("/flowInstanceById/:id", async (req, res) => {
 
 //submit maju 1 step atau maju berdasarkan logic jika ada
 router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
+  if (!requireAuth(req, res)) return;
   const { statuses: currentIndexStatusResponse, selectedAuthorized } = req.body;
 
   const instanceId = req.params.instanceId;
@@ -920,6 +959,7 @@ router.post("/submitStatusFulfillment/:instanceId", async (req, res) => {
 });
 
 router.put("/rollback/:id", async (req, res) => {
+  if (!requireAuth(req, res)) return;
   const id = req.params.id;
 
   try {
@@ -981,6 +1021,7 @@ router.put("/rollback/:id", async (req, res) => {
 });
 
 router.put("/undo/:id", async (req, res) => {
+  if (!requireAuth(req, res)) return;
   const { targetStatusIndex } = req.body;
 
   if (targetStatusIndex === undefined) {
@@ -1064,6 +1105,7 @@ router.put("/undo/:id", async (req, res) => {
 });
 
 router.delete("/delete/:instanceId", async (req, res) => {
+  if (!requireAuth(req, res)) return;
   const instanceId = req.params.instanceId;
   try {
     const flowInstance = await FlowInstance.findOneAndDelete({
@@ -1083,6 +1125,7 @@ router.delete("/delete/:instanceId", async (req, res) => {
 
 // Get tasks assigned to the current user
 router.get("/my-tasks", flowCacheMiddleware, async (req, res) => {
+  if (!requireAuth(req, res)) return;
   const userId = req.user._id;
   const orgId = req.user.org;
 
@@ -1159,7 +1202,12 @@ router.get("/my-tasks", flowCacheMiddleware, async (req, res) => {
           createdAt: 1,
           debugTitle: 1,
           currentStatusTitle: "$currentStatusObject.title",
-          requestedByUsername: "$requestedByInfo.displayName",
+          requestedByUsername: {
+            $ifNull: [
+              "$requestedByInfo.displayName",
+              { $ifNull: ["$requestedByInfo.username", "Stranger"] },
+            ],
+          },
           flowTemplateTitle: "$flowTemplateDetails.title",
           globalIndex: 1, // << langsung ambil dari FlowInstance
         },
@@ -1184,6 +1232,7 @@ router.get("/my-tasks", flowCacheMiddleware, async (req, res) => {
 });
 
 router.get("/download/:month", async (req, res) => {
+  if (!requireAuth(req, res)) return;
   try {
     const { month } = req.params; // format: "2025-06"
 
@@ -1272,6 +1321,7 @@ router.get("/download/:month", async (req, res) => {
 });
 
 router.post("/download-detail", async (req, res) => {
+  if (!requireAuth(req, res)) return;
   const { flowTemplateId, month } = req.body;
 
   if (!flowTemplateId || !month) {
@@ -1688,6 +1738,7 @@ router.post("/download-detail", async (req, res) => {
 });
 
 router.post("/download-detail-table-column", async (req, res) => {
+  if (!requireAuth(req, res)) return;
   const { flowTemplateId, month } = req.body;
 
   if (!flowTemplateId || !month) {
@@ -2103,6 +2154,7 @@ router.post("/download-detail-table-column", async (req, res) => {
 });
 
 router.get("/my-stats", async (req, res) => {
+  if (!requireAuth(req, res)) return;
   try {
     const userId = new mongoose.Types.ObjectId(req.user._id);
     const orgId = new mongoose.Types.ObjectId(req.user.org);
@@ -2310,6 +2362,51 @@ router.get("/my-stats", async (req, res) => {
     return res
       .status(500)
       .json({ message: error?.message || "Internal Server Error" });
+  }
+});
+
+// GET flow template by ID supporting stranger mode (optional auth)
+router.get("/flowTemplate/:id", async (req, res) => {
+  const { id } = req.params;
+  if (!id) {
+    return res.status(400).json({ message: "ID required" });
+  }
+
+  try {
+    const flow = await FlowAndPoint.findById(id)
+      .populate({
+        path: "request",
+        populate: [{ path: "sourceData", model: "SourceData" }],
+      })
+      .populate("status.requirements")
+      .populate("status.authorized")
+      .populate("designedBy", "username _id role");
+
+    if (!flow) {
+      return res.status(404).json({ message: "Flow template not found" });
+    }
+
+    const isStranger = !req.user;
+
+    // If stranger, they can only view if isStrangerMode is true
+    if (isStranger && !flow.isStrangerMode) {
+      return res.status(401).json({ message: "Unauthorized. Stranger mode is disabled for this flow." });
+    }
+
+    // If logged in user, make sure it matches their org
+    if (!isStranger && flow.org.toString() !== req.user.org.toString()) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    return res.status(200).json({
+      message: "Berhasil mengambil data flow template",
+      data: flow,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 });
 

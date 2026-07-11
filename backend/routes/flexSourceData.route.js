@@ -2,11 +2,12 @@ import { Router } from "express";
 import FlexSourceData from "../models/FlexSourceData.model.js";
 import axios from "axios";
 import getNestedValue from "../utils/getNestedDataUtil.js";
+import authenticate from "../middlewares/authenticate.js";
 
 const router = Router();
 //interal
-router.post("/createSourceData", async (req, res) => {
-  const { title, desc, keys } = req.body;
+router.post("/createSourceData", authenticate, async (req, res) => {
+  const { title, desc, keys, views } = req.body;
 
   if (!title || !desc) {
     return res.status(400).json({
@@ -36,6 +37,7 @@ router.post("/createSourceData", async (req, res) => {
         ...fl,
         key: fl.key.replaceAll(" ", "_"),
       })),
+      views,
       createdBy: req.user._id,
       org: req.user.org, // ✅ penting: scope ke organisasi
     });
@@ -60,7 +62,7 @@ router.post("/createSourceData", async (req, res) => {
   }
 });
 
-router.post("/createSourceDataExternal", async (req, res) => {
+router.post("/createSourceDataExternal", authenticate, async (req, res) => {
   const {
     title,
     desc,
@@ -103,7 +105,7 @@ router.post("/createSourceDataExternal", async (req, res) => {
   }
 });
 
-router.get("/getAllSourceData/:search?", async (req, res) => {
+router.get("/getAllSourceData/:search?", authenticate, async (req, res) => {
   const search = req.params.search;
   const query = {};
   if (search && search !== "undefined") {
@@ -125,7 +127,7 @@ router.get("/getAllSourceData/:search?", async (req, res) => {
   }
 });
 
-router.get("/getSourceDataById/:id", async (req, res) => {
+router.get("/getSourceDataById/:id", authenticate, async (req, res) => {
   const id = req.params.id;
   if (!id) {
     return res
@@ -167,6 +169,11 @@ router.get("/getSourceDataByIdPost", async (req, res) => {
 
     if (!flexSourceData) {
       return res.status(404).json({ message: "Pilihan tidak ditemukan" });
+    }
+
+    // Jika user login, pastikan org cocok (tenancy isolation)
+    if (req.user && flexSourceData.org && flexSourceData.org.toString() !== req.user.org.toString()) {
+      return res.status(403).json({ message: "Forbidden" });
     }
 
     if (flexSourceData.tipe == "external") {
@@ -220,9 +227,9 @@ router.get("/getSourceDataByIdPost", async (req, res) => {
 });
 
 // Edit source data
-router.put("/editSourceData/:id", async (req, res) => {
+router.put("/editSourceData/:id", authenticate, async (req, res) => {
   const { id } = req.params;
-  const { title, desc, keys } = req.body;
+  const { title, desc, keys, views } = req.body;
 
   console.log(id, req.body);
 
@@ -253,6 +260,7 @@ router.put("/editSourceData/:id", async (req, res) => {
       {
         title,
         desc,
+        views,
         keys: keys.map((fl) => ({ ...fl, key: fl.key.replaceAll(" ", "_") })),
       },
       { new: true, runValidators: true }
@@ -272,7 +280,7 @@ router.put("/editSourceData/:id", async (req, res) => {
 });
 
 // Delete source data
-router.delete("/deleteSourceData/:id", async (req, res) => {
+router.delete("/deleteSourceData/:id", authenticate, async (req, res) => {
   const { id } = req.params;
   if (!id) {
     return res.status(400).json({ message: "Id is required" });

@@ -1,22 +1,32 @@
 import FlexSourceDataApi from "@/api/flexSourceDataApi";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
-const initialTempSourceData = {
-  title: "",
-  desc: "",
-  keys: [],
-  views: "standard",
-};
-
-export default function ModalCreateSourceData() {
-  const [tempSourceData, setTempSourceData] = useState(initialTempSourceData);
+export default function ModalEditSourceData({ sourceDataId, initialData }) {
+  const [tempSourceData, setTempSourceData] = useState({
+    title: "",
+    desc: "",
+    keys: [],
+    views: "standard",
+  });
   const queryClient = useQueryClient();
 
-  const { mutate: handleUploadSourceData } = useMutation({
-    mutationKey: ["sourcedata"],
+  useEffect(() => {
+    if (initialData) {
+      setTempSourceData({
+        title: initialData.title || "",
+        desc: initialData.desc || "",
+        keys: initialData.keys || [],
+        views: initialData.views || "standard",
+      });
+    }
+  }, [initialData]);
+
+  const { mutate: handleEditSourceData } = useMutation({
+    mutationKey: ["sourcedata-edit", sourceDataId],
     mutationFn: async () => {
+      if (!sourceDataId) throw new Error("ID Source Data tidak ditemukan");
       if (!tempSourceData.title.trim()) {
         throw new Error("Title tidak boleh kosong");
       }
@@ -34,31 +44,40 @@ export default function ModalCreateSourceData() {
         }
       }
 
-      const res = await FlexSourceDataApi.createSourceData(tempSourceData);
+      const res = await FlexSourceDataApi.editSourceData(sourceDataId, tempSourceData);
       return res;
     },
     onSuccess: (res) => {
-      toast.success(res?.response?.data?.message || "Succeed");
-      document.getElementById("modalsourcedata")?.close();
-      setTempSourceData(initialTempSourceData);
+      toast.success(res?.message || "Succeed updated");
+      document.getElementById("modaleditsourcedata")?.close();
       queryClient.invalidateQueries({ queryKey: ["sourcedata-list"] });
+      queryClient.invalidateQueries({ queryKey: ["sourcedata-preview", sourceDataId] });
       queryClient.invalidateQueries({ queryKey: ["sourceData"] });
     },
     onError: (error) => {
       toast.error(
-        error?.response?.data?.message || error.message || "Upload failed"
+        error?.response?.data?.message || error.message || "Edit failed"
       );
     },
   });
 
+  if (!sourceDataId) return null;
+
   return (
-    <dialog id="modalsourcedata" className="modal modal-bottom sm:modal-middle">
+    <dialog id="modaleditsourcedata" className="modal modal-bottom sm:modal-middle">
       <Toaster />
       <div className="modal-box bg-white shadow-xl rounded-lg p-6 w-full">
         <button
           onClick={() => {
-            setTempSourceData(initialTempSourceData);
-            document.getElementById("modalsourcedata")?.close();
+            if (initialData) {
+              setTempSourceData({
+                title: initialData.title || "",
+                desc: initialData.desc || "",
+                keys: initialData.keys || [],
+                views: initialData.views || "standard",
+              });
+            }
+            document.getElementById("modaleditsourcedata")?.close();
           }}
           className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-gray-500 hover:text-gray-700"
         >
@@ -66,7 +85,7 @@ export default function ModalCreateSourceData() {
         </button>
 
         <h3 className="font-bold text-xl text-gray-800 mb-4">
-          New Source Data
+          Edit Source Data
         </h3>
 
         <input
@@ -192,9 +211,9 @@ export default function ModalCreateSourceData() {
           <button
             type="button"
             className="btn btn-primary px-6 py-2 text-white"
-            onClick={() => handleUploadSourceData()}
+            onClick={() => handleEditSourceData()}
           >
-            Upload
+            Update
           </button>
         </div>
       </div>

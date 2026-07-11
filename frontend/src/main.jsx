@@ -17,6 +17,7 @@ import InventoryManagement from "./pages/InventoryManagement";
 import RequestPage from "./pages/RequestPage";
 import FlowManagement from "./pages/FlowManagement";
 import RequestStartCreatePage from "./pages/RequestStartCreatePage";
+import RequestSuccessPage from "./pages/RequestSuccessPage";
 import FlowDesignEdit from "./pages/FlowDesignEdit";
 import FlowDesignCreate from "./pages/FlowDesignCreate";
 import SourceDataOption from "./pages/SourceDataOption";
@@ -34,6 +35,14 @@ import DepartmentStatistics from "./pages/DepartmentStatistics";
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<App />}>
+      <Route
+        path="/request/create/:id" //templateId
+        element={<RequestStartCreatePage />}
+      />
+      <Route
+        path="/request/success"
+        element={<RequestSuccessPage />}
+      />
       <Route path="/" element={<LevelWrapper />}>
         <Route index={true} path="/" element={<Home />} />
         <Route
@@ -45,10 +54,6 @@ const router = createBrowserRouter(
         <Route path="/profile" element={<Profile />} />
         <Route path="/process/:instanceId?" element={<ProcessPage />} />
         <Route path="/request" element={<RequestPage />} />
-        <Route
-          path="/request/create/:id" //templateId
-          element={<RequestStartCreatePage />}
-        />
         <Route
           path="/request/edit/:instanceId" //instanceId
           element={<RequestEditPage />}

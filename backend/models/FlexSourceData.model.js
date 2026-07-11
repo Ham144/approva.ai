@@ -33,6 +33,11 @@ const sourceDataSchema = new mongoose.Schema({
     type: String,
     default: "searchKey",
   },
+  views: {
+    type: String,
+    enum: ["big", "standard", "small"],
+    default: "standard",
+  },
   endpoint: String,
   pointer: String,
   keyMapping: {

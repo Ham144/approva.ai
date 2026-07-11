@@ -14,6 +14,8 @@ import {
   Plus,
   Search,
   Trash,
+  UserRoundX,
+  Zap,
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { useEditor } from "../store";
@@ -291,6 +293,75 @@ export default function FlowCreation() {
               </button>
             </div>
 
+            <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <input
+                type="checkbox"
+                className="toggle toggle-warning toggle-sm"
+                checked={!!flow?.isPrioritizeRequestor}
+                onChange={(e) =>
+                  setFlow({
+                    ...flow,
+                    isPrioritizeRequestor: e.target.checked,
+                  })
+                }
+              />
+              <div>
+                <span className="font-medium text-gray-800 dark:text-gray-200">
+                  Prioritize Requestor
+                </span>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Jika requestor ada di approver step berikutnya, hanya requestor
+                  yang bisa dipilih untuk notifikasi langsung.
+                </p>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <input
+                type="checkbox"
+                className="toggle toggle-info toggle-sm"
+                checked={!!flow?.isStrangerMode}
+                onChange={(e) =>
+                  setFlow({
+                    ...flow,
+                    isStrangerMode: e.target.checked,
+                  })
+                }
+              />
+              <div>
+                <span className="font-medium text-gray-800 dark:text-gray-200 flex items-center gap-1">
+                  <UserRoundX size={16} /> Stranger Mode
+                </span>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Jika diaktifkan, siapa pun bisa mengisi form ini tanpa perlu
+                  login.
+                </p>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <input
+                type="checkbox"
+                className="toggle toggle-success toggle-sm"
+                checked={!!flow?.noApprovalNeeded}
+                onChange={(e) =>
+                  setFlow({
+                    ...flow,
+                    noApprovalNeeded: e.target.checked,
+                  })
+                }
+              />
+              <div>
+                <span className="font-medium text-gray-800 dark:text-gray-200 flex items-center gap-1">
+                  <Zap size={16} /> Auto Completion
+                </span>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Jika diaktifkan, hasil request overallStatus untuk flow ini
+                  akan otomatis completed tanpa memerlukan approval tambahan.
+                </p>
+              </div>
+            </label>
+
             {/* Private Mode Content */}
             {flow.mode === "private" && (
               <div className="card bg-base-100 shadow-sm">
@@ -552,6 +623,8 @@ export default function FlowCreation() {
       >
         + Tambah Input
       </button>
+      {!flow?.noApprovalNeeded && (
+        <>
       <div className="divider">Flow Status</div>
       <div className="flex flex-col gap-2 p-6 bg-gradient-to-r from-blue-300 to to-blue-500 rounded-lg">
         {flow.status?.map((stat, i) => (
@@ -709,6 +782,8 @@ export default function FlowCreation() {
           + Add Status
         </button>
       </div>
+        </>
+      )}
 
       <ModalCreateSourceData />
     </div>

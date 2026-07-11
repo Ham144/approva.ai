@@ -4,6 +4,7 @@ import { connectDB } from "./utils/connectDB.js";
 import cors from "cors";
 import auhtRoutes from "./routes/auth.route.js";
 import authenticate from "./middlewares/authenticate.js";
+import optionalAuthenticate from "./middlewares/optionalAuthenticate.js";
 import cookieParser from "cookie-parser";
 import path from "path";
 import configRoutes from "./routes/config.route.js";
@@ -62,9 +63,9 @@ app.get("/", async (req, res) => {
 //routes
 app.use("/api/auth", auhtRoutes);
 app.use("/api/config", authenticate, authorize, configRoutes);
-app.use("/api/flexSourceData", authenticate, FlexSourceDataRoutes);
+app.use("/api/flexSourceData", optionalAuthenticate, FlexSourceDataRoutes);
 app.use("/api/flow", authenticate, flowAndPointRoutes); //ini untuk designernya
-app.use("/api/flowInstance", authenticate, flowInstanceroutes); //ini untuk user
+app.use("/api/flowInstance", optionalAuthenticate, flowInstanceroutes); //ini untuk user (optionalAuthenticate untuk support stranger mode)
 app.use("/api/org", orgRoutes);
 app.use("/api/file", authenticate, fileRoutes);
 app.use("/api/department", authenticate, departmentRoutes);

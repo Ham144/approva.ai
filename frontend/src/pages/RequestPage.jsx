@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import flowApi from "@/api/flowApi";
 import ModalOption from "@/components/ModalOption";
 import FlowStatusModal from "@/components/StatusPreviewModal";
+import toast from "react-hot-toast";
 
 export const initialFilterRequestPage = {
   forMe: true,
@@ -111,8 +112,8 @@ export default function RequestPage() {
           columns === 1
             ? "grid-cols-1"
             : columns === 2
-            ? "grid-cols-2"
-            : "grid-cols-3"
+              ? "grid-cols-2"
+              : "grid-cols-3"
         }`}
       >
         {flowList?.data?.length === 0 ? (
@@ -208,7 +209,7 @@ export default function RequestPage() {
                         ))}
                   </div>
 
-                  <div className="grid  grid-cols-1 sm:grid-cols-2 gap-2 w-full sm:w-auto">
+                  <div className="grid  grid-cols-1 sm:grid-cols-3 gap-2 w-full sm:w-auto">
                     <button
                       onClick={() => {
                         setSelectedFlow(flow);
@@ -229,6 +230,60 @@ export default function RequestPage() {
                       className="btn rounded-lg btn-md bg-amber-500 text-white hover:bg-amber-600 w-full"
                     >
                       Aksi
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+
+                        if (!flow || !flow._id) {
+                          toast.error("ID tidak ditemukan!");
+                          return;
+                        }
+
+                        const textToCopy = `${window.location.origin}/request/create/${flow._id}`;
+
+                        // 1. Cek apakah Clipboard API modern tersedia (HTTPS / Localhost)
+                        if (
+                          navigator.clipboard &&
+                          navigator.clipboard.writeText
+                        ) {
+                          navigator.clipboard
+                            .writeText(textToCopy)
+                            .then(() => toast.success("Link berhasil disalin!"))
+                            .catch(() => toast.error("Gagal menyalin link!"));
+                        } else {
+                          // 2. Metode Cadangan (Fallback) jika menggunakan HTTP / IP Address alternatif
+                          const textArea = document.createElement("textarea");
+                          textArea.value = textToCopy;
+
+                          // Sembunyikan elemen teks agar tidak merusak tampilan UI
+                          textArea.style.position = "fixed";
+                          textArea.style.left = "-999999px";
+                          textArea.style.top = "-999999px";
+                          document.body.appendChild(textArea);
+
+                          textArea.focus();
+                          textArea.select();
+
+                          try {
+                            const successful = document.execCommand("copy"); // Perintah salin lama
+                            if (successful) {
+                              toast.success(
+                                "Link berhasil disalin! (via fallback)",
+                              );
+                            } else {
+                              toast.error("Gagal menyalin link!");
+                            }
+                          } catch (err) {
+                            toast.error("Browser tidak mendukung fitur salin!");
+                          }
+
+                          document.body.removeChild(textArea); // Hapus kembali elemen setelah selesai
+                        }
+                      }}
+                      className="btn rounded-lg btn-md bg-amber-500 text-white hover:bg-amber-600 w-full"
+                    >
+                      Link Stranger
                     </button>
                   </div>
                 </div>

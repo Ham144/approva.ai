@@ -3,6 +3,7 @@ import { useResponseCollector } from "@/store";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import checkOperator from "@/utils/checkOperator";
+import getPrioritizedRecipients from "@/utils/getPrioritizedRecipients";
 
 export default function ApprovalButton({
   isOnlyPreview,
@@ -10,6 +11,8 @@ export default function ApprovalButton({
   isLoadinghandleSubmitStatus,
   logics,
   allStatuses,
+  isPrioritizeRequestor,
+  requestedBy,
 }) {
   const {
     statuses,
@@ -90,14 +93,39 @@ export default function ApprovalButton({
     return nextStatusForRecipient !== null;
   }, [verdict, metLogic, nextStatusForRecipient]);
 
+  const { recipients: notificationRecipients, isActive: isPrioritizeActive } =
+    useMemo(
+      () =>
+        getPrioritizedRecipients({
+          isPrioritizeRequestor,
+          requestedBy,
+          nextAuthorized: nextStatusForRecipient?.authorized || [],
+        }),
+      [
+        isPrioritizeRequestor,
+        requestedBy,
+        nextStatusForRecipient?.authorized,
+      ],
+    );
+
   // Clear selection if the target recipient status changes
   useEffect(() => {
     setSelectedAuthorized([]);
   }, [nextStatusForRecipient?.uuid, setSelectedAuthorized]);
 
+  useEffect(() => {
+    if (isPrioritizeActive && notificationRecipients[0]?._id) {
+      setSelectedAuthorized(notificationRecipients[0]._id);
+    }
+  }, [
+    isPrioritizeActive,
+    notificationRecipients,
+    nextStatusForRecipient?.uuid,
+    setSelectedAuthorized,
+  ]);
+
   function handleSelect(verdict) {
     const statusesCopy = [...statuses];
-    console.log(statusesCopy);
     statusesCopy[currentStatusIndex].verdict = verdict;
     setStatuses(statusesCopy);
   }
@@ -184,6 +212,11 @@ export default function ApprovalButton({
                             Jump Active
                           </span>
                         )}
+                        {isPrioritizeActive && (
+                          <span className="ml-2 badge badge-sm badge-warning">
+                            Prioritize Requestor
+                          </span>
+                        )}
                       </span>
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -209,14 +242,21 @@ export default function ApprovalButton({
                             ? `Pilihan Pemberitahuan untuk Status: ${nextStatusForRecipient?.title || nextStatusForRecipient?.statusTitle}`
                             : "Berikut Pilihan yang telah ditetapkan untuk pemberitahuan langsung"}
                           <span className="block text-sm text-gray-500 mt-1 font-normal">
-                            (yang tidak dipilih juga dapat mengisi persetujuan
-                            sebagai alternatif)
+                            {isPrioritizeActive
+                              ? "Mode Prioritize Requestor: hanya requestor yang dapat dipilih untuk pemberitahuan langsung"
+                              : "(yang tidak dipilih juga dapat mengisi persetujuan sebagai alternatif)"}
                           </span>
                         </p>
 
+                        {isPrioritizeActive && (
+                          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3 mx-2">
+                            Prioritize Requestor aktif — requestor terdaftar
+                            sebagai approver step berikutnya.
+                          </p>
+                        )}
+
                         <div className="flex flex-wrap gap-3 p-2">
-                          {nextStatusForRecipient?.authorized?.map(
-                            (authorized) => {
+                          {notificationRecipients.map((authorized) => {
                               const isSelected = selectedAuthorized?.includes(
                                 authorized._id,
                               );
@@ -245,8 +285,7 @@ export default function ApprovalButton({
                                   )}
                                 </button>
                               );
-                            },
-                          )}
+                            })}
                         </div>
                       </div>
                     )}

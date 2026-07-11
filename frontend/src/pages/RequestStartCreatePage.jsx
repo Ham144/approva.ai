@@ -2,7 +2,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { useResponseCollector } from "@/store";
 import flowInstanceApi from "@/api/flowInstanceApi";
-import flowApi from "@/api/flowApi";
 import PreviewFlow from "@/components/PreviewFlow";
 import toast from "react-hot-toast";
 import { Check, CheckCircle, ChevronDown, Save, Trash } from "lucide-react";
@@ -26,15 +25,30 @@ export default function RequestStartCreatePage() {
     data: flowData,
     isLoading: isFlowLoading,
     isError: isFlowError,
+    error: flowError,
   } = useQuery({
     queryKey: ["flowTemplate", id],
-    queryFn: () => flowApi.getFlowById(id),
+    queryFn: () => flowInstanceApi.getFlowTemplateForRequest(id),
     enabled: !!id,
+    retry: false,
   });
 
   const [authorizedOptionBlinking, setAuthorizedOptionBlinking] =
     useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isFlowError && flowError) {
+      const status = flowError?.response?.status || flowError?.status;
+      if (status === 401) {
+        toast.error("Silakan login terlebih dahulu untuk mengakses form ini.");
+        navigate("/login");
+      } else if (status === 403) {
+        toast.error("Anda tidak memiliki akses ke form ini.");
+        navigate("/");
+      }
+    }
+  }, [isFlowError, flowError, navigate]);
 
   //flow Data instance untuk memulai flow instance baru
   const { mutateAsync: handleSubmitNewRequest, isPending: sendingEmail } =
@@ -44,15 +58,22 @@ export default function RequestStartCreatePage() {
         await flowInstanceApi.requestNewFlowInstance({
           instanceTitle,
           flowTemplateId: id,
-          overallStatus,
+          overallStatus: flowData?.data?.noApprovalNeeded
+            ? "in-progress"
+            : overallStatus,
           requestData,
-          selectedAuthorized,
+          selectedAuthorized: flowData?.data?.noApprovalNeeded
+            ? []
+            : selectedAuthorized,
         }),
       onSuccess: (res) => {
         toast.success(res?.message);
-        //kembali instance Id
         setTimeout(() => {
-          navigate(`/process?isMyRequestOnlyQuery=true`);
+          if (flowData?.data?.isStrangerMode) {
+            navigate(`/request/success`);
+          } else {
+            navigate(`/process?isMyRequestOnlyQuery=true`);
+          }
           resetRequestData();
         }, 500);
         setSelectedAuthorized([]);
@@ -86,15 +107,18 @@ export default function RequestStartCreatePage() {
 
   return (
     <div className="min-h-screen bg-blue-100">
-      <div className="mx-auto max-w-4xl px-4 py-6">
-        {/* Floating Action Bar - Sticky di atas */}
-        <div className="sticky top-0 z-10 mb-4">
+      {/* Action Bar - selalu terlihat, tidak ikut scroll */}
+      <div className="fixed top-0 left-0 right-0 z-30 bg-blue-100/95 backdrop-blur-sm border-b border-blue-200/60">
+        <div className="mx-auto max-w-4xl px-4 py-3">
           <div className="flex flex-wrap items-center justify-center gap-3 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
             {/* Save/Update Button */}
             <button
               disabled={sendingEmail}
               onClick={async () => {
-                if (selectedAuthorized?.length) {
+                if (
+                  flowData?.data?.noApprovalNeeded ||
+                  selectedAuthorized?.length
+                ) {
                   await handleSubmitNewRequest();
                 } else {
                   toast.error(
@@ -135,7 +159,8 @@ export default function RequestStartCreatePage() {
               Reset
             </button>
 
-            {/* Status Dropdown */}
+            {/* Status Dropdown — hidden jika noApprovalNeeded */}
+            {!flowData?.data?.noApprovalNeeded && (
             <div className="relative flex-1 min-w-[140px] sm:min-w-[160px]">
               <select
                 onChange={(e) => setOveralStatus(e.target.value)}
@@ -158,10 +183,14 @@ export default function RequestStartCreatePage() {
                 <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               </div>
             </div>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Authorized User Selection */}
+      <div className="mx-auto max-w-4xl px-4 py-6 pt-28">
+        {/* Authorized User Selection — hidden jika noApprovalNeeded */}
+        {!flowData?.data?.noApprovalNeeded && (
         <div
           className={`mb-6 p-5 bg-white dark:bg-gray-800 rounded-xl shadow-lg border-2 transition-all duration-300 ${
             authorizedOptionBlinking
@@ -180,7 +209,7 @@ export default function RequestStartCreatePage() {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            {flowData?.data.status[0].authorized.map(
+            {flowData?.data.status[0]?.authorized.map(
               (authorizedFirstStatus) => {
                 const isSelected = selectedAuthorized?.includes(
                   authorizedFirstStatus._id,
@@ -218,6 +247,7 @@ export default function RequestStartCreatePage() {
             )}
           </div>
         </div>
+        )}
 
         {/* Main Content - Scrollable Area */}
         <div className="overflow-visible">
@@ -231,7 +261,7 @@ export default function RequestStartCreatePage() {
         </div>
 
         {/* Bottom Spacing untuk mobile */}
-        <div className="h-16 sm:h-8"></div>
+        <div className="h-16 sm:h-8" />
       </div>
     </div>
   );
