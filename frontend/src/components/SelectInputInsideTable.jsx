@@ -39,7 +39,7 @@ export default function SelectInputInsideTable({
         onChange(e.target.value);
       }}
     >
-      <option value="">-- Pilih Opsi --</option>
+      <option value="">{isLoading ? "-- Memuat opsi... --" : "-- Pilih Opsi --"}</option>
       {options.map((k) => (
         <option key={k._id} value={k.key}>
           {k.value}

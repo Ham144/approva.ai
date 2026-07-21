@@ -151,10 +151,55 @@ router.post("/request/new", async (req, res) => {
       isPrivateAuthorized: template.isPrivateRequest,
     }));
 
-    // Tentukan overallStatus: jika noApprovalNeeded, langsung completed
-    const finalOverallStatus = template.noApprovalNeeded
+    // Tentukan overallStatus awal: jika noApprovalNeeded, langsung completed
+    let finalOverallStatus = template.noApprovalNeeded
       ? "completed"
       : overallStatus;
+
+    let finalCurrentStatusIndex = template.noApprovalNeeded
+      ? template.status.length
+      : 0;
+
+    // Evaluasi Logika untuk Request Phase
+    if (!template.noApprovalNeeded && finalOverallStatus === "in-progress") {
+      const relevantLogics = template.logics?.filter((logic) =>
+        template.request.some(
+          (reqInput) =>
+            String(reqInput._id) === String(logic.requirementId) ||
+            String(reqInput.uuid) === String(logic.requirementId),
+        ),
+      );
+
+      if (relevantLogics && relevantLogics.length > 0) {
+        // Ambil logic pertama yang dikonfigurasi pada request (biasanya 1 input hanya 1 logic)
+        for (const matchingLogic of relevantLogics) {
+          const actualValue = requestData[matchingLogic.requirementId];
+          const isMet = checkOperator({
+            operator: matchingLogic.operator,
+            actual: actualValue,
+            expected: matchingLogic.value,
+          });
+
+          if (isMet) {
+            if (matchingLogic.logicType === "jumpTo") {
+              const targetIndex = template.status.findIndex(
+                (s) => String(s.uuid) === String(matchingLogic.jumpToStatusUuid),
+              );
+              if (targetIndex !== -1) {
+                finalCurrentStatusIndex = targetIndex;
+              }
+            } else if (matchingLogic.logicType === "completedIf") {
+              finalOverallStatus = "completed";
+              finalCurrentStatusIndex = template.status.length;
+            } else if (matchingLogic.logicType === "rejectedIf") {
+              finalOverallStatus = "rejected";
+              finalCurrentStatusIndex = template.status.length;
+            }
+            break; // Hentikan evaluasi setelah satu logika terpenuhi (mirip di frontend)
+          }
+        }
+      }
+    }
 
     // 5. Siapkan dokumen
     const docToInsert = {
@@ -164,9 +209,7 @@ router.post("/request/new", async (req, res) => {
       requestData: requestData,
       overallStatus: finalOverallStatus,
       statuses: statusesFromTemplate,
-      currentStatusIndex: template.noApprovalNeeded
-        ? template.status.length
-        : 0,
+      currentStatusIndex: finalCurrentStatusIndex,
       org: userOrg,
       globalIndex: globalIndex,
     };

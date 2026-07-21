@@ -29,11 +29,37 @@ export default function SelectInput({
     statuses,
   } = useResponseCollector();
 
-  const tipe = data?.data?.tipe;
+  const tipe = data?.data?.tipe || "internal";
   const options = data?.data?.keys ?? [];
   const views = data?.data?.views || "standard"; // "big" | "standard" | "small"
   const isDisabled = baseProps?.disabled || isLoading;
   const [isSearchingExternal, setIsSearchingExternal] = useState(false);
+
+  // Debounce search key to prevent excessive API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchKey(searchKey);
+      setIsSearchingExternal(false);
+    }, 2000);
+
+    return () => {
+      clearTimeout(timer);
+      setIsSearchingExternal(true);
+    };
+  }, [searchKey]);
+
+  if (isLoading) {
+    return (
+      <select
+        className="px-3 rounded-md w-full input input-bordered bg-gray-100 text-gray-400"
+        disabled
+        value=""
+        onChange={() => {}}
+      >
+        <option value="">-- Memuat opsi... --</option>
+      </select>
+    );
+  }
 
   const disabledStyle = isDisabled
     ? {
@@ -57,19 +83,6 @@ export default function SelectInput({
       setRequestData(input._id, value);
     }
   };
-
-  // Debounce search key to prevent excessive API calls
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchKey(searchKey);
-      setIsSearchingExternal(false);
-    }, 2000);
-
-    return () => {
-      clearTimeout(timer);
-      setIsSearchingExternal(true);
-    };
-  }, [searchKey]);
 
   // ─── RENDER: External type ───
   if (tipe === "external") {

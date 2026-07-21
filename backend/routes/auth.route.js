@@ -223,32 +223,33 @@ router.post(
 
     const username = usernameRaw.toLowerCase();
 
-    try {
-      const result = await axios.post(
-        "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-        new URLSearchParams({
-          secret: process.env.TURNSTILE_SECRET_KEY,
-          response: captchaToken,
-          remoteip: req.ip,
-        }),
-        {
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
+    if (process.env.NODE_ENV != "development") {
+      try {
+        const result = await axios.post(
+          "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+          new URLSearchParams({
+            secret: process.env.TURNSTILE_SECRET_KEY,
+            response: captchaToken,
+            remoteip: req.ip,
+          }),
+          {
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
           },
-        },
-      );
+        );
 
-      if (!result.data.success) {
+        if (!result.data.success) {
+          return res
+            .status(403)
+            .json({ success: false, message: "Verifikasi CAPTCHA gagal." });
+        }
+        console.log("berhasil verifikasi turnstile");
+      } catch (error) {
         return res
-          .status(403)
-          .json({ success: false, message: "Verifikasi CAPTCHA gagal." });
+          .status(500)
+          .json({ success: false, message: "Gagal memverifikasi CAPTCHA." });
       }
-      console.log("berhasil verifikasi turnstile");
-    } catch (error) {
-      console.error("Turnstile error:", error.message);
-      return res
-        .status(500)
-        .json({ success: false, message: "Gagal memverifikasi CAPTCHA." });
     }
 
     if (username == "SUPERTENANT") {
@@ -442,30 +443,31 @@ router.post(
       });
     }
 
-    try {
-      const result = await axios.post(
-        "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-        new URLSearchParams({
-          secret: process.env.TURNSTILE_SECRET_KEY,
-          response: captchaToken,
-        }),
-        {
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
+    if (process.env.NODE_ENV != "development") {
+      try {
+        const result = await axios.post(
+          "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+          new URLSearchParams({
+            secret: process.env.TURNSTILE_SECRET_KEY,
+            response: captchaToken,
+          }),
+          {
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
           },
-        },
-      );
+        );
 
-      if (!result.data.success) {
+        if (!result.data.success) {
+          return res
+            .status(403)
+            .json({ success: false, message: "Verifikasi CAPTCHA gagal." });
+        }
+      } catch (error) {
         return res
-          .status(403)
-          .json({ success: false, message: "Verifikasi CAPTCHA gagal." });
+          .status(500)
+          .json({ success: false, message: "Gagal memverifikasi CAPTCHA." });
       }
-    } catch (error) {
-      console.error("Turnstile error:", error.message);
-      return res
-        .status(500)
-        .json({ success: false, message: "Gagal memverifikasi CAPTCHA." });
     }
 
     const OrgDB = await Org.findById(selectedOrg);

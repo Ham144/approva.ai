@@ -3,14 +3,14 @@ import axiosInstance from "./axiosInstance";
 const FlexSourceDataApi = {
   getAllSourceData: async (search) => {
     const res = await axiosInstance.get(
-      `/api/flexSourceData/getAllSourceData/${search}`
+      `/api/flexSourceData/getAllSourceData/${search}`,
     );
     return res.data;
   },
   getSourceDataById: async (id) => {
     if (!id) return;
     const res = await axiosInstance.get(
-      `/api/flexSourceData/getSourceDataById/${id}`
+      `/api/flexSourceData/getSourceDataById/${id}`,
     );
     return res.data;
   },
@@ -26,7 +26,7 @@ const FlexSourceDataApi = {
       "/api/flexSourceData/getSourceDataByIdPost",
       {
         params,
-      }
+      },
     );
 
     return res.data;
@@ -36,7 +36,7 @@ const FlexSourceDataApi = {
     try {
       const res = await axiosInstance.post(
         `/api/flexSourceData/createSourceData`,
-        body
+        body,
       );
       return res.data;
     } catch (error) {
@@ -47,7 +47,7 @@ const FlexSourceDataApi = {
     try {
       const res = await axiosInstance.post(
         `/api/flexSourceData/createSourceDataExternal`,
-        body
+        body,
       );
       return res.data;
     } catch (error) {
@@ -58,13 +58,13 @@ const FlexSourceDataApi = {
     console.log(id, body);
     const res = await axiosInstance.put(
       `/api/flexSourceData/editSourceData/${id}`,
-      body
+      body,
     );
     return res.data;
   },
   deleteSourceData: async (id) => {
     const res = await axiosInstance.delete(
-      `/api/flexSourceData/deleteSourceData/${id}`
+      `/api/flexSourceData/deleteSourceData/${id}`,
     );
     return res.data;
   },

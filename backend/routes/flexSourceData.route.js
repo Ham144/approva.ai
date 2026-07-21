@@ -39,7 +39,7 @@ router.post("/createSourceData", authenticate, async (req, res) => {
       })),
       views,
       createdBy: req.user._id,
-      org: req.user.org, // ✅ penting: scope ke organisasi
+      org: req.user.org, // ? penting: scope ke organisasi
     });
 
     await flexSourceDataInstance.save();
@@ -89,7 +89,7 @@ router.post("/createSourceDataExternal", authenticate, async (req, res) => {
       pointer,
       keyMapping: { key, value },
       createdBy: req.user._id,
-      org: req.user.org, // ✅ penting: scope ke organisasi
+      org: req.user.org, // ? penting: scope ke organisasi
     });
 
     await flexSourceDataInstance.save();
@@ -138,7 +138,6 @@ router.get("/getSourceDataById/:id", authenticate, async (req, res) => {
   try {
     const flexSourceData = await FlexSourceData.findOne({
       _id: id,
-      org: req.user.org,
     });
 
     if (!flexSourceData) {
@@ -171,10 +170,7 @@ router.get("/getSourceDataByIdPost", async (req, res) => {
       return res.status(404).json({ message: "Pilihan tidak ditemukan" });
     }
 
-    // Jika user login, pastikan org cocok (tenancy isolation)
-    if (req.user && flexSourceData.org && flexSourceData.org.toString() !== req.user.org.toString()) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
+
 
     if (flexSourceData.tipe == "external") {
       const { endpoint, apiKey, penamaanSearchKey, pointer, keyMapping } =
@@ -206,13 +202,11 @@ router.get("/getSourceDataByIdPost", async (req, res) => {
         })) || [];
 
       //jaga jaga jika data dari external terlalu banyak
-      if (keys.length > 30) {
-        result.keys = result.keys.slice(0, 30);
-      }
+      const slicedKeys = keys.length > 30 ? keys.slice(0, 30) : keys;
 
       const result = {
-        ...flexSourceData._doc,
-        keys,
+        ...flexSourceData.toObject(),
+        keys: slicedKeys,
       };
 
       return res.json({ data: result });
@@ -229,7 +223,18 @@ router.get("/getSourceDataByIdPost", async (req, res) => {
 // Edit source data
 router.put("/editSourceData/:id", authenticate, async (req, res) => {
   const { id } = req.params;
-  const { title, desc, keys, views } = req.body;
+  const {
+    title,
+    desc,
+    keys,
+    views,
+    tipe,
+    endpoint,
+    apiKey,
+    penamaanSearchKey,
+    pointer,
+    keyMapping,
+  } = req.body;
 
   console.log(id, req.body);
 
@@ -241,29 +246,77 @@ router.put("/editSourceData/:id", authenticate, async (req, res) => {
       .status(400)
       .json({ message: "Title and description are required" });
   }
-  if (!Array.isArray(keys) || keys.length < 2) {
-    return res
-      .status(400)
-      .json({ message: "Your data must have at least 2 options" });
-  }
-  for (const fl of keys) {
-    if (!fl.key || typeof fl.key !== "string") {
+
+  const activeTipe = tipe || "internal";
+
+  if (activeTipe === "internal") {
+    if (!Array.isArray(keys) || keys.length < 2) {
       return res
         .status(400)
-        .json({ message: "Each key must be a non-empty string" });
+        .json({ message: "Your data must have at least 2 options" });
+    }
+    for (const fl of keys) {
+      if (!fl.key || typeof fl.key !== "string") {
+        return res
+          .status(400)
+          .json({ message: "Each key must be a non-empty string" });
+      }
+    }
+  } else if (activeTipe === "external") {
+    if (!endpoint) {
+      return res.status(400).json({ message: "Endpoint is required" });
+    }
+    if (!penamaanSearchKey) {
+      return res
+        .status(400)
+        .json({ message: "Penamaan search key is required" });
+    }
+    if (!keyMapping?.key || !keyMapping?.value) {
+      return res
+        .status(400)
+        .json({ message: "Key and Value mapping are required" });
     }
   }
 
   try {
-    const updated = await FlexSourceData.findOneAndUpdate(
-      { _id: id, org: req.user.org }, // ✅ scope ke tenant
-      {
+    const updateQuery = {
+      $set: {
         title,
         desc,
         views,
-        keys: keys.map((fl) => ({ ...fl, key: fl.key.replaceAll(" ", "_") })),
+        tipe: activeTipe,
       },
-      { new: true, runValidators: true }
+    };
+
+    if (activeTipe === "internal") {
+      updateQuery.$set.keys = keys.map((fl) => ({
+        ...fl,
+        key: fl.key.replaceAll(" ", "_"),
+      }));
+      // Optional: unset external fields to clean up
+      updateQuery.$unset = {
+        endpoint: "",
+        apiKey: "",
+        penamaanSearchKey: "",
+        pointer: "",
+        keyMapping: "",
+      };
+    } else {
+      updateQuery.$set.endpoint = endpoint;
+      updateQuery.$set.apiKey = apiKey;
+      updateQuery.$set.penamaanSearchKey = penamaanSearchKey;
+      updateQuery.$set.pointer = pointer;
+      updateQuery.$set.keyMapping = keyMapping;
+      // Optional: unset keys to clean up
+      updateQuery.$unset = { keys: "" };
+    }
+
+    const updated = await FlexSourceData.findOneAndUpdate(
+      {
+        _id: id,
+      },
+      updateQuery,
+      { new: true, runValidators: true },
     );
 
     if (!updated) return res.status(404).json({ message: "Data not found" });
@@ -288,7 +341,6 @@ router.delete("/deleteSourceData/:id", authenticate, async (req, res) => {
   try {
     const deleted = await FlexSourceData.findOneAndDelete({
       _id: id,
-      org: req.user._id,
     });
     if (!deleted) return res.status(404).json({ message: "Data not found" });
     return res.json({ message: "Data deleted" });

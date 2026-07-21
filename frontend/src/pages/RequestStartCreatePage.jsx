@@ -1,11 +1,13 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
-import { useResponseCollector } from "@/store";
+import { useResponseCollector, useUserInfo } from "@/store";
 import flowInstanceApi from "@/api/flowInstanceApi";
 import PreviewFlow from "@/components/PreviewFlow";
 import toast from "react-hot-toast";
-import { Check, CheckCircle, ChevronDown, Save, Trash } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Check, ChevronDown, Save, Trash } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import checkOperator from "@/utils/checkOperator";
+import getPrioritizedRecipients from "@/utils/getPrioritizedRecipients";
 
 export default function RequestStartCreatePage() {
   const { id } = useParams();
@@ -32,6 +34,87 @@ export default function RequestStartCreatePage() {
     enabled: !!id,
     retry: false,
   });
+
+  const { userInfo } = useUserInfo();
+
+  const logics = flowData?.data?.logics;
+  const allStatuses = flowData?.data?.status;
+
+  const metLogic = useMemo(() => {
+    if (!logics || !requestData) return null;
+
+    const currentRequirements = flowData?.data?.request;
+    if (!currentRequirements) return null;
+
+    const relevantLogic = logics.find((logic) =>
+      currentRequirements.some(
+        (req) =>
+          String(req._id || req) === String(logic.requirementId) ||
+          String(req.uuid) === String(logic.requirementId),
+      ),
+    );
+
+    if (relevantLogic) {
+      const actualValue = requestData[relevantLogic.requirementId];
+      const isMet = checkOperator({
+        operator: relevantLogic.operator,
+        actual: actualValue,
+        expected: relevantLogic.value,
+      });
+
+      if (isMet) return relevantLogic;
+    }
+
+    return null;
+  }, [requestData, logics, flowData?.data?.request]);
+
+  const nextStatusForRecipient = useMemo(() => {
+    if (metLogic?.logicType === "jumpTo") {
+      return allStatuses?.find((s) => s.uuid === metLogic.jumpToStatusUuid);
+    }
+    return allStatuses?.[0] || null;
+  }, [metLogic, allStatuses]);
+
+  const showRecipientSelection = useMemo(() => {
+    if (metLogic) {
+      if (
+        metLogic.logicType === "completedIf" ||
+        metLogic.logicType === "rejectedIf"
+      ) {
+        return false;
+      }
+    }
+    return nextStatusForRecipient !== null;
+  }, [metLogic, nextStatusForRecipient]);
+
+  const { recipients: notificationRecipients, isActive: isPrioritizeActive } =
+    useMemo(
+      () =>
+        getPrioritizedRecipients({
+          isPrioritizeRequestor: flowData?.data?.isPrioritizeRequestor,
+          requestedBy: userInfo,
+          nextAuthorized: nextStatusForRecipient?.authorized || [],
+        }),
+      [
+        flowData?.data?.isPrioritizeRequestor,
+        userInfo,
+        nextStatusForRecipient?.authorized,
+      ],
+    );
+
+  // Clear or select prioritized recipient when target status changes
+  useEffect(() => {
+    if (isPrioritizeActive && notificationRecipients[0]?._id) {
+      setSelectedAuthorized([notificationRecipients[0]._id]);
+    } else {
+      setSelectedAuthorized([]);
+    }
+  }, [
+    isPrioritizeActive,
+    notificationRecipients,
+    nextStatusForRecipient?.uuid,
+    setSelectedAuthorized,
+  ]);
 
   const [authorizedOptionBlinking, setAuthorizedOptionBlinking] =
     useState(false);
@@ -139,7 +222,15 @@ export default function RequestStartCreatePage() {
               aria-label="Save or Update Request"
             >
               <Save className="w-5 h-5" />
-              {sendingEmail ? "Mengirim..." : "Mulai Proses"}
+              {sendingEmail
+                ? "Mengirim..."
+                : metLogic?.logicType === "jumpTo"
+                  ? `Request & Jump to ${nextStatusForRecipient?.title || "Target"}`
+                  : metLogic?.logicType === "completedIf"
+                    ? "Request & Complete"
+                    : metLogic?.logicType === "rejectedIf"
+                      ? "Request & Reject (Auto)"
+                      : "Mulai Proses"}
             </button>
 
             {/* Clear Input Button */}
@@ -161,11 +252,11 @@ export default function RequestStartCreatePage() {
 
             {/* Status Dropdown — hidden jika noApprovalNeeded */}
             {!flowData?.data?.noApprovalNeeded && (
-            <div className="relative flex-1 min-w-[140px] sm:min-w-[160px]">
-              <select
-                onChange={(e) => setOveralStatus(e.target.value)}
-                value={overallStatus}
-                className="
+              <div className="relative flex-1 min-w-[140px] sm:min-w-[160px]">
+                <select
+                  onChange={(e) => setOveralStatus(e.target.value)}
+                  value={overallStatus}
+                  className="
                   appearance-none w-full px-4 py-3 pr-10
                   bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600
                   rounded-xl shadow-sm text-gray-800 dark:text-gray-100 font-medium
@@ -173,16 +264,16 @@ export default function RequestStartCreatePage() {
                   transition-all duration-300 cursor-pointer
                   hover:border-gray-400 dark:hover:border-gray-500
                 "
-                aria-label="Select request status"
-              >
-                <option value="draft">Draft</option>
-                <option value="in-progress">In Progress</option>
-              </select>
-              {/* Custom dropdown arrow */}
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  aria-label="Select request status"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="in-progress">In Progress</option>
+                </select>
+                {/* Custom dropdown arrow */}
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                  <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                </div>
               </div>
-            </div>
             )}
           </div>
         </div>
@@ -190,33 +281,45 @@ export default function RequestStartCreatePage() {
 
       <div className="mx-auto max-w-4xl px-4 py-6 pt-28">
         {/* Authorized User Selection — hidden jika noApprovalNeeded */}
-        {!flowData?.data?.noApprovalNeeded && (
-        <div
-          className={`mb-6 p-5 bg-white dark:bg-gray-800 rounded-xl shadow-lg border-2 transition-all duration-300 ${
-            authorizedOptionBlinking
-              ? "border-red-400 dark:border-red-500 ring-2 ring-red-200 dark:ring-red-900"
-              : "border-gray-200 dark:border-gray-700"
-          }`}
-        >
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-              Pemberitahuan Langsung
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Pilih penerima pemberitahuan utama (yang tidak dipilih tetap dapat
-              memberikan persetujuan)
-            </p>
-          </div>
+        {!flowData?.data?.noApprovalNeeded && showRecipientSelection && (
+          <div
+            className={`mb-6 p-5 bg-white dark:bg-gray-800 rounded-xl shadow-lg border-2 transition-all duration-300 ${
+              authorizedOptionBlinking
+                ? "border-red-400 dark:border-red-500 ring-2 ring-red-200 dark:ring-red-900"
+                : "border-gray-200 dark:border-gray-700"
+            }`}
+          >
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                Pemberitahuan Langsung
+                {metLogic?.logicType === "jumpTo" && (
+                  <span className="badge badge-sm badge-info">Jump Active</span>
+                )}
+                {isPrioritizeActive && (
+                  <span className="badge badge-sm badge-warning">
+                    Prioritize Requestor
+                  </span>
+                )}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {metLogic?.logicType === "jumpTo"
+                  ? `Pilihan Pemberitahuan untuk Status: ${nextStatusForRecipient?.title}`
+                  : "Pilih penerima pemberitahuan utama (yang tidak dipilih tetap dapat memberikan persetujuan)"}
+              </p>
+              {isPrioritizeActive && (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2">
+                  Prioritize Requestor aktif — Anda terdaftar sebagai approver
+                  step berikutnya.
+                </p>
+              )}
+            </div>
 
-          <div className="flex flex-wrap gap-3">
-            {flowData?.data.status[0]?.authorized.map(
-              (authorizedFirstStatus) => {
-                const isSelected = selectedAuthorized?.includes(
-                  authorizedFirstStatus._id,
-                );
+            <div className="flex flex-wrap gap-3">
+              {notificationRecipients.map((authorized) => {
+                const isSelected = selectedAuthorized?.includes(authorized._id);
                 return (
                   <button
-                    key={authorizedFirstStatus._id}
+                    key={authorized._id}
                     className={`
                     relative flex items-center gap-2 px-4 py-2.5 rounded-full
                     border-2 transition-all duration-300 hover:scale-[1.02]
@@ -228,13 +331,12 @@ export default function RequestStartCreatePage() {
                     }
                   `}
                     onClick={() => {
-                      console.log("Selected ID:", authorizedFirstStatus._id);
-                      setSelectedAuthorized(authorizedFirstStatus._id);
+                      console.log("Selected ID:", authorized._id);
+                      setSelectedAuthorized(authorized._id);
                     }}
                   >
                     <span className="font-medium text-sm">
-                      {authorizedFirstStatus.displayName ||
-                        authorizedFirstStatus.username}
+                      {authorized.displayName || authorized.username}
                     </span>
                     {isSelected && (
                       <div className="w-5 h-5 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center">
@@ -243,10 +345,9 @@ export default function RequestStartCreatePage() {
                     )}
                   </button>
                 );
-              },
-            )}
+              })}
+            </div>
           </div>
-        </div>
         )}
 
         {/* Main Content - Scrollable Area */}

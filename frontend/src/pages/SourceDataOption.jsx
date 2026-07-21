@@ -20,6 +20,16 @@ export default function SourceDataOption() {
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editViews, setEditViews] = useState("standard");
+  const [editTipe, setEditTipe] = useState("internal");
+  const [editKeys, setEditKeys] = useState([]);
+  const [editEndpoint, setEditEndpoint] = useState("");
+  const [editApiKey, setEditApiKey] = useState("");
+  const [editPenamaanSearchKey, setEditPenamaanSearchKey] =
+    useState("searchKey");
+  const [editPointer, setEditPointer] = useState("");
+  const [editKeyMappingKey, setEditKeyMappingKey] = useState("");
+  const [editKeyMappingValue, setEditKeyMappingValue] = useState("");
+
   const queryClient = useQueryClient();
 
   const {
@@ -38,22 +48,57 @@ export default function SourceDataOption() {
     }
   };
 
-  const openEdit = (opt) => {
-    setEditData(opt);
-    setEditTitle(opt.title);
-    setEditDesc(opt.desc);
-    setEditViews(opt.views || "standard");
+  const openEdit = async (opt) => {
+    const loadingToast = toast.loading("Memuat detail data...");
+    try {
+      const detail = await FlexSourceDataApi.getSourceDataById(opt._id);
+      const data = detail?.data || opt;
+      setEditData(data);
+      setEditTitle(data.title || "");
+      setEditDesc(data.desc || "");
+      setEditViews(data.views || "standard");
+      setEditTipe(data.tipe || "internal");
+      setEditKeys(data.keys || []);
+      setEditEndpoint(data.endpoint || "");
+      setEditApiKey(data.apiKey || "");
+      setEditPenamaanSearchKey(data.penamaanSearchKey || "searchKey");
+      setEditPointer(data.pointer || "");
+      setEditKeyMappingKey(data.keyMapping?.key || "");
+      setEditKeyMappingValue(data.keyMapping?.value || "");
+      toast.dismiss(loadingToast);
+    } catch (err) {
+      console.log(err);
+      toast.error("Gagal memuat detail data");
+      toast.dismiss(loadingToast);
+    }
   };
+
+  const addEditKey = () => {
+    setEditKeys((prev) => [...prev, { key: "", value: "" }]);
+  };
+
+  const handleEditKeyChange = (index, field, val) => {
+    setEditKeys((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: val };
+      return updated;
+    });
+  };
+
+  const deleteEditKey = (index) => {
+    setEditKeys((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
   const { mutate: mutateEdit, isLoading: isLoadingEdit } = useMutation({
     mutationFn: (updatedData) =>
       FlexSourceDataApi.editSourceData(updatedData._id, updatedData),
     onSuccess: (res) => {
       setEditData(null);
       queryClient.invalidateQueries(["sourceData"]); // fix typo dari "sourcedata-list"
-      toast.success(res?.response?.data?.message || "Berhasil");
+      toast.success(res?.message || "Berhasil diperbarui");
     },
-    onError: () => {
-      toast.error("Gagal memperbarui data");
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || "Gagal memperbarui data");
     },
   });
 
@@ -62,12 +107,59 @@ export default function SourceDataOption() {
 
     if (!editData) return;
 
-    mutateEdit({
-      ...editData,
+    if (!editTitle.trim()) {
+      toast.error("Judul tidak boleh kosong");
+      return;
+    }
+    if (!editDesc.trim()) {
+      toast.error("Deskripsi tidak boleh kosong");
+      return;
+    }
+
+    const payload = {
+      _id: editData._id,
       title: editTitle,
       desc: editDesc,
       views: editViews,
-    });
+      tipe: editTipe,
+    };
+
+    if (editTipe === "internal") {
+      if (editKeys.length < 2) {
+        toast.error("Minimal 2 pilihan data diperlukan");
+        return;
+      }
+      for (const k of editKeys) {
+        if (!k.key.trim() || !k.value.trim()) {
+          toast.error("Semua key dan label pilihan data harus diisi");
+          return;
+        }
+      }
+      payload.keys = editKeys;
+    } else {
+      if (!editEndpoint.trim()) {
+        toast.error("Endpoint URL diperlukan");
+        return;
+      }
+      if (!editPenamaanSearchKey.trim()) {
+        toast.error("Penamaan Search Key diperlukan");
+        return;
+      }
+      if (!editKeyMappingKey.trim() || !editKeyMappingValue.trim()) {
+        toast.error("Key Mapping dan Value Mapping diperlukan");
+        return;
+      }
+      payload.endpoint = editEndpoint;
+      payload.apiKey = editApiKey;
+      payload.penamaanSearchKey = editPenamaanSearchKey;
+      payload.pointer = editPointer;
+      payload.keyMapping = {
+        key: editKeyMappingKey,
+        value: editKeyMappingValue,
+      };
+    }
+
+    mutateEdit(payload);
   };
 
   const openCreateNew = () => {
@@ -189,10 +281,10 @@ export default function SourceDataOption() {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 p-4 ">
           <form
             onSubmit={handleEdit}
-            className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md animate-fade-in max-h-[80%] overflow-auto relative"
+            className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-xl animate-fade-in max-h-[85vh] overflow-auto relative"
           >
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold sticky top-7 right-3 text-gray-800 dark:text-gray-100">
+            <div className="flex justify-between items-center mb-6 sticky top-0 bg-white dark:bg-gray-800 pb-2 z-10 border-b border-gray-100 dark:border-gray-700">
+              <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                 Edit Data Sumber
               </h3>
               <button
@@ -204,7 +296,7 @@ export default function SourceDataOption() {
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <div className="space-y-4 overflow-y-auto ">
+            <div className="space-y-4 pb-4">
               <div>
                 <label
                   htmlFor="edit-title"
@@ -235,27 +327,226 @@ export default function SourceDataOption() {
                   required
                 />
               </div>
-              <div>
-                <label
-                  htmlFor="edit-views"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1"
-                >
-                  Display Mode (Tampilan)
-                </label>
-                <select
-                  id="edit-views"
-                  className="select select-bordered w-full px-4 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  value={editViews}
-                  onChange={(e) => setEditViews(e.target.value)}
-                >
-                  <option value="standard">Standard (Dropdown biasa)</option>
-                  <option value="big">Big (Kotak besar dengan emoji)</option>
-                  <option value="small">Small (Badge kecil mendatar)</option>
-                </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="edit-tipe"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1"
+                  >
+                    Tipe Opsi
+                  </label>
+                  <select
+                    id="edit-tipe"
+                    className="select select-bordered w-full px-4 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    value={editTipe}
+                    onChange={(e) => setEditTipe(e.target.value)}
+                  >
+                    <option value="internal">Internal (Statis)</option>
+                    <option value="external">External (API)</option>
+                  </select>
+                </div>
+                <div>
+                  <label
+                    htmlFor="edit-views"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1"
+                  >
+                    Display Mode (Tampilan)
+                  </label>
+                  <select
+                    id="edit-views"
+                    className="select select-bordered w-full px-4 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    value={editViews}
+                    onChange={(e) => setEditViews(e.target.value)}
+                  >
+                    <option value="standard">Standard (Dropdown biasa)</option>
+                    <option value="big">Big (Kotak besar dengan emoji)</option>
+                    <option value="small">Small (Badge kecil mendatar)</option>
+                  </select>
+                </div>
               </div>
+
+              {/* Tipe: INTERNAL */}
+              {editTipe === "internal" && (
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200">
+                      Daftar Pilihan Opsi
+                    </label>
+                    <button
+                      type="button"
+                      className="btn btn-xs btn-outline btn-primary flex items-center gap-1"
+                      onClick={addEditKey}
+                    >
+                      + Tambah Baris
+                    </button>
+                  </div>
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    {editKeys.map((k, i) => (
+                      <div key={i} className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          className="input input-sm input-bordered flex-1 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          placeholder="Key (mesin)"
+                          value={k.key}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val.includes(" ")) {
+                              toast.error("Key tidak boleh mengandung spasi");
+                              return;
+                            }
+                            handleEditKeyChange(i, "key", val);
+                          }}
+                          required
+                        />
+                        <input
+                          type="text"
+                          className="input input-sm input-bordered flex-1 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          placeholder="Label/Value"
+                          value={k.value}
+                          onChange={(e) =>
+                            handleEditKeyChange(i, "value", e.target.value)
+                          }
+                          required
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-xs btn-error text-white hover:scale-105 transition-transform"
+                          onClick={() => deleteEditKey(i)}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    {editKeys.length === 0 && (
+                      <p className="text-sm italic text-gray-400 text-center py-2">
+                        Belum ada opsi. Silakan klik tambah baris.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Tipe: EXTERNAL */}
+              {editTipe === "external" && (
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4 space-y-3">
+                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200">
+                    Konfigurasi API Eksternal
+                  </label>
+
+                  <div>
+                    <label
+                      htmlFor="edit-endpoint"
+                      className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
+                    >
+                      Endpoint URL
+                    </label>
+                    <input
+                      id="edit-endpoint"
+                      type="url"
+                      className="input input-bordered input-sm w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      placeholder="https://api.example.com/data"
+                      value={editEndpoint}
+                      onChange={(e) => setEditEndpoint(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="edit-apikey"
+                      className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
+                    >
+                      API Key Header (x-api-key)
+                    </label>
+                    <input
+                      id="edit-apikey"
+                      type="text"
+                      className="input input-bordered input-sm w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      placeholder="Masukkan API Key jika ada"
+                      value={editApiKey}
+                      onChange={(e) => setEditApiKey(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label
+                        htmlFor="edit-searchkey"
+                        className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
+                      >
+                        Penamaan Search Key
+                      </label>
+                      <input
+                        id="edit-searchkey"
+                        type="text"
+                        className="input input-bordered input-sm w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        placeholder="e.g. searchKey"
+                        value={editPenamaanSearchKey}
+                        onChange={(e) =>
+                          setEditPenamaanSearchKey(e.target.value)
+                        }
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="edit-pointer"
+                        className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
+                      >
+                        Response Pointer (Optional)
+                      </label>
+                      <input
+                        id="edit-pointer"
+                        type="text"
+                        className="input input-bordered input-sm w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        placeholder="e.g. data.items"
+                        value={editPointer}
+                        onChange={(e) => setEditPointer(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label
+                        htmlFor="edit-mapping-key"
+                        className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
+                      >
+                        Key Mapping (Field Key)
+                      </label>
+                      <input
+                        id="edit-mapping-key"
+                        type="text"
+                        className="input input-bordered input-sm w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        placeholder="e.g. id"
+                        value={editKeyMappingKey}
+                        onChange={(e) => setEditKeyMappingKey(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="edit-mapping-value"
+                        className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
+                      >
+                        Value Mapping (Field Label)
+                      </label>
+                      <input
+                        id="edit-mapping-value"
+                        type="text"
+                        className="input input-bordered input-sm w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        placeholder="e.g. name"
+                        value={editKeyMappingValue}
+                        onChange={(e) => setEditKeyMappingValue(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="flex justify-end gap-3 mt-6 sticky bottom-1">
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-800 z-10">
               <button
                 type="button"
                 className="btn btn-ghost dark:text-gray-300 dark:hover:bg-gray-700 px-4 py-2 rounded-lg font-medium transition-colors duration-200"
@@ -266,7 +557,7 @@ export default function SourceDataOption() {
               <button
                 disabled={isLoadingEdit}
                 type="submit"
-                className="btn btn-primary bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center gap-2 px-4 py-2 rounded-lg shadow-md transition-colors duration-200"
+                className="btn btn-primary bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center gap-2 px-6 py-2 rounded-lg shadow-md transition-all duration-200"
               >
                 <Save className="w-4 h-4" /> Simpan
               </button>

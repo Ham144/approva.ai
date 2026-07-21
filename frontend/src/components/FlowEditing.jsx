@@ -130,6 +130,7 @@ export default function FlowEditing() {
           tipe: "text",
           sourceData: null,
           isNullable: false,
+          uuid: uuidv4(),
         },
       ],
     }));
@@ -252,6 +253,18 @@ export default function FlowEditing() {
       ...prev,
       status: prev.status.map((stat) =>
         stat?.uuid ? stat : { ...stat, uuid: uuidv4() },
+      ),
+    }));
+  };
+
+  const missingRequestUuidCount =
+    flow?.request?.filter((req) => !req?.uuid)?.length ?? 0;
+
+  const handleGenerateAllMissingRequestUuids = () => {
+    setFlow((prev) => ({
+      ...prev,
+      request: prev.request.map((req) =>
+        req?.uuid ? req : { ...req, uuid: uuidv4() },
       ),
     }));
   };
@@ -687,6 +700,25 @@ export default function FlowEditing() {
         </div>
       </div>
       <div className="divider">Flow Request</div>
+      {missingRequestUuidCount > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 mb-4">
+          <div className="flex items-start gap-2 text-sm">
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>
+              {missingRequestUuidCount} input request belum punya UUID. Input tanpa UUID
+              dapat menyebabkan logika terputus setelah disimpan.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleGenerateAllMissingRequestUuids}
+            className="btn btn-sm btn-warning shrink-0"
+          >
+            <KeyRound className="w-4 h-4" />
+            Generate UUID Request
+          </button>
+        </div>
+      )}
       {/* REQUEST */}
       <div className="flex flex-col gap-3 ">
         {flow.request?.map((input, requestIdx) => (

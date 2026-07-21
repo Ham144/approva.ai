@@ -50,14 +50,21 @@ function InputItem({
   const { flow, setFlow } = useEditor();
 
   // Gunakan status index yang diterima dari parent
-  const currentStatus = flow?.status[statusIndex];
+  const currentStatus = isForRequest
+    ? {
+        _id: "request",
+        id: "request",
+        title: "Request",
+        uuid: "request",
+        requirements: flow?.request || [],
+      }
+    : flow?.status?.[statusIndex];
   const currentStatusId = currentStatus?._id || currentStatus?.id;
 
   // Gunakan ID dari requirement yang sedang dikonfigurasi
   const currentRequirementId = input?._id;
 
   // no console logs per user preference
-
   const { data: sourceDataList } = useQuery({
     queryKey: ["sourcedata-list", searchSourceDataTitle],
     queryFn: async () => {
@@ -672,121 +679,117 @@ function InputItem({
       )}
 
       {/* Bagian fitur logika Jump to, completed if, rejected if, prevent next if */}
-      {!isForRequest && (
-        <>
-          <div className="space-y-4">
-            <button
-              disabled={flow?.logics?.some((logic) =>
-                currentStatus.requirements.some(
-                  (req) =>
-                    req._id === logic.requirementId ||
-                    req.uuid === logic.requirementId,
-                ),
-              )}
-              className="btn w-full rounded-lg shadow-sm bg-primary hover:bg-primary-focus text-white"
-              onClick={() => {
-                const modalId = `logicModal-${currentStatusId}-${currentRequirementId}`;
-                setOpenSignal((s) => s + 1);
-                document.getElementById(modalId)?.showModal();
-              }}
-            >
-              <Plus />
-              {flow?.logics?.some((logic) =>
-                currentStatus.requirements.some(
-                  (req) =>
-                    req._id === logic.requirementId ||
-                    req.uuid === logic.requirementId,
-                ),
-              )
-                ? "Hanya boleh satu logic perstatus"
-                : "Tambah Logic Route"}
-            </button>
+      <>
+        <div className="space-y-4">
+          <button
+            disabled={flow?.logics?.some((logic) =>
+              currentStatus?.requirements?.some(
+                (req) =>
+                  req._id === logic.requirementId ||
+                  req.uuid === logic.requirementId,
+              ),
+            )}
+            className="btn w-full rounded-lg shadow-sm bg-primary hover:bg-primary-focus text-white"
+            onClick={() => {
+              const modalId = `logicModal-${currentStatusId}-${currentRequirementId}`;
+              setOpenSignal((s) => s + 1);
+              document.getElementById(modalId)?.showModal();
+            }}
+          >
+            <Plus />
+            {flow?.logics?.some((logic) =>
+              currentStatus?.requirements?.some(
+                (req) =>
+                  req._id === logic.requirementId ||
+                  req.uuid === logic.requirementId,
+              ),
+            )
+              ? "Hanya boleh satu logic perstatus"
+              : "Tambah Logic Route"}
+          </button>
 
-            {flow?.logics && flow.logics.length > 0 && (
-              <div className="space-y-3 my-3 rounded-lg">
-                {flow.logics
-                  .filter(
-                    (logic) =>
-                      String(logic.requirementId) === String(input._id),
-                  )
-                  .map((logic, logicIndex) => (
-                    <div
-                      key={logicIndex}
-                      className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 space-y-2"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="badge badge-primary text-white rounded-lg">
-                            {logic.logicType === "jumpTo" && "Jump to"}
-                            {logic.logicType === "completedIf" &&
-                              "Completed if"}
-                            {logic.logicType === "rejectedIf" && "Rejected if"}
-                            {logic.logicType === "preventNextIf" &&
-                              "Prevent next if"}
-                          </span>
-                          {logic.logicType === "jumpTo" &&
-                            logic.jumpToStatusUuid && (
-                              <span className="text-sm text-gray-600 dark:text-gray-400">
-                                →{" "}
-                                {flow.status?.find(
-                                  (s) => s.uuid === logic.jumpToStatusUuid,
-                                )?.title || "Unknown Status"}
-                              </span>
-                            )}
-                        </div>
-                        <button
-                          onClick={() => {
-                            const newLogics = [...(flow?.logics || [])];
-                            const logicIndex = newLogics.findIndex(
-                              (e) => e.requirementId === input._id,
-                            );
-                            newLogics.splice(logicIndex, 1);
-                            setFlow({
-                              ...flow,
-                              logics: newLogics,
-                            });
-                          }}
-                          className="btn btn-error btn-xs"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+          {flow?.logics && flow.logics.length > 0 && (
+            <div className="space-y-3 my-3 rounded-lg">
+              {flow.logics
+                .filter(
+                  (logic) => String(logic.requirementId) === String(input._id),
+                )
+                .map((logic, logicIndex) => (
+                  <div
+                    key={logicIndex}
+                    className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="badge badge-primary text-white rounded-lg">
+                          {logic.logicType === "jumpTo" && "Jump to"}
+                          {logic.logicType === "completedIf" && "Completed if"}
+                          {logic.logicType === "rejectedIf" && "Rejected if"}
+                          {logic.logicType === "preventNextIf" &&
+                            "Prevent next if"}
+                        </span>
+                        {logic.logicType === "jumpTo" &&
+                          logic.jumpToStatusUuid && (
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              →{" "}
+                              {flow.status?.find(
+                                (s) => s.uuid === logic.jumpToStatusUuid,
+                              )?.title || "Unknown Status"}
+                            </span>
+                          )}
                       </div>
-                      <div className="text-sm space-y-1">
-                        <div>
-                          <span className="font-medium">Requirement:</span>{" "}
-                          {input.title || "Unknown"}
-                        </div>
-                        <div>
-                          <span className="font-medium">Kondisi:</span>{" "}
-                          {logic.operator}{" "}
-                          <span className="font-mono bg-gray-200 dark:bg-gray-600 px-1 rounded">
-                            {logic.value}
-                          </span>
-                        </div>
+                      <button
+                        onClick={() => {
+                          const newLogics = [...(flow?.logics || [])];
+                          const logicIndex = newLogics.findIndex(
+                            (e) => e.requirementId === input._id,
+                          );
+                          newLogics.splice(logicIndex, 1);
+                          setFlow({
+                            ...flow,
+                            logics: newLogics,
+                          });
+                        }}
+                        className="btn btn-error btn-xs"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    <div className="text-sm space-y-1">
+                      <div>
+                        <span className="font-medium">Requirement:</span>{" "}
+                        {input.title || "Unknown"}
+                      </div>
+                      <div>
+                        <span className="font-medium">Kondisi:</span>{" "}
+                        {logic.operator}{" "}
+                        <span className="font-mono bg-gray-200 dark:bg-gray-600 px-1 rounded">
+                          {logic.value}
+                        </span>
                       </div>
                     </div>
-                  ))}
-              </div>
-            )}
-          </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
 
-          <LogicModal
-            flow={flow}
-            currentRequirementId={currentRequirementId}
-            currentStatus={currentStatus}
-            modalId={`logicModal-${currentStatusId}-${currentRequirementId}`}
-            openSignal={openSignal}
-            handleAddlogicModal={(logicData) => {
-              setFlow((prev) => ({
-                ...prev,
-                logics: [...prev?.logics, logicData],
-              }));
-            }}
-            input={input}
-            key={`modalLogic-${currentStatusId}-${currentRequirementId}`}
-          />
-        </>
-      )}
+        <LogicModal
+          flow={flow}
+          currentRequirementId={currentRequirementId}
+          currentStatus={currentStatus}
+          modalId={`logicModal-${currentStatusId}-${currentRequirementId}`}
+          openSignal={openSignal}
+          handleAddlogicModal={(logicData) => {
+            setFlow((prev) => ({
+              ...prev,
+              logics: [...prev?.logics, logicData],
+            }));
+          }}
+          input={input}
+          key={`modalLogic-${currentStatusId}-${currentRequirementId}`}
+        />
+      </>
 
       {ModalShowTips && <ModalShowTips />}
       <ModalCreateSourceData key={"modalSourceData"} />
