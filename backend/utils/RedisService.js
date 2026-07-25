@@ -17,9 +17,34 @@ const redisService = {
   // Menghapus cache berdasarkan pola (pattern)
   // Sangat berguna untuk invalidate semua cache milik satu Org
   deleteByPattern: async (pattern) => {
-    const stream = redis.scanStream({ match: pattern });
-    stream.on("data", (keys) => {
-      if (keys.length) redis.del(keys);
+    return new Promise((resolve, reject) => {
+      const stream = redis.scanStream({ match: pattern });
+      const pipeline = redis.pipeline();
+      let count = 0;
+
+      stream.on("data", (keys) => {
+        if (keys.length) {
+          keys.forEach((key) => {
+            pipeline.del(key);
+            count++;
+          });
+        }
+      });
+
+      stream.on("end", async () => {
+        try {
+          if (count > 0) {
+            await pipeline.exec();
+          }
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      });
+
+      stream.on("error", (err) => {
+        reject(err);
+      });
     });
   },
 };

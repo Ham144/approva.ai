@@ -36,7 +36,7 @@ router.post("/createFlow", async (req, res) => {
       .json({ message: "Form request setidaknya 1 input aktif" });
   }
 
-  if (!status || (status.length === 0 && !noApprovalNeeded)) {
+  if (!noApprovalNeeded && (!status || status.length === 0)) {
     return res
       .status(400)
       .json({ message: "Status setidaknya 1 status aktif" });
@@ -83,88 +83,90 @@ router.post("/createFlow", async (req, res) => {
     }
 
     const statuses = [];
-    // Buat status dengan requirements
-    for (let statusItem of status) {
-      const requirementIds = [];
+    if (!noApprovalNeeded) {
+      // Buat status dengan requirements
+      for (let statusItem of status || []) {
+        const requirementIds = [];
 
-      //cegah kalau authorized tidak ada pada salah satu status
-      if (statusItem?.authorized?.length == 0) {
-        return res.status(400).json({
-          message:
-            "Salah satu status anda buat tidak memiliki orang yang diizinkan untuk approve : " +
-            statusItem?.title,
-        });
-      }
-
-      //cegah tidak ada requirements
-      if (statusItem?.requirements?.length == 0) {
-        return res.status(400).json({
-          message:
-            "Salah satu status anda buat tidak memiliki requirement : " +
-            statusItem?.title,
-        });
-      }
-
-      //cegah authorized tidak terdaftar
-      const authorizedFound = await UserRefrensi.find({
-        _id: { $in: statusItem?.authorized },
-      });
-      if (authorizedFound?.length != statusItem?.authorized.length) {
-        return res.status(400).json({
-          message:
-            "Salah satu status anda buat memiliki akun yang tidak dikenal untuk approve : " +
-            statusItem?.title,
-        });
-      }
-
-      //buang _id nya menghidani 11000
-      for (let requirement of statusItem.requirements) {
-        const { _id, ...restReq } = requirement; // buang _id
-
-        if (requirement.tipe === "table") {
-          const hasSelectType =
-            requirement?.table?.keysType?.includes("select");
-
-          if (
-            hasSelectType &&
-            (!Array.isArray(requirement.table.sourceDataList) ||
-              requirement.table.sourceDataList.length === 0)
-          ) {
-            return res.status(400).json({
-              message:
-                "Di dalam table terdapat tipe select, tapi sourceDataList masih kosong: " +
-                (statusItem?.title || ""),
-            });
-          }
-        }
-
-        if (
-          (requirement.tipe == "select" ||
-            requirement.tipe == "multipleCheckbox") &&
-          !requirement.sourceData
-        ) {
+        //cegah kalau authorized tidak ada pada salah satu status
+        if (statusItem?.authorized?.length == 0 && !noApprovalNeeded) {
           return res.status(400).json({
             message:
-              "Source data harus diisi jika tipe select/multipleCheckbox" +
-              " " +
+              "Salah satu status anda buat tidak memiliki orang yang diizinkan untuk approve : " +
               statusItem?.title,
           });
         }
-        const newRequirement = await Input.create({
-          ...restReq,
-          org: req.user.org, // ✅ Tambahkan ini juga
-        });
-        requirementIds.push(newRequirement._id);
-      }
 
-      statuses.push({
-        uuid: statusItem?.uuid, // ✅ Tambahkan uuid dari frontend
-        title: statusItem?.title,
-        desc: statusItem?.desc,
-        authorized: statusItem.authorized || [],
-        completed: false,
-        requirements: requirementIds,
-      });
+        //cegah tidak ada requirements
+        if (statusItem?.requirements?.length == 0 && !noApprovalNeeded) {
+          return res.status(400).json({
+            message:
+              "Salah satu status anda buat tidak memiliki requirement : " +
+              statusItem?.title,
+          });
+        }
+
+        //cegah authorized tidak terdaftar
+        const authorizedFound = await UserRefrensi.find({
+          _id: { $in: statusItem?.authorized },
+        });
+        if (authorizedFound?.length != statusItem?.authorized.length) {
+          return res.status(400).json({
+            message:
+              "Salah satu status anda buat memiliki akun yang tidak dikenal untuk approve : " +
+              statusItem?.title,
+          });
+        }
+
+        //buang _id nya menghidani 11000
+        for (let requirement of statusItem.requirements || []) {
+          const { _id, ...restReq } = requirement; // buang _id
+
+          if (requirement.tipe === "table") {
+            const hasSelectType =
+              requirement?.table?.keysType?.includes("select");
+
+            if (
+              hasSelectType &&
+              (!Array.isArray(requirement.table.sourceDataList) ||
+                requirement.table.sourceDataList.length === 0)
+            ) {
+              return res.status(400).json({
+                message:
+                  "Di dalam table terdapat tipe select, tapi sourceDataList masih kosong: " +
+                  (statusItem?.title || ""),
+              });
+            }
+          }
+
+          if (
+            (requirement.tipe == "select" ||
+              requirement.tipe == "multipleCheckbox") &&
+            !requirement.sourceData
+          ) {
+            return res.status(400).json({
+              message:
+                "Source data harus diisi jika tipe select/multipleCheckbox" +
+                " " +
+                statusItem?.title,
+            });
+          }
+          const newRequirement = await Input.create({
+            ...restReq,
+            org: req.user.org, // ✅ Tambahkan ini juga
+          });
+          requirementIds.push(newRequirement._id);
+        }
+
+        statuses.push({
+          uuid: statusItem?.uuid, // ✅ Tambahkan uuid dari frontend
+          title: statusItem?.title,
+          desc: statusItem?.desc,
+          authorized: statusItem.authorized || [],
+          completed: false,
+          requirements: requirementIds,
+        });
+      }
     }
 
     if (
@@ -496,7 +498,7 @@ router.put("/update/:id", async (req, res) => {
     });
   }
 
-  if (!status || (status.length === 0 && !noApprovalNeeded)) {
+  if (!noApprovalNeeded && (!status || status.length === 0)) {
     return res.status(400).json({
       message: "Harus ada setidaknya 1 status dalam flow.",
     });
@@ -584,70 +586,72 @@ router.put("/update/:id", async (req, res) => {
     }
 
     const updatedStatuses = [];
-    for (const s of status) {
-      const authorizedIds = s.authorized;
+    if (!noApprovalNeeded) {
+      for (const s of status || []) {
+        const authorizedIds = s.authorized;
 
-      // Validasi user
-      const foundUsers = await UserRefrensi.find({
-        _id: { $in: authorizedIds },
-        org: req.user.org,
-      });
-      if (foundUsers.length !== authorizedIds.length) {
-        return res
-          .status(400)
-          .json({ message: `User tidak valid di status: ${s.title}` });
-      }
+        // Validasi user
+        const foundUsers = await UserRefrensi.find({
+          _id: { $in: authorizedIds },
+          org: req.user.org,
+        });
+        if (foundUsers.length !== authorizedIds.length) {
+          return res
+            .status(400)
+            .json({ message: `User tidak valid di status: ${s.title}` });
+        }
 
-      const requirementIds = [];
+        const requirementIds = [];
 
-      for (let requirement of s.requirements) {
-        const { _id, ...restReq } = requirement;
+        for (let requirement of s.requirements || []) {
+          const { _id, ...restReq } = requirement;
 
-        if (requirement.tipe === "table") {
-          const selectTipeIndex = requirement?.table.keysType.findIndex(
-            (key) => key === "select",
-          );
+          if (requirement.tipe === "table") {
+            const selectTipeIndex = requirement?.table.keysType.findIndex(
+              (key) => key === "select",
+            );
 
-          if (
-            selectTipeIndex !== -1 &&
-            requirement.table.sourceDataList.length === 0
-          ) {
-            return res.status(400).json({
-              message:
-                "Di dalam table terdapat tipe select, tapi sourceDataList masih kosong: " +
-                requirement?.title,
+            if (
+              selectTipeIndex !== -1 &&
+              requirement.table.sourceDataList.length === 0
+            ) {
+              return res.status(400).json({
+                message:
+                  "Di dalam table terdapat tipe select, tapi sourceDataList masih kosong: " +
+                  requirement?.title,
+              });
+            }
+          }
+
+          if (isValidObjectIdStrict(_id)) {
+            // ✅ Update input yang sudah ada
+            await Input.findByIdAndUpdate(
+              _id,
+              {
+                ...restReq,
+                updatedAt: new Date(),
+              },
+              { new: true },
+            );
+            requirementIds.push(_id);
+          } else {
+            const newRequirement = await Input.create({
+              ...restReq,
+              createdBy: req.user._id,
+              org: req.user.org,
             });
+            requirementIds.push(newRequirement._id);
           }
         }
 
-        if (isValidObjectIdStrict(_id)) {
-          // ✅ Update input yang sudah ada
-          await Input.findByIdAndUpdate(
-            _id,
-            {
-              ...restReq,
-              updatedAt: new Date(),
-            },
-            { new: true },
-          );
-          requirementIds.push(_id);
-        } else {
-          const newRequirement = await Input.create({
-            ...restReq,
-            createdBy: req.user._id,
-            org: req.user.org,
-          });
-          requirementIds.push(newRequirement._id);
-        }
+        updatedStatuses.push({
+          uuid: s.uuid,
+          title: s.title,
+          desc: s.desc,
+          authorized: authorizedIds,
+          requirements: requirementIds,
+        });
       }
-
-      updatedStatuses.push({
-        uuid: s.uuid,
-        title: s.title,
-        desc: s.desc,
-        authorized: authorizedIds,
-        requirements: requirementIds,
-      });
     }
 
     // Update flow

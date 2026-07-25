@@ -14,6 +14,7 @@ import flowCacheMiddleware from "../middlewares/redise-middleware.js";
 import redisService from "../utils/RedisService.js";
 import Org from "../models/Organization.model.js";
 import generateTokenJWT from "../utils/generateTokenJWT.js";
+import FlexSourceData from "../models/FlexSourceData.model.js";
 
 const router = Router();
 
@@ -37,6 +38,49 @@ export async function checkDuplidateGlobalIndex(globalIndex) {
     return false;
   }
 }
+
+const getSourceDataMap = async (flowTemplate) => {
+  const sourceDataIds = new Set();
+  
+  for (const req of flowTemplate.request || []) {
+    if (req.tipe === "select" && req.sourceData) {
+      sourceDataIds.add(req.sourceData.toString());
+    } else if (req.tipe === "table" && Array.isArray(req.table?.sourceDataList)) {
+      for (const sdId of req.table.sourceDataList) {
+        if (sdId) sourceDataIds.add(sdId.toString());
+      }
+    }
+  }
+  
+  for (const st of flowTemplate.status || []) {
+    for (const req of st.requirements || []) {
+      if (req.tipe === "select" && req.sourceData) {
+        sourceDataIds.add(req.sourceData.toString());
+      } else if (req.tipe === "table" && Array.isArray(req.table?.sourceDataList)) {
+        for (const sdId of req.table.sourceDataList) {
+          if (sdId) sourceDataIds.add(sdId.toString());
+        }
+      }
+    }
+  }
+
+  const map = {};
+  if (sourceDataIds.size > 0) {
+    const list = await FlexSourceData.find({ _id: { $in: Array.from(sourceDataIds) } }).lean();
+    for (const sd of list) {
+      const keyToValue = {};
+      if (Array.isArray(sd.keys)) {
+        for (const item of sd.keys) {
+          if (item && item.key !== undefined) {
+            keyToValue[item.key] = item.value;
+          }
+        }
+      }
+      map[sd._id.toString()] = keyToValue;
+    }
+  }
+  return map;
+};
 
 //flow instance untuk start flow baru dengan template yang dipilih
 // Mendukung stranger mode: jika template.isStrangerMode === true, tidak perlu login
@@ -1392,6 +1436,8 @@ router.post("/download-detail", async (req, res) => {
       return res.status(404).json({ message: "Flow template not found" });
     }
 
+    const sourceDataMap = await getSourceDataMap(flowTemplate);
+
     // Siapkan workbook
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Detail dalam satu row");
@@ -1546,6 +1592,13 @@ router.post("/download-detail", async (req, res) => {
 
         // Case: row is object
         if (row && typeof row === "object") {
+          if (Array.isArray(row.values)) {
+            const obj = {};
+            cols.forEach((k, i) => {
+              obj[k] = row.values[i] !== undefined ? row.values[i] : "";
+            });
+            return obj;
+          }
           // If object already contains the expected keys, pick those
           const hasAnyKey = cols.some((k) =>
             Object.prototype.hasOwnProperty.call(row, k),
@@ -1624,6 +1677,7 @@ router.post("/download-detail", async (req, res) => {
       tableData,
       keys = [],
       keysType = [],
+      sourceDataList = [],
     ) => {
       if (!Array.isArray(tableData)) return tableData;
       // normalize to objects with expected keys
@@ -1633,7 +1687,16 @@ router.post("/download-detail", async (req, res) => {
         const filtered = {};
         keys.forEach((key, idx) => {
           const kt = Array.isArray(keysType) ? keysType[idx] : undefined;
-          const value = row[key];
+          const sdId = Array.isArray(sourceDataList) ? sourceDataList[idx] : undefined;
+          let value = row[key];
+
+          if (kt === "select" && sdId) {
+            const sdMap = sourceDataMap[sdId.toString()];
+            if (sdMap && sdMap[value] !== undefined) {
+              value = sdMap[value];
+            }
+          }
+
           if (kt === "image") {
             // show url if string and looks like url, else empty
             if (typeof value === "string" && value.startsWith("http"))
@@ -1652,8 +1715,16 @@ router.post("/download-detail", async (req, res) => {
     };
 
     // formatValue upgraded
-    const formatValue = (tipe, val, keys = [], keysType = []) => {
+    const formatValue = (tipe, val, keys = [], keysType = [], sourceDataId = null, sourceDataList = []) => {
       if (val === undefined || val === null) return "";
+
+      if (tipe === "select" && sourceDataId) {
+        const sdMap = sourceDataMap[sourceDataId.toString()];
+        if (sdMap && sdMap[val] !== undefined) {
+          return sdMap[val];
+        }
+      }
+
       if (tipe === "date") {
         try {
           return new Date(val).toLocaleDateString("id-ID");
@@ -1663,7 +1734,7 @@ router.post("/download-detail", async (req, res) => {
       }
       if (tipe === "table") {
         // Normalize + filter image columns
-        const filtered = filterImageColumnsFromTable(val, keys, keysType);
+        const filtered = filterImageColumnsFromTable(val, keys, keysType, sourceDataList);
         // If empty array or all rows are empty objects -> return empty string
         if (!Array.isArray(filtered) || filtered.length === 0) return "";
 
@@ -1695,7 +1766,7 @@ router.post("/download-detail", async (req, res) => {
         meta_instanceTitle: inst.instanceTitle,
         meta_globalIndex: inst.globalIndex,
         meta_requestedBy: inst.requestedBy?.username || "",
-        meta_createdAt: new Date(inst.createdAt).toLocaleDateString("id-ID"),
+        meta_createdAt: new Date(inst.createdAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }),
         meta_overallStatus: inst.overallStatus,
         meta_currentStatusIndex:
           inst.currentStatusIndex + "/" + inst.statuses.length,
@@ -1713,6 +1784,8 @@ router.post("/download-detail", async (req, res) => {
           rawVal,
           reqInput.table?.keys,
           reqInput.table?.keysType,
+          reqInput.sourceData,
+          reqInput.table?.sourceDataList,
         );
         // optional: tampilkan tipe hanya kalau bukan table, atau hapus sama sekali kalau ga mau debug
         row[tKey] = reqInput.tipe === "table" ? "" : reqInput.tipe;
@@ -1745,6 +1818,8 @@ router.post("/download-detail", async (req, res) => {
             rawVal,
             req.table?.keys,
             req.table?.keysType,
+            req.sourceData,
+            req.table?.sourceDataList,
           );
           row[rTypeKey] = req.tipe === "table" ? "" : req.tipe;
 
@@ -1808,6 +1883,8 @@ router.post("/download-detail-table-column", async (req, res) => {
       return res.status(404).json({ message: "Flow template not found" });
     }
 
+    const sourceDataMap = await getSourceDataMap(flowTemplate);
+
     // ---------- Helpers ----------
     const idToStr = (id) => (typeof id === "string" ? id : String(id));
 
@@ -1825,6 +1902,13 @@ router.post("/download-detail-table-column", async (req, res) => {
         }
 
         if (row && typeof row === "object") {
+          if (Array.isArray(row.values)) {
+            const obj = {};
+            cols.forEach((k, i) => {
+              obj[k] = row.values[i] !== undefined ? row.values[i] : "";
+            });
+            return obj;
+          }
           const rowKeys = Object.keys(row);
           const hasAnyKey = cols.some((k) =>
             Object.prototype.hasOwnProperty.call(row, k),
@@ -1885,6 +1969,7 @@ router.post("/download-detail-table-column", async (req, res) => {
       tableData,
       keys = [],
       keysType = [],
+      sourceDataList = [],
     ) => {
       if (!Array.isArray(tableData)) return [];
       const normalized = normalizeTableRows(tableData, keys);
@@ -1892,7 +1977,16 @@ router.post("/download-detail-table-column", async (req, res) => {
         const filtered = {};
         keys.forEach((key, idx) => {
           const kt = Array.isArray(keysType) ? keysType[idx] : undefined;
-          const value = row[key];
+          const sdId = Array.isArray(sourceDataList) ? sourceDataList[idx] : undefined;
+          let value = row[key];
+
+          if (kt === "select" && sdId) {
+            const sdMap = sourceDataMap[sdId.toString()];
+            if (sdMap && sdMap[value] !== undefined) {
+              value = sdMap[value];
+            }
+          }
+
           if (kt === "image") {
             if (typeof value === "string" && value.startsWith("http"))
               filtered[key] = value;
@@ -1908,8 +2002,16 @@ router.post("/download-detail-table-column", async (req, res) => {
       });
     };
 
-    const formatValue = (tipe, val, keys = [], keysType = []) => {
+    const formatValue = (tipe, val, keys = [], keysType = [], sourceDataId = null, sourceDataList = []) => {
       if (val === undefined || val === null) return "";
+
+      if (tipe === "select" && sourceDataId) {
+        const sdMap = sourceDataMap[sourceDataId.toString()];
+        if (sdMap && sdMap[val] !== undefined) {
+          return sdMap[val];
+        }
+      }
+
       if (tipe === "date") {
         try {
           return new Date(val).toLocaleDateString("id-ID");
@@ -1918,7 +2020,7 @@ router.post("/download-detail-table-column", async (req, res) => {
         }
       }
       if (tipe === "table") {
-        const filtered = filterImageColumnsFromTable(val, keys, keysType);
+        const filtered = filterImageColumnsFromTable(val, keys, keysType, sourceDataList);
         if (!Array.isArray(filtered) || filtered.length === 0) return [];
         return filtered; // for table: return array-of-rows (we'll handle it outside)
       }
@@ -1963,6 +2065,9 @@ router.post("/download-detail-table-column", async (req, res) => {
           keysType: Array.isArray(reqInput.table?.keysType)
             ? reqInput.table.keysType
             : [],
+          sourceDataList: Array.isArray(reqInput.table?.sourceDataList)
+            ? reqInput.table.sourceDataList
+            : [],
           source: "request",
         });
       } else {
@@ -2004,6 +2109,9 @@ router.post("/download-detail-table-column", async (req, res) => {
             keys: Array.isArray(req.table?.keys) ? req.table.keys : [],
             keysType: Array.isArray(req.table?.keysType)
               ? req.table.keysType
+              : [],
+            sourceDataList: Array.isArray(req.table?.sourceDataList)
+              ? req.table.sourceDataList
               : [],
             source: `status`,
             statusIndex: i,
@@ -2080,7 +2188,7 @@ router.post("/download-detail-table-column", async (req, res) => {
         meta_instanceTitle: inst.instanceTitle,
         meta_globalIndex: inst.globalIndex,
         meta_requestedBy: inst.requestedBy?.username || "",
-        meta_createdAt: new Date(inst.createdAt).toLocaleDateString("id-ID"),
+        meta_createdAt: new Date(inst.createdAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }),
         meta_overallStatus: inst.overallStatus,
         meta_currentStatusIndex:
           inst.currentStatusIndex + "/" + inst.statuses.length,
@@ -2097,6 +2205,8 @@ router.post("/download-detail-table-column", async (req, res) => {
           rawVal,
           reqInput.table?.keys,
           reqInput.table?.keysType,
+          reqInput.sourceData,
+          reqInput.table?.sourceDataList,
         );
       }
 
@@ -2125,6 +2235,8 @@ router.post("/download-detail-table-column", async (req, res) => {
             rawVal,
             req.table?.keys,
             req.table?.keysType,
+            req.sourceData,
+            req.table?.sourceDataList,
           );
         }
       }
@@ -2141,6 +2253,7 @@ router.post("/download-detail-table-column", async (req, res) => {
           rawVal || [],
           t.keys,
           t.keysType,
+          t.sourceDataList,
         );
         return rows;
       });

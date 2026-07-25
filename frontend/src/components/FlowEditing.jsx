@@ -459,6 +459,7 @@ export default function FlowEditing() {
                   setFlow({
                     ...flow,
                     noApprovalNeeded: e.target.checked,
+                    status: []
                   })
                 }
               />

@@ -53,7 +53,7 @@ const generateExcelFile = async (month, filename) => {
     data.forEach((instance, index) => {
       const currentStatus = instance.statuses[instance.currentStatusIndex];
       const completedSteps = instance.statuses.filter(
-        (s) => s.completed
+        (s) => s.completed,
       ).length;
       const totalSteps = instance.statuses.length;
 
@@ -68,8 +68,12 @@ const generateExcelFile = async (month, filename) => {
           "N/A",
         overallStatus: instance.overallStatus,
         currentStatus: currentStatus?.statusTitle || "N/A",
-        createdAt: instance.createdAt.toLocaleDateString("id-ID"),
-        updatedAt: instance.updatedAt.toLocaleDateString("id-ID"),
+        createdAt: instance.createdAt.toLocaleString("id-ID", {
+          timeZone: "Asia/Jakarta",
+        }),
+        updatedAt: instance.updatedAt.toLocaleString("id-ID", {
+          timeZone: "Asia/Jakarta",
+        }),
         completedSteps: completedSteps,
         totalSteps: totalSteps,
       });
@@ -122,7 +126,9 @@ const generateExcelFile = async (month, filename) => {
             status.completedBy?.displayName ||
             "N/A",
           completedAt: status.completedAt
-            ? status.completedAt.toLocaleDateString("id-ID")
+            ? status.completedAt.toLocaleString("id-ID", {
+                timeZone: "Asia/Jakarta",
+              })
             : "N/A",
           verdict: status.verdict,
           rejectedReason: status.rejectedReason || "N/A",
@@ -154,18 +160,18 @@ const generateExcelFile = async (month, filename) => {
     };
 
     // Hitung summary
-    const totalInstances = data.length;
+    const totatalInstances = data.length;
     const completedInstances = data.filter(
-      (i) => i.overallStatus === "completed"
+      (i) => i.overallStatus === "completed",
     ).length;
     const rejectedInstances = data.filter(
-      (i) => i.overallStatus === "rejected"
+      (i) => i.overallStatus === "rejected",
     ).length;
     const inProgressInstances = data.filter(
-      (i) => i.overallStatus === "in-progress"
+      (i) => i.overallStatus === "in-progress",
     ).length;
     const draftInstances = data.filter(
-      (i) => i.overallStatus === "draft"
+      (i) => i.overallStatus === "draft",
     ).length;
 
     summaryWorksheet.addRow({
