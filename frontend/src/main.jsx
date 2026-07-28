@@ -30,6 +30,7 @@ import DepartmentManagement from "./pages/DepartmentManagement";
 import LibraryManagement from "./pages/LibraryManagement";
 import DownloadProcessPage from "./pages/DownloadProcessPage";
 import DepartmentStatistics from "./pages/DepartmentStatistics";
+import LandingPage from "./pages/LandingPage";
 // import RegisterPage from "./pages/RegisterPage";
 
 const router = createBrowserRouter(
@@ -104,7 +105,8 @@ const router = createBrowserRouter(
         <Route path="/all_account" element={<AllAccounts />} />
       </Route>
       <Route index={true} path="/login" element={<Login />} />
-      {/* <Route index={true} path="/register" element={<RegisterPage />} /> */}
+      <Route path="/landing" element={<LandingPage />} />
+      <Route index={true} path="/register" element={<RegisterPage />} />
 
       <Route path="*" element={<NotFound />} />
     </Route>,

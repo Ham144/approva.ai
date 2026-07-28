@@ -1,22 +1,18 @@
-import { useEffect, useState } from "react";
+import {  useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { loginApp, loginLdap } from "@/api/authApi";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
 import { useUserInfo } from "@/store";
-import { APP_NAME, siteKeyCloudflare } from "@/api/constant";
-import { LogIn, Search } from "lucide-react";
+import { APP_DESC, APP_NAME } from "@/api/constant";
 import OrgApi from "@/api/orgApi";
-import TurnstileCaptcha from "@/components/TurnstileCaptcha";
+// import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 
 export default function Login({ className, ...props }) {
   const [username, setUsername] = useState(``);
   const [password, setPassword] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
-  const [selectedOrg, setSelectedOrg] = useState({
-    organizationName: "CATUR SUKSES INTERNASIONAL",
-    _id: "687f046738e38024ff0751fc",
-  });
+  const [selectedOrg, setSelectedOrg] = useState();
   const [search, setSearch] = useState("*");
   const [authMethod, setAuthMethod] = useState("ldap");
   const [captchaToken, setCaptchaToken] = useState("");
@@ -132,37 +128,94 @@ export default function Login({ className, ...props }) {
   }
 
   return (
-    <div
-      className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4 overflow-y-auto max-md:py-20"
-      {...props}
-    >
-      <div className="w-full max-w-4xl rounded-xl overflow-hidden shadow-2xl bg-white dark:bg-gray-800">
-        <div className="grid grid-cols-1 md:grid-cols-2">
-          {/* Form Section */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              loginGate();
-            }}
-            className="p-8 md:p-12 space-y-6"
-          >
-            <div className="flex flex-col items-center text-center mb-6">
-              <h1 className="text-4xl font-extrabold text-blue-600 dark:text-blue-400 mb-2">
-                {APP_NAME}
-              </h1>
-              <p className="text-balance text-lg text-gray-700 dark:text-gray-300">
-                Selamat datang! Silakan masuk untuk melanjutkan.
-              </p>
-              <p className="mt-3 px-4 py-1 text-sm bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 rounded-full font-medium">
-                Gunakan Kredensial LDAP CSI Anda atau username:password yang
-                diberikan IT
+  <div className="flex min-h-screen items-center justify-center p-4 overflow-y-auto bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 relative max-md:py-20">
+    {/* Animated Background Elements */}
+    <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+      <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
+    </div>
+
+    <div className="w-full max-w-5xl relative z-10">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-0 backdrop-blur-sm bg-white/10 rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+        
+        {/* Left Section - Brand & Motivation */}
+        <div className="lg:col-span-2 bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-800 p-10 flex flex-col justify-between min-h-[500px] relative overflow-hidden">
+          {/* Decorative Orbs */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full filter blur-2xl"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-400/20 rounded-full filter blur-2xl"></div>
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-14 h-14 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center shadow-xl border border-white/30">
+                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white leading-tight">{APP_NAME}</h1>
+                <p className="text-cyan-200 text-sm font-medium tracking-wide">{APP_DESC}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 mt-8">
+              <div className="flex items-center gap-3 text-white/90">
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="text-sm font-light">Flow approval dalam 3 klik</span>
+              </div>
+              <div className="flex items-center gap-3 text-white/90">
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="text-sm font-light">Routing logic cerdas & otomatis</span>
+              </div>
+              <div className="flex items-center gap-3 text-white/90">
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="text-sm font-light">Integrasi LDAP & Active Directory</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative z-10 mt-8">
+            <p className="text-white/60 text-xs tracking-wider uppercase font-semibold">
+              Powered by Enterprise Workflow Engine v3.0
+            </p>
+            <div className="flex gap-1 mt-2">
+              {[1,2,3,4,5].map((i) => (
+                <div key={i} className="w-1.5 h-1.5 bg-white/30 rounded-full"></div>
+              ))}
+              <div className="w-12 h-1.5 bg-cyan-400 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Section - Login Form */}
+        <div className="lg:col-span-3 bg-white dark:bg-gray-900 p-10 backdrop-blur-sm bg-white/95 dark:bg-gray-900/95">
+          <div className="max-w-sm mx-auto space-y-8">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Selamat Datang Kembali
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Masuk untuk mengelola approval workflow
               </p>
             </div>
 
-            <div className="max-w-md mx-auto p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md space-y-6">
-              {/* Authentication Method Selection */}
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={(e) => { e.preventDefault(); loginGate(); }} className="space-y-6">
+              {/* Auth Method Toggle - Redesign with Icons */}
+              <div className="grid grid-cols-2 gap-3 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
                 <button
+                  type="button"
                   onClick={() => {
                     if (import.meta.env.VITE_DEMO) {
                       setAuthMethod("app");
@@ -173,179 +226,139 @@ export default function Login({ className, ...props }) {
                       setAuthMethod("app");
                     }
                   }}
-                  type="button"
-                  className={`btn rounded-lg px-4 py-2 transition-all duration-200 ${
-                    authMethod === "app"
-                      ? "bg-blue-600 text-white shadow-lg transform -translate-y-0.5"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
-                  }`}
+                  className={`
+                    flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-medium text-sm transition-all duration-300
+                    ${authMethod === "app"
+                      ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-md transform scale-95"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    }
+                  `}
                 >
-                  App Authentication
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  App
                 </button>
                 <button
-                  onClick={() => setAuthMethod("ldap")}
                   type="button"
-                  className={`btn rounded-lg px-4 py-2 transition-all duration-200 ${
-                    authMethod === "ldap"
-                      ? "bg-blue-600 text-white shadow-lg transform -translate-y-0.5"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
-                  }`}
+                  onClick={() => setAuthMethod("ldap")}
+                  className={`
+                    flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-medium text-sm transition-all duration-300
+                    ${authMethod === "ldap"
+                      ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-md transform scale-95"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    }
+                  `}
                 >
-                  LDAP Authentication
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" />
+                  </svg>
+                  LDAP
                 </button>
               </div>
 
-              {/* Username Input */}
-              <div className="space-y-2">
-                <label
-                  htmlFor="username"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Username
-                </label>
-                <input
-                  id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  type="text"
-                  placeholder="ham"
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm"
-                  disabled={isPending || isVerifying}
-                />
-              </div>
-
-              {/* Password Input */}
-              <div className="space-y-2">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  placeholder="*****"
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm"
-                  disabled={isPending || isVerifying || loadingAppLogin}
-                />
-              </div>
-
-              {/* Organization Search */}
-              <div className="space-y-3">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Search Organization
-                </label>
-                <div className="relative">
+              {/* Input Fields with Floating Labels */}
+              <div className="space-y-5">
+                <div className="relative group">
                   <input
+                    id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm pr-10"
-                    placeholder="Example: PT Inovasi Teknologi"
+                    placeholder=" "
+                    required
+                    className="w-full px-4 pt-5 pb-2 border-0 border-b-2 border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-white placeholder-transparent focus:outline-none focus:border-blue-500 transition-all duration-300 peer"
+                    disabled={isPending || isVerifying}
                   />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <Search className="text-gray-400" />
+                  <label
+                    htmlFor="username"
+                    className="absolute left-4 top-3 text-sm text-gray-500 dark:text-gray-400 transition-all duration-300 peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-focus:top-0 peer-focus:text-xs peer-focus:text-blue-500 peer-placeholder-shown:text-gray-400"
+                  >
+                    Username atau Email
+                  </label>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
                   </div>
                 </div>
 
-                {/* Search Results */}
-                {searchResult?.length > 0 ? (
-                  <ul className="border border-gray-200 dark:border-gray-700 rounded-lg mt-2 overflow-y-auto max-h-40 divide-y divide-gray-200 dark:divide-gray-700 shadow-inner">
-                    {searchResult.map((org) => (
-                      <li
-                        key={org._id}
-                        onClick={() => {
-                          setSelectedOrg(org);
-                          setSearch(org.organizationName);
-                        }}
-                        className={`p-3 hover:bg-blue-50 dark:hover:bg-blue-900 cursor-pointer transition-all duration-150 ${
-                          selectedOrg?._id === org._id
-                            ? "bg-blue-50 dark:bg-blue-800"
-                            : ""
-                        }`}
-                      >
-                        <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                          {org.organizationName}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          ID: {org._id}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  search && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 text-center">
-                      Organization not found. Try another name or register a new
-                      one.
-                    </p>
-                  )
-                )}
+                <div className="relative group">
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    placeholder=" "
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="w-full px-4 pt-5 pb-2 border-0 border-b-2 border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-white placeholder-transparent focus:outline-none focus:border-blue-500 transition-all duration-300 peer"
+                    disabled={isPending || isVerifying || loadingAppLogin}
+                  />
+                  <label
+                    htmlFor="password"
+                    className="absolute left-4 top-3 text-sm text-gray-500 dark:text-gray-400 transition-all duration-300 peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-focus:top-0 peer-focus:text-xs peer-focus:text-blue-500 peer-placeholder-shown:text-gray-400"
+                  >
+                    Password
+                  </label>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <div className="w-full justify-center flex">
-              <TurnstileCaptcha
-                siteKey={siteKeyCloudflare} // atau bisa hardcode dulu
-                onVerify={(token) => setCaptchaToken(token)}
-              />
-            </div>
-
-            <button
-              type="submit"
-              className={`
-                  w-full py-3 px-4 rounded-lg text-white font-bold text-lg
-                  bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600
-                  shadow-lg transition-all duration-300 ease-in-out flex items-center justify-center gap-2
-                  ${
-                    isPending || isVerifying || loadingAppLogin
-                      ? "opacity-70 cursor-not-allowed"
-                      : ""
-                  }
+              {/* Submit Button with Animated Gradient */}
+              <button
+                type="submit"
+                className={`
+                  w-full py-3.5 rounded-xl font-bold text-white text-base
+                  bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500
+                  hover:from-blue-700 hover:via-blue-600 hover:to-cyan-600
+                  shadow-lg hover:shadow-blue-500/30
+                  transform transition-all duration-300 hover:scale-[1.02] active:scale-95
+                  flex items-center justify-center gap-3
+                  ${(isPending || isVerifying || loadingAppLogin) ? "opacity-70 cursor-not-allowed hover:scale-100" : ""}
                 `}
-              disabled={isPending || isVerifying || loadingAppLogin}
-            >
-              {isPending || isVerifying || loadingAppLogin ? (
-                <>
-                  <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
-                  {isVerifying ? "Memverifikasi..." : "Memproses..."}
-                </>
-              ) : (
-                <>
-                  <LogIn className="w-5 h-5" /> Login
-                </>
-              )}
-            </button>
-
-            {/* <div className="text-right">
-              <a
-                href="/register"
-                className="text-sm text-blue-600 dark:text-blue-400 underline-offset-2 hover:underline transition-colors duration-200"
+                disabled={isPending || isVerifying || loadingAppLogin}
               >
-                Registrasi (Validasi Akun baru)
-              </a>
-            </div> */}
-          </form>
+                {isPending || isVerifying || loadingAppLogin ? (
+                  <>
+                    <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
+                    <span>{isVerifying ? "Memverifikasi..." : "Memproses..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Masuk ke Dashboard</span>
+                    <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </>
+                )}
+              </button>
 
-          {/* Image Section */}
-          <div className="relative hidden md:flex items-center justify-center bg-blue-50 dark:bg-gray-900 p-6">
-            {!(isPending || isVerifying) ? (
-              <img
-                src="/csi-logo.png" // Pastikan path ini benar
-                alt="CSI Logo"
-                className="max-w-[80%] max-h-[80%] object-contain" // Lebih responsif dan terpusat
-              />
-            ) : (
-              <span className="animate-spin h-16 w-16 border-4 border-blue-500 border-t-transparent rounded-full"></span>
-            )}
+              {/* Demo Credentials & Helper */}
+              {import.meta.env.VITE_DEMO && (
+                <div className="text-center">
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    🔑 Demo: admin / Supertenant144
+                  </p>
+                </div>
+              )}
+            </form>
+
+            {/* Footer */}
+            <div className="text-center pt-4 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                &copy; {new Date().getFullYear()} {APP_NAME}. Enterprise Approval System.
+              </p>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  );
+
+    
+  </div>
+);
 }

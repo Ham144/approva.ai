@@ -279,7 +279,6 @@ router.post(
     });
 
     const bindDn = `${OrgDB.AD_DOMAIN}\\${username}`;
-    // const baseDN = "dc=catur,dc=co,dc=id";
     const baseDN = OrgDB.AD_BASE_DN;
 
     try {

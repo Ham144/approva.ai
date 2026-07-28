@@ -264,7 +264,7 @@ export default function RegisterPage() {
                         })
                       }
                       className="input input-bordered w-full mb-3"
-                      placeholder="Contoh: Catur Sukses Internasional"
+                      placeholder="Example: Hexadim llc"
                     />
 
                     <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1">
@@ -333,8 +333,8 @@ export default function RegisterPage() {
           <div className="relative hidden md:flex items-center justify-center bg-blue-50 dark:bg-gray-900 p-6">
             {!isVerifying ? (
               <img
-                src="/csi-logo.png" // Pastikan path ini benar
-                alt="CSI Logo"
+                src="/logo.png" // Pastikan path ini benar
+                alt="Approva Logo"
                 className="max-w-[80%] max-h-[80%] object-contain" // Lebih responsif dan terpusat
               />
             ) : (
