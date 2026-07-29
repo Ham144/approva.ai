@@ -10,9 +10,9 @@ import {
   ResponsiveContainer,
   Cell
 } from "recharts";
-import { Calendar, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, ChevronDown, ChevronLeft, ChevronRight, Activity, TrendingUp, Clock, FileText, XCircle } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
-// Daftar bulan dalam setahun
 export const months = [
   { value: 0, label: "Januari" },
   { value: 1, label: "Februari" },
@@ -30,27 +30,23 @@ export const months = [
 
 const MyStats = () => {
   const { userInfo } = useUserInfo();
-;
-const currentYear = new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth();
 
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Format date range untuk display
   const getDateRangeText = () => {
     const monthName = months.find((m) => m.value === selectedMonth)?.label;
     return `${monthName} ${selectedYear}`;
   };
 
-  // Get my stats dengan filter bulan
   const { data: myStats, isLoading } = useQuery({
     queryKey: ["myStats", selectedMonth, selectedYear, userInfo],
     queryFn: async () => {
-      // Buat date range untuk bulan yang dipilih
       const startDate = new Date(selectedYear, selectedMonth, 1);
-      const endDate = new Date(selectedYear, selectedMonth + 1, 0); // Hari terakhir bulan
+      const endDate = new Date(selectedYear, selectedMonth + 1, 0); 
 
       const filter = {
         startDate: startDate.toISOString().split("T")[0],
@@ -62,13 +58,11 @@ const currentYear = new Date().getFullYear();
     enabled: !!userInfo,
   });
 
-  // Handle month change
   const handleMonthSelect = (monthValue) => {
     setSelectedMonth(monthValue);
     setIsDropdownOpen(false);
   };
 
-  // Handle previous month
   const handlePrevMonth = () => {
     if (selectedMonth === 0) {
       setSelectedMonth(11);
@@ -78,7 +72,6 @@ const currentYear = new Date().getFullYear();
     }
   };
 
-  // Handle next month
   const handleNextMonth = () => {
     if (selectedMonth === 11) {
       setSelectedMonth(0);
@@ -88,21 +81,21 @@ const currentYear = new Date().getFullYear();
     }
   };
 
-  // Loading state
   if (isLoading) {
     return (
-      <div className="mt-8 bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-        <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded w-48 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-64 mb-6"></div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="h-[300px] bg-gray-100 rounded"></div>
+      <div className="mt-8 bg-slate-900/60 backdrop-blur-2xl rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] p-8 border border-white/10 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent pointer-events-none" />
+        <div className="animate-pulse relative z-10">
+          <div className="h-6 bg-slate-800 rounded w-48 mb-4 shadow-inner" />
+          <div className="h-4 bg-slate-800 rounded w-64 mb-8 shadow-inner" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="h-[320px] bg-slate-800/50 rounded-2xl border border-white/5" />
             <div className="space-y-4">
-              <div className="h-20 bg-gray-100 rounded"></div>
-              <div className="h-20 bg-gray-100 rounded"></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="h-20 bg-gray-100 rounded"></div>
-                <div className="h-20 bg-gray-100 rounded"></div>
+              <div className="h-24 bg-slate-800/50 rounded-2xl border border-white/5" />
+              <div className="h-24 bg-slate-800/50 rounded-2xl border border-white/5" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="h-24 bg-slate-800/50 rounded-2xl border border-white/5" />
+                <div className="h-24 bg-slate-800/50 rounded-2xl border border-white/5" />
               </div>
             </div>
           </div>
@@ -111,209 +104,266 @@ const currentYear = new Date().getFullYear();
     );
   }
 
-  // No data state
   if (!myStats) {
     return (
-      <div className="mt-8 bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-        <p className="text-center text-gray-500">Tidak ada data statistik</p>
+      <div className="mt-8 bg-slate-900/60 backdrop-blur-2xl rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] p-8 border border-white/10 text-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-800/50 rounded-2xl text-slate-500 mb-4">
+          <Activity className="w-8 h-8" />
+        </div>
+        <p className="text-slate-400 font-medium">Tidak ada data statistik tersedia saat ini.</p>
       </div>
     );
   }
 
   return (
-    <div className="pb-12">
-      {/* Pie Chart Section */}
-      <div className="mt-8 bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-        {/* Header with Title and Month Filter */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-          <div className="flex flex-col">
-            <h2 className="text-xl font-semibold text-gray-800">
-              Statistik Tugas - {myStats.name || "User"}
+    <div className="pb-4">
+      {/* Dark Glass Main Container */}
+      <div className="mt-8 bg-slate-900/60 backdrop-blur-2xl rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] p-6 sm:p-8 border border-white/10 relative overflow-hidden">
+        {/* Subtle inner top glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+        
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8 relative z-20">
+          <div className="flex flex-col ">
+            <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+              Statistik Kinerja Anda
             </h2>
             {myStats.tanggalAktifitasTerakhir && (
-              <p className="text-sm text-gray-500">
-                Terakhir aktif: {myStats.tanggalAktifitasTerakhir}{" "}
-                {myStats.jamAktifitasTerakhir || ""}
+              <p className="text-sm text-slate-400 mt-2 font-medium flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                Terakhir sinkronisasi: {myStats.tanggalAktifitasTerakhir} {myStats.jamAktifitasTerakhir || ""}
               </p>
             )}
           </div>
 
-          {/* Month Filter */}
-          <div className="flex items-center gap-2">
-            {/* Previous Month Button */}
+          {/* Sleek Dark Month Filter */}
+          <div className="flex items-center gap-2 bg-slate-950/50 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md ">
             <button
               onClick={handlePrevMonth}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Bulan sebelumnya"
+              className="p-2.5 hover:bg-white/5 rounded-xl transition-all text-slate-400 hover:text-white group"
             >
-              <ChevronLeft className="w-4 h-4 text-gray-600" />
+              <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             </button>
 
-            {/* Month Dropdown */}
-            <div className="relative">
+            <div className="relative ">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200 text-sm min-w-[160px] justify-between"
+                className="flex items-center gap-3 px-5 py-2.5 bg-cyan-500/10 text-cyan-400 rounded-xl hover:bg-cyan-500/20 hover:text-cyan-300 transition-all border border-cyan-500/20 text-sm min-w-[170px] justify-between shadow-[0_0_15px_rgba(6,182,212,0.15)] "
               >
-                <span>📅</span>
-                <span className="font-medium">{getDateRangeText()}</span>
-                <ChevronDown className="w-4 h-4" />
+                <Calendar className="w-4 h-4 opacity-80" />
+                <span className="font-bold tracking-wide">{getDateRangeText()}</span>
+                <ChevronDown className="w-4 h-4 opacity-80" />
               </button>
 
-              {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 p-2 z-50">
-                  <div className="grid grid-cols-2 gap-1">
-                    {months.map((month) => (
-                      <button
-                        key={month.value}
-                        onClick={() => handleMonthSelect(month.value)}
-                        className={`px-2 py-1.5 text-xs rounded hover:bg-blue-50 transition-colors ${
-                          selectedMonth === month.value
-                            ? "bg-blue-100 text-blue-600 font-medium"
-                            : "text-gray-700"
-                        }`}
-                      >
-                        {month.label}
-                      </button>
-                    ))}
-                  </div>
+              <AnimatePresence>
+                {isDropdownOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 mt-3 w-56 bg-slate-900 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-slate-700/80 p-3 z-50 backdrop-blur-xl"
+                  >
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {months.map((month) => (
+                        <button
+                          key={month.value}
+                          onClick={() => handleMonthSelect(month.value)}
+                          className={`px-3 py-2 text-xs font-bold rounded-xl transition-all ${
+                            selectedMonth === month.value
+                              ? "bg-cyan-500 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.4)]"
+                              : "text-slate-400 hover:bg-white/10 hover:text-white"
+                          }`}
+                        >
+                          {month.label}
+                        </button>
+                      ))}
+                    </div>
 
-                  {/* Year selector */}
-                  <div className="mt-2 pt-2 border-t border-gray-100">
-                    <input
-                      type="number"
-                      value={selectedYear}
-                      onChange={(e) =>
-                        setSelectedYear(parseInt(e.target.value) || currentYear)
-                      }
-                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                      min="2020"
-                      max={currentYear + 5}
-                    />
-                  </div>
-                </div>
-              )}
+                    <div className="mt-3 pt-3 border-t border-slate-800">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Tahun</label>
+                      <input
+                        type="number"
+                        value={selectedYear}
+                        onChange={(e) =>
+                          setSelectedYear(parseInt(e.target.value) || currentYear)
+                        }
+                        className="w-full px-3 py-2 text-sm bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-400 text-white font-bold transition-all outline-none"
+                        min="2020"
+                        max={currentYear + 5}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            {/* Next Month Button */}
             <button
               onClick={handleNextMonth}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Bulan berikutnya"
+              className="p-2.5 hover:bg-white/5 rounded-xl transition-all text-slate-400 hover:text-white group disabled:opacity-30 disabled:hover:bg-transparent"
               disabled={
                 selectedYear === currentYear && selectedMonth === currentMonth
               }
             >
-              <ChevronRight className="w-4 h-4 text-gray-600" />
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Pie Chart */}
-          <div className="h-[300px]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
+          {/* Neon Pie Chart Container */}
+          <div className="h-[340px] bg-slate-950/50 rounded-3xl border border-white/5 shadow-inner p-4 relative flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={[
                     {
-                      name: "Request",
+                      name: "Total Request",
                       value: Number(myStats["QTY request"]) || 0,
                     },
                     {
-                      name: "Approved & Reject",
+                      name: "Approved / Rejected",
                       value: Number(myStats["QTY approved&reject"]) || 0,
                     },
                     {
-                      name: "Pending",
+                      name: "Pending di Saya",
                       value: Number(myStats["Pending Di Saya"]) || 0,
                     },
                   ]}
                   cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
+                  cy="45%"
+                  innerRadius={75}
+                  outerRadius={110}
+                  paddingAngle={6}
                   dataKey="value"
                   label={({ name, percent }) =>
-                    percent > 0 ? `${name} ${(percent * 100).toFixed(0)}%` : ""
+                    percent > 0 ? `${(percent * 100).toFixed(0)}%` : ""
                   }
                   labelLine={false}
+                  stroke="none"
                 >
-                  <Cell key="request" fill="#3B82F6" /> {/* Blue */}
-                  <Cell key="approved" fill="#10B981" /> {/* Green */}
-                  <Cell key="pending" fill="#F59E0B" /> {/* Orange */}
+                  {/* Neon Color Palette */}
+                  <Cell key="request" fill="#06b6d4" /> {/* Cyan 500 */}
+                  <Cell key="approved" fill="#10b981" /> {/* Emerald 500 */}
+                  <Cell key="pending" fill="#f59e0b" /> {/* Amber 500 */}
                 </Pie>
                 <Tooltip
-                  formatter={(value) => [`${value} tugas`, "Jumlah"]}
+                  formatter={(value) => [`${value} Tugas`, "Volume"]}
                   contentStyle={{
-                    backgroundColor: "white",
-                    borderRadius: "8px",
-                    padding: "8px",
-                    border: "1px solid #e5e7eb",
+                    backgroundColor: "rgba(15, 23, 42, 0.95)",
+                    borderRadius: "16px",
+                    padding: "12px 16px",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    backdropFilter: "blur(12px)",
+                    boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
+                    color: "#f8fafc",
+                    fontWeight: "bold",
+                    fontSize: "12px"
                   }}
+                  itemStyle={{ color: "#38bdf8", fontWeight: "bold" }}
                 />
-                <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36} 
+                  iconType="circle"
+                  formatter={(value) => <span className="text-slate-300 font-semibold text-xs ml-1">{value}</span>}
+                />
               </PieChart>
             </ResponsiveContainer>
+            
+            {/* Center Label Overlay */}
+            <div className="absolute top-[45%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+              <p className="text-3xl font-black text-white">{Number(myStats["QTY AlL"]) || 0}</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Total</p>
+            </div>
           </div>
 
-          {/* Summary Cards */}
+          {/* Translucent Neon Summary Cards */}
           <div className="space-y-4">
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-              <div className="flex items-center justify-between">
-                <span className="text-blue-700 font-medium">Total QTY</span>
-                <span className="text-2xl font-bold text-blue-700">
+            {/* Total Tasks Highlight */}
+            <div className="bg-gradient-to-br from-cyan-500/10 to-blue-600/5 rounded-3xl p-6 border border-cyan-500/20 relative overflow-hidden group">
+              <div className="absolute -right-6 -top-6 w-24 h-24 bg-cyan-500/20 rounded-full blur-2xl group-hover:bg-cyan-500/30 transition-colors duration-500" />
+              <div className="flex items-center justify-between relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-cyan-500/20 text-cyan-400 rounded-xl border border-cyan-500/30">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-cyan-400 font-bold text-sm">Volume Keseluruhan</span>
+                    <p className="text-xs text-cyan-500/70 font-medium mt-0.5">Semua tipe aktivitas flow</p>
+                  </div>
+                </div>
+                <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.4)]">
                   {Number(myStats["QTY AlL"]) || 0}
                 </span>
               </div>
-              <p className="text-sm text-blue-600 mt-1">Semua tugas</p>
             </div>
 
-            <div className="bg-orange-50 rounded-lg p-4 border border-orange-100">
-              <div className="flex items-center justify-between">
-                <span className="text-orange-700 font-medium">Pending</span>
-                <span className="text-2xl font-bold text-orange-700">
+            {/* Pending Alert Card */}
+            <div className="bg-gradient-to-br from-amber-500/10 to-orange-600/5 rounded-3xl p-6 border border-amber-500/20 relative overflow-hidden group">
+              <div className="absolute -right-6 -top-6 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-colors duration-500" />
+              <div className="flex items-center justify-between relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/30">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-amber-400 font-bold text-sm">Butuh Perhatian</span>
+                    <p className="text-xs text-amber-500/70 font-medium mt-0.5">Tugas pending di antrean Anda</p>
+                  </div>
+                </div>
+                <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.4)]">
                   {Number(myStats["Pending Di Saya"]) || 0}
                 </span>
               </div>
-              <p className="text-sm text-orange-600 mt-1">Tugas menunggu</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <span className="text-sm text-gray-600">Request</span>
-                <p className="text-xl font-semibold text-gray-800">
+            {/* Sub-metrics Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-slate-950/50 rounded-3xl p-5 border border-white/5 shadow-inner flex flex-col justify-between">
+                <span className="text-xs text-slate-400 font-bold uppercase tracking-wider flex items-center gap-2 mb-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
+                  Total Request
+                </span>
+                <p className="text-2xl font-black text-white">
                   {Number(myStats["QTY request"]) || 0}
                 </p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <span className="text-sm text-gray-600">Approved/Reject</span>
-                <p className="text-xl font-semibold text-gray-800">
+              <div className="bg-slate-950/50 rounded-3xl p-5 border border-white/5 shadow-inner flex flex-col justify-between">
+                <span className="text-xs text-slate-400 font-bold uppercase tracking-wider flex items-center gap-2 mb-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Approve / Reject
+                </span>
+                <p className="text-2xl font-black text-white">
                   {Number(myStats["QTY approved&reject"]) || 0}
                 </p>
               </div>
             </div>
 
-            {/* Month Info */}
-            <div className="text-xs text-gray-400 flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              <span>Periode: {getDateRangeText()}</span>
+            {/* Footer Period Info */}
+            <div className="pt-2 text-[11px] text-slate-500 font-bold flex items-center justify-end gap-1.5 uppercase tracking-widest">
+              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <span>Periode Data: <span className="text-cyan-400">{getDateRangeText()}</span></span>
             </div>
           </div>
         </div>
 
-        {/* Info Footer */}
-        <div className="mt-6 pt-4 border-t border-gray-100">
-          <p className="text-xs text-gray-400 text-center">
-            Data diperbarui:{" "}
-            {new Date().toLocaleDateString("id-ID", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+        {/* Info Footer Line */}
+        <div className="mt-8 pt-5 border-t border-slate-800/80">
+          <p className="text-[10px] text-slate-500 font-bold text-center tracking-widest uppercase">
+            Data real-time disinkronisasi pada:{" "}
+            <span className="text-slate-400">
+              {new Date().toLocaleDateString("id-ID", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
           </p>
         </div>
       </div>

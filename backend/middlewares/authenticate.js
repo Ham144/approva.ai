@@ -5,7 +5,6 @@ const authenticate = (req, res, next) => {
     req?.cookies?.token || req.headers.authorization?.split(" ")[1] || null;
 
   if (!token) {
-    console.log("authentication failed : ", req.originalUrl);
     return res.status(401).json({ message: "No Authentication" });
   }
 
@@ -14,7 +13,6 @@ const authenticate = (req, res, next) => {
     // Verify web token
     decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
-    console.log("authentication success : ", req.originalUrl);
     next();
   } catch (error) {
     console.log("authentication failed : ", req.originalUrl);

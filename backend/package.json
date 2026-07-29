@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon index.js",
-    "start": "node index.js"
+    "dev": "node utils/seed.js && nodemon index.js",
+    "start": "node utils/seed.js && node index.js"
   },
   "author": "yafizham",
   "license": "ISC",

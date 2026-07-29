@@ -28,11 +28,10 @@ if (!fs.existsSync(uploadPath)) {
   fs.mkdirSync(uploadPath, { recursive: true });
 }
 
-const isProduction = process.env.NODE_ENV === "production";
-
-const corsOrigin = isProduction
-  ? [process.env.FRONT_END]
-  : ["http://192.168.169.12:3000", "http://192.168.169.12:5173"];
+// Memisahkan string origin jika ada koma (mendukung multiple origins)
+const corsOrigin = process.env.FRONT_END 
+  ? process.env.FRONT_END.split(",").map(origin => origin.trim()) 
+  : "*";
 
 const app = express();
 
@@ -49,8 +48,6 @@ app.use(
 
 // Serve static files from uploads directory
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-// Untuk serve file statis dari frontend/dist
-app.use(express.static(path.join(__dirname, "..", "frontend", "dist")));
 
 //database
 connectDB();

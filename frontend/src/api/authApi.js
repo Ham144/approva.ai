@@ -6,6 +6,11 @@ export const loginLdap = async (body) => {
   return response?.data;
 };
 
+export const checkUsername = async (body) => {
+  const response = await axiosInstance.post(`/api/auth/check-username`, body);
+  return response?.data;
+};
+
 export const loginApp = async (body) => {
   const response = await axiosInstance.post(`/api/auth/login/app`, body);
   return response?.data;

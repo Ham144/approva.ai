@@ -1,37 +1,56 @@
 import mongoose from "mongoose";
 
-//ingat ya username boleh sama,  dia bisa punya beberapa akun gitu yang terdaftar di org yg beda
-//jadi bisa ada dua akun csi/yafizham yang punya akun di csi dan ril
-//oleh karena itu diperlukan pemilihan tenant (org) untuk setiap login agar ga salah masuk karena username sama
 const userSchema = new mongoose.Schema(
-  //tetap pakai _id ya untuk link, biar bisa populate
   {
     username: {
       type: String,
       required: true,
+      lowercase: true, // 🌟 Mengamankan agar username selalu disimpan dalam huruf kecil
+      trim: true
     },
     displayName: String,
-    email: String,
+    email: {
+      type: String,
+      lowercase: true,
+      trim: true
+    },
     role: {
       type: String,
       required: true,
-      enum: ["member", "viewer", "owner", "supertenant"], //supertenant hanya ada 1 dan di buat langsung dari database tidak ada fitur yang bisa menetapkan disediakan untuk menjadikan user supertenant
-      default: "member", //member setara dengan viewer hanya saja viewer bisa melihat semua proses terlepas dari departmentna
+      enum: ["member", "viewer", "owner", "supertenant"],
+      default: "member",
     },
-    password: String, //ini untuk authMethod 'app'
+    password: {
+      type: String,
+      // 🌟 Validasi bersyarat: Jika authMethod adalah 'app', password WAJIB diisi
+      required: function() {
+        return this.authMethod === "app";
+      }
+    },
     authMethod: {
       type: String,
       required: true,
       enum: ["app", "ldap"],
       default: "ldap",
     },
+    mobile :String,// ini di ldap apa ya?
+    // 🌟 TAMBAHKAN VALIDASI: hanya user role owner yang boleh upload foto profil.
     org: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Org",
+      // 🌟 Validasi bersyarat: Jika role adalah 'supertenant', org BOLEH kosong (null)
+      required: function() {
+        return this.role !== "supertenant";
+      }
     },
   },
   { timestamps: true }
 );
 
-const UserRefrensi = new mongoose.model("UserRefrensi", userSchema);
+// 🌟 SOLUSI KRITIS: Membuat kombinasi username + org menjadi UNIK.
+// Ini mencegah username kembar di dalam organisasi yang sama, 
+// tetapi mengizinkan username yang sama di organisasi yang berbeda.
+userSchema.index({ username: 1, org: 1 }, { unique: true });
+
+const UserRefrensi = mongoose.models.UserRefrensi || mongoose.model("UserRefrensi", userSchema);
 export default UserRefrensi;

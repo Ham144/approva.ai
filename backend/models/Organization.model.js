@@ -11,23 +11,18 @@ const organizationSchema = new mongoose.Schema(
     // start AD---------------
     AD_HOST: {
       type: String,
-      required: true,
     },
     AD_PORT: {
       type: Number,
-      required: true,
     },
     AD_DOMAIN: {
       type: String,
-      required: true,
     },
     AD_BASE_DN: {
       //contoh : DC=csi,DC=my,DC=id
       type: String,
-      required: true,
     },
     //END AD------------------
-
     owners: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -54,24 +49,19 @@ const organizationSchema = new mongoose.Schema(
     // start smtp---------------
     EMAIL_USER: {
       type: String,
-      required: true,
     },
     EMAIL_PASS: {
       type: String,
-      required: true,
     },
     EMAIL_HOST: {
       type: String,
-      required: true,
     },
     EMAIL_PORT: {
       type: String,
-      required: true,
       default: "587",
     },
     EMAIL_SECURE: {
       type: Boolean,
-      required: true,
       default: false,
     },
     // Setting app

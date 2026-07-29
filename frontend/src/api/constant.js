@@ -1,4 +1,4 @@
-const DEV_URL = "http://192.168.169.12:3000";
+const DEV_URL = "";
 let PROD_URL = "https://approva-ai.hexadim.com";
 
 if (import.meta.env.VITE_BACKEND_URL) {
@@ -13,11 +13,9 @@ const NODE_ENV = isProductionEnvironment ? "production" : "development"; // kala
 
 // Final BASE_URL
 export const BASE_URL = NODE_ENV === "production" ? PROD_URL : DEV_URL;
-
 export const APP_NAME = "Approva.AI";
-export const APP_DESC =
-  "AI powered approval builder";
-export const NAMAPERUSAHAAN = "He";
+export const APP_DESC = "AI powered approval builder";
+export const NAMA_PERUSAHAAN = "Hexadim LLC"; 
 
 export const initialTempSourceData = {
   title: "",

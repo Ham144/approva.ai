@@ -50,7 +50,7 @@ const router = createBrowserRouter(
           path="/pengelolaan/inventory"
           element={<InventoryManagement />}
         />
-
+    
         {/* menu User awam */}
         <Route path="/profile" element={<Profile />} />
         <Route path="/process/:instanceId?" element={<ProcessPage />} />
@@ -106,7 +106,7 @@ const router = createBrowserRouter(
       </Route>
       <Route index={true} path="/login" element={<Login />} />
       <Route path="/landing" element={<LandingPage />} />
-      <Route index={true} path="/register" element={<RegisterPage />} />
+      {/* <Route index={true} path="/register" element={<RegisterPage />} /> */}
 
       <Route path="*" element={<NotFound />} />
     </Route>,
