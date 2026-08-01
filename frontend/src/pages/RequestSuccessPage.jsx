@@ -42,7 +42,7 @@ export default function RequestSuccessPage() {
         <div className="pt-2">
           {userInfo ? (
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/home")}
               className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
             >
               <Home className="w-4 h-4" />

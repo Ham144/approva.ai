@@ -150,8 +150,8 @@ export default function Login({ className, ...props }) {
   const handleSuccessLogin = (res) => {
     setUserInfo(res?.data);
     queryClient.invalidateQueries(["userInfo"]);
-    navigate("/");
-    setTimeout(() => navigate("/"), 1000);
+    navigate("/home");
+    setTimeout(() => navigate("/home"), 1000);
   };
 
   const handleErrorLogin = (err) => {
@@ -600,21 +600,7 @@ export default function Login({ className, ...props }) {
             </AnimatePresence>
           </div>
 
-          {/* Footer Security Badges */}
-          <div className="mt-8 pt-6 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-            <div className="flex items-center gap-1.5">
-              <Shield className="w-3.5 h-3.5 text-cyan-400" />
-              <span>256-Bit TLS Encryption</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Fingerprint className="w-3.5 h-3.5 text-cyan-400" />
-              <span>SOC2 Type II</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Cpu className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Active Directory</span>
-            </div>
-          </div>
+
         </div>
       </motion.div>
     </div>

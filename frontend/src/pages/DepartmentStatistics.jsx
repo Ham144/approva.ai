@@ -295,9 +295,9 @@ const DepartmentStatistics = () => {
               <p className="text-sm text-yellow-600 font-medium">Tugas Pending</p>
               <p className="text-2xl font-bold text-yellow-700">{stats["Pending Di Saya"] || 0}</p>
             </div>
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <p className="text-sm text-purple-600 font-medium">Jumlah Semua</p>
-              <p className="text-2xl font-bold text-purple-700">{stats["QTY AlL"] || 0}</p>
+            <div className="bg-cyan-50 p-4 rounded-lg">
+              <p className="text-sm text-cyan-600 font-medium">Jumlah Semua</p>
+              <p className="text-2xl font-bold text-cyan-700">{stats["QTY AlL"] || 0}</p>
             </div>
           </div>
 

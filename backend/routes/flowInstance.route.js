@@ -2327,10 +2327,6 @@ router.get("/my-stats", async (req, res) => {
     end.setHours(23, 59, 59, 999);
     start.setHours(0, 0, 0, 0);
 
-    console.log("Filter dates:", {
-      start: start.toISOString(),
-      end: end.toISOString(),
-    });
 
     // ================== AGREGASI 1: Statistik Aktivitas (request & completed) ==================
     const activityStats = await FlowInstance.aggregate([

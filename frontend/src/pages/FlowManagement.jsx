@@ -169,7 +169,7 @@ export default function FlowManagement() {
                             )}
                             {flow.mode === "private" && (
                               <>
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200">
                                   <Key />
                                   Private
                                 </span>

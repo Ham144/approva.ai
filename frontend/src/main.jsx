@@ -45,7 +45,7 @@ const router = createBrowserRouter(
         element={<RequestSuccessPage />}
       />
       <Route path="/" element={<LevelWrapper />}>
-        <Route index={true} path="/" element={<Home />} />
+        <Route path="/home" element={<Home />} />
         <Route
           path="/pengelolaan/inventory"
           element={<InventoryManagement />}
@@ -105,7 +105,7 @@ const router = createBrowserRouter(
         <Route path="/all_account" element={<AllAccounts />} />
       </Route>
       <Route index={true} path="/login" element={<Login />} />
-      <Route path="/landing" element={<LandingPage />} />
+      <Route index={true} element={<LandingPage />} />
       {/* <Route index={true} path="/register" element={<RegisterPage />} /> */}
 
       <Route path="*" element={<NotFound />} />

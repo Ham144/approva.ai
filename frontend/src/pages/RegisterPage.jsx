@@ -59,7 +59,7 @@ export default function RegisterPage() {
       toast.success(res?.response?.data?.message || "Berhasil");
       toast.loading("proses registration berlangsung..");
       setTimeout(() => {
-        navigate(`/`);
+        navigate(`/home`);
         toast.dismiss();
       }, 1000);
     },

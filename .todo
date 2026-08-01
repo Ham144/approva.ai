@@ -105,11 +105,21 @@
 [x] add: bisa auto switch organization jika dikirimi link organisasi berbeda
 [x] add: tombol download pada tiap review pdf
 
-fitur penting yang belum ada
+fitur penting yang belum ada (jangan checklist jika belum ada! ini tidak ada kaitannya dengan landing page)
 [] WhatsApp Notification 
+[] fit
 [] Backup & Restore System: fitur pencadangan database otomatis
-[] fitur LDAP yang dinamis
+[] fitur config LDAP setup 
+[] cek multi-tenancy apakah sudah sempurna
+[] buat vidio
+// teknis untuk berkesinambungan
+[] fungsi cek end-to-end untuk fitur-fitur utama
+[] perlindungan kode backend saja dengan pkg biner + bun + docker (pelajari lebih lanjut)
+[] halaman artikel dokumentasi lengkap
 
-bagian 2 pricing juga hapus, pricing nya 1 saja dan berdasarkan besar nya perusahaan saja disesuaikan harganya, buatkan juga maintanance nya, buat maintanance nya murah agar tidak terlalu terbebani, tidak ada program full white label. ini hanya beli putus untuk pemakaian 1 perusahaan tidak boleh di jual ulang 
-jujur landing page kurang lengkap! whatsapp notification tidak ada
-apa lagi?, tolong kamu crawl aja code base ini untuk membuat copy writing landing page semenggoda mungkin!!
+// penyempurnaan landing page, saya ingin landing page benar-benar menjual seperti layaknya aplikasi formal besar
+
+[x] lengkapi section "Fitur Cerdas yang Dirancang Khusus untuk Kebutuhan Korporat Modern", sepertinya ini kurang lengkap, beberapa yang kurang: email notification/whatsapp, selain External Stranger Mode kan ada lagi department lock mode, private mode, public mode, stranger mode, auto completion (untuk prioritize requestor nanti saya akan hilangkan jadi tidak usah), dan fitur-fitur keren lainnya yang kamu rasa cocok untuk di tawarkan, tolonglah buat aplikasi ini sangat menjual!
+[x] jelaskan aplikasi ini sudah sempurna, hexadim memberikan garansi tidak akan eror, bagaimanapun hexadim yang maintain dan akan merepotkan hexadim jika eror (perbaiki bahasa nya)
+[x] untuk customisasi gratis hexadim tidak keberatan untuk penyesuaian ulang tampilan lebih lanjut, hexadim mengakui tampilan kurang sempurna karena hexadim berfokus ke fungsi dan skenario kasus (edge case)
+[x] sediakan holder demo video 

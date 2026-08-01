@@ -44,7 +44,7 @@ export default function StatusFullfillmentPage() {
       toast.success(res?.message);
       toast.loading("memeriksa status untuk anda...");
       setTimeout(() => {
-        navigate(`/`);
+        navigate(`/home`);
         toast.dismiss();
       }, 1000);
       setSelectedAuthorized([]);

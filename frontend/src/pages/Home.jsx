@@ -147,18 +147,7 @@ const Home = () => {
         {/* Header */}
         <div className="mb-10 text-center relative">
           <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-40 h-40 bg-cyan-500/20 rounded-full filter blur-3xl pointer-events-none" />
-          
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 mb-4 px-4 py-1.5 bg-slate-900/60 border border-slate-700/60 rounded-full shadow-lg backdrop-blur-xl group"
-          >
-            <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse group-hover:text-cyan-300 transition-colors" />
-            <span className="text-xs font-bold text-slate-300 tracking-wider uppercase group-hover:text-white transition-colors">
-              {APP_NAME} Platform
-            </span>
-          </motion.div>
-
+            
           <motion.h1 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}

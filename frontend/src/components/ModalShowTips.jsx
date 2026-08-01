@@ -39,7 +39,7 @@ export default function ModalShowTips() {
     },
     {
       name: "Select",
-      icon: <List className="w-6 h-6 text-purple-500" />,
+      icon: <List className="w-6 h-6 text-cyan-500" />,
       description:
         "Pilihan tunggal dari daftar opsi yang sudah ditentukan. Cocok untuk data dengan beberapa pilihan terbatas yang perlu dipilih satu saja.",
       example: "Contoh: Jenis Kelamin, Status Pernikahan, Kategori Produk.",

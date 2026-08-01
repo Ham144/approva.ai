@@ -66,11 +66,11 @@ const LevelWrapper = () => {
 
     // 2. Jika user SUDAH login dan mencoba mengakses public path (kecuali "/")
     // Ini mencegah user yang sudah login melihat halaman login/about/dokumentasi
-    if (!isLoading && userInfo && isPublicPath && currentPath !== "/") {
+    if (!isLoading && userInfo && isPublicPath && currentPath !== "/home") {
       console.log(
         "Redirecting from public path to home: User already authenticated."
       );
-      navigate("/", { replace: true });
+      navigate("/home", { replace: true });
       return;
     }
 

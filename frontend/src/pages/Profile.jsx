@@ -57,12 +57,12 @@ const ManagementButton = () => {
         const hoverColor = 
           menu.color === 'cyan' ? 'hover:border-cyan-500/50 hover:bg-cyan-900/20' :
           menu.color === 'emerald' ? 'hover:border-emerald-500/50 hover:bg-emerald-900/20' :
-          'hover:border-purple-500/50 hover:bg-purple-900/20';
+          'hover:border-cyan-500/50 hover:bg-cyan-900/20';
           
         const iconColor = 
           menu.color === 'cyan' ? 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30' :
           menu.color === 'emerald' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' :
-          'text-purple-400 bg-purple-500/10 border-purple-500/30';
+          'text-cyan-400 bg-cyan-500/10 border-cyan-500/30';
 
         return (
           <motion.button
@@ -248,43 +248,7 @@ const Profile = () => {
       {/* Main Content Area */}
       <div className="flex-1 p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto relative z-10 mt-4">
         
-        {/* Security Status Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-900/60 backdrop-blur-2xl p-6 rounded-3xl border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
-        >
-          <div className="flex items-center gap-4">
-            <div className="relative flex items-center justify-center w-12 h-12 bg-emerald-500/10 border border-emerald-500/30 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.2)]">
-              <ShieldCheck className="w-6 h-6 text-emerald-400" />
-              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full animate-pulse" />
-            </div>
-            <div>
-              <h2 className="text-xl font-black text-white flex items-center gap-2">
-                Secure Session Active
-              </h2>
-              <p className="text-xs font-bold text-emerald-400/80 tracking-widest uppercase mt-1">
-                256-Bit TLS Encryption
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex gap-4">
-            <div className="text-right hidden sm:block">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Waktu Sistem</p>
-              <p className="text-sm font-bold text-slate-300 font-mono mt-0.5">
-                {new Date().toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' })}
-              </p>
-            </div>
-            <div className="w-px bg-slate-800 hidden sm:block" />
-            <div className="text-right hidden sm:block">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Koneksi</p>
-              <p className="text-sm font-bold text-cyan-400 mt-0.5 flex items-center gap-1.5 justify-end">
-                <Activity className="w-3.5 h-3.5" /> Optimal
-              </p>
-            </div>
-          </div>
-        </motion.div>
+
 
         <AnimatePresence mode="wait">
           {activeTab === "profile" && (
@@ -335,9 +299,9 @@ const Profile = () => {
 
                 {/* Role Card */}
                 <div className="bg-slate-900/60 backdrop-blur-2xl rounded-3xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.4)] border border-white/10 group relative overflow-hidden">
-                  <div className="absolute -right-10 -top-10 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl group-hover:bg-purple-500/20 transition-all duration-500" />
+                  <div className="absolute -right-10 -top-10 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl group-hover:bg-cyan-500/20 transition-all duration-500" />
                   <div className="flex items-center gap-4 mb-4 relative z-10">
-                    <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-2xl text-purple-400">
+                    <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl text-cyan-400">
                       <KeyRound className="w-6 h-6" />
                     </div>
                     <div>
@@ -399,7 +363,7 @@ const Profile = () => {
               className="space-y-6"
             >
               <h2 className="text-2xl font-black text-white flex items-center gap-3">
-                <div className="w-1.5 h-6 bg-gradient-to-b from-purple-400 to-indigo-600 rounded-full" />
+                <div className="w-1.5 h-6 bg-gradient-to-b from-cyan-400 to-indigo-600 rounded-full" />
                 Sistem Manajemen
               </h2>
               

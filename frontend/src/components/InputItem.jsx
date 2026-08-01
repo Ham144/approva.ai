@@ -547,7 +547,7 @@ function InputItem({
                     onChange={(e) =>
                       onChange({ ...input, sourceData: e.target.value })
                     }
-                    className="select select-bordered w-full pl-10 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    className="select select-bordered w-full pl-10 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                   >
                     <option disabled value="">
                       Pilih daftar opsi dari koleksi...
@@ -566,7 +566,7 @@ function InputItem({
                 onClick={() =>
                   document.getElementById("modalsourcedata")?.showModal()
                 }
-                className="btn-outline btn sm:btn-md text-purple-500 border-purple-500 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/20 transition-colors duration-200 flex items-center rounded-lg gap-1 mt-2 sm:mt-0"
+                className="btn-outline btn sm:btn-md text-cyan-500 border-cyan-500 hover:bg-cyan-50 hover:text-cyan-700 dark:hover:bg-cyan-900/20 transition-colors duration-200 flex items-center rounded-lg gap-1 mt-2 sm:mt-0"
               >
                 <Plus size={16} /> Buat Baru
               </button>

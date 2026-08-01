@@ -229,7 +229,7 @@ export default function ProcessActionOption({ selectedInstance }) {
                 rollingBack ||
                 selectedInstance?.currentStatusIndex == 0
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-purple-600 hover:bg-purple-700 text-white hover:shadow-md cursor-pointer group"
+                  : "bg-cyan-600 hover:bg-cyan-700 text-white hover:shadow-md cursor-pointer group"
               }`}
               title="Klik kiri untuk rollback, klik kanan untuk buka di tab baru"
             >
