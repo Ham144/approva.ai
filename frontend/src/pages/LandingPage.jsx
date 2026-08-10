@@ -629,7 +629,7 @@ const LandingPage = () => {
 
         {/* Strategic Quote Card */}
         <div className="mt-10 p-8 rounded-3xl bg-slate-950 text-white text-center shadow-2xl max-w-4xl mx-auto space-y-4">
-          <blockquote className="text-xl sm:text-2xl font-extrabold leading-relaxed text-blue-100 italic">
+          <blockquote className="text-xl sm:text-2xl font-extrabold leading-relaxed text-blue-100 italic ">
             "Approva.ai menggabungkan kemudahan Form Builder, fleksibilitas Workflow SaaS, dan kemampuan Enterprise BPM dalam satu platform yang dapat dimiliki sepenuhnya oleh perusahaan melalui lisensi beli putus."
           </blockquote>
         </div>
