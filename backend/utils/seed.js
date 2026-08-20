@@ -30,7 +30,7 @@ async function init() {
 
       // Buat password acak yang aman (huruf besar, kecil, angka, simbol)
       const randomString = Math.random().toString(36).slice(-6);
-      const randomPassword = `Admin${randomString}!`; // Contoh: Adminx8y9z!
+      const randomPassword = `Hex4dim`; // Contoh: Adminx8y9z!
       
       const hashedPassword = await bcrypt.hash(randomPassword, 10);
 

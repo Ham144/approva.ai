@@ -31,6 +31,8 @@ import LibraryManagement from "./pages/LibraryManagement";
 import DownloadProcessPage from "./pages/DownloadProcessPage";
 import DepartmentStatistics from "./pages/DepartmentStatistics";
 import LandingPage from "./pages/LandingPage";
+import UpdateLogsPage from "./pages/UpdateLogsPage";
+import DocumentationPage from "./pages/DocumentationPage";
 // import RegisterPage from "./pages/RegisterPage";
 
 const router = createBrowserRouter(
@@ -40,17 +42,14 @@ const router = createBrowserRouter(
         path="/request/create/:id" //templateId
         element={<RequestStartCreatePage />}
       />
-      <Route
-        path="/request/success"
-        element={<RequestSuccessPage />}
-      />
+      <Route path="/request/success" element={<RequestSuccessPage />} />
       <Route path="/" element={<LevelWrapper />}>
         <Route path="/home" element={<Home />} />
         <Route
           path="/pengelolaan/inventory"
           element={<InventoryManagement />}
         />
-    
+
         {/* menu User awam */}
         <Route path="/profile" element={<Profile />} />
         <Route path="/process/:instanceId?" element={<ProcessPage />} />
@@ -105,6 +104,13 @@ const router = createBrowserRouter(
         <Route path="/all_account" element={<AllAccounts />} />
       </Route>
       <Route index={true} path="/login" element={<Login />} />
+      <Route index={true} path="/update-logs" element={<UpdateLogsPage />} />
+      <Route
+        index={true}
+        path="/documentation"
+        element={<DocumentationPage />}
+      />
+
       <Route index={true} element={<LandingPage />} />
       {/* <Route index={true} path="/register" element={<RegisterPage />} /> */}
 

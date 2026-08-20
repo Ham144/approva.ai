@@ -4,7 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowBigRight,
+  ArrowRight,
   Calendar,
+  Check,
   ChevronDown,
   ChevronUp,
   Filter,
@@ -202,322 +204,314 @@ export default function ProcessPage() {
   }, []);
 
   return (
-    <div className="p-4 md:p-6 lg:p-8  min-h-screen">
-      <div className="space-y-6 ">
-        <div className="w-full mb-8">
-          {/* Card dengan glassmorphism effect */}
+    <div className="p-4 md:p-6 lg:p-8 min-h-screen bg-zinc-950 text-zinc-100 font-sans antialiased">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* FILTER ACCORDION CARD */}
+        <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+          {/* Header Filter Panel */}
           <div
-            className="card glass  rounded-2xl overflow-hidden border border-white/30 backdrop-blur-lg"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(173, 216, 230, 0.15) 0%, rgba(176, 224, 230, 0.1) 100%)",
-            }}
+            className="flex items-center justify-between p-4 sm:p-5 cursor-pointer hover:bg-zinc-800/50 transition-colors border-b border-zinc-800/60"
+            onClick={toggleExpand}
           >
-            {/* Header dengan glass effect yang lebih smooth */}
-            <div
-              className="flex items-center justify-between p-5 cursor-pointer transition-all duration-300 hover:bg-white/10"
-              onClick={toggleExpand}
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm">
-                  <Filter className="w-6 h-6 text-blue-600" />
-                </div>
-                <div className="flex  md:gap-x-4 max-md:flex-col">
-                  <h3 className="text-xl font-bold text-gray-800">
-                    Filter Pencarian
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Saring data dengan filter yang tersedia
-                  </p>
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-zinc-800 border border-zinc-700 text-teal-400">
+                <Filter className="w-5 h-5" />
               </div>
-
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-white/30 backdrop-blur-sm">
-                  {isExpanded ? (
-                    <ChevronUp className="w-5 h-5 text-blue-700" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-blue-700" />
-                  )}
-                </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-semibold text-zinc-100 tracking-tight">
+                  Filter Parameter &amp; Kueri
+                </h3>
+                <p className="text-xs text-zinc-400">
+                  Saring antrean proses berdasarkan kategori, pemohon, dan
+                  metadata status.
+                </p>
               </div>
             </div>
 
-            {/* Konten Filter dengan animasi yang lebih smooth */}
-            <div
-              className={`
-            transition-all duration-500 ease-in-out overflow-hidden
-            ${isExpanded ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"}
-          `}
-            >
-              <div className="p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Kategori Request dengan Search */}
-                  <div className="space-y-2">
-                    <label className=" text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <Hash className="w-4 h-4" />
-                      Kategori Request
-                    </label>
+            <div className="p-1.5 rounded-lg bg-zinc-800 text-zinc-400 hover:text-zinc-200">
+              {isExpanded ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </div>
+          </div>
 
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search className="h-4 w-4 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Cari kategori..."
-                        value={searchCategory}
-                        onChange={(e) => setSearchCategory(e.target.value)}
-                        className="pl-10 pr-4 py-2.5 w-full rounded-xl border border-gray-300/50 bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-300 text-gray-700 placeholder-gray-400"
-                      />
-                    </div>
+          {/* Filter Content */}
+          <div
+            className={`transition-all duration-300 ease-in-out overflow-hidden ${
+              isExpanded
+                ? "max-h-[850px] opacity-100 p-5 sm:p-6"
+                : "max-h-0 opacity-0 p-0"
+            }`}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Kategori Request */}
+              <div className="space-y-2">
+                <label className="text-xs font-mono font-medium uppercase tracking-wider text-zinc-400 flex items-center gap-2">
+                  <Hash className="w-3.5 h-3.5 text-zinc-500" />
+                  Kategori Flow
+                </label>
 
-                    {/* List Kategori dengan Scroll */}
-                    <div className="max-h-60 overflow-y-auto rounded-xl border border-gray-200/50 bg-white/60 backdrop-blur-sm">
-                      <div className="p-2">
-                        <button
-                          onClick={() => handleCategoryChange("all")}
-                          className={`w-full text-left px-4 py-3 rounded-lg mb-2 transition-all duration-300 ${
-                            selectedCategory === "all"
-                              ? "bg-blue-100/80 text-blue-700 font-medium border border-blue-200"
-                              : "hover:bg-gray-100/70 text-gray-700"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span>Semua Kategori</span>
-                            {selectedCategory === "all" && (
-                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            )}
-                          </div>
-                        </button>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Cari kategori spesifik..."
+                    value={searchCategory}
+                    onChange={(e) => setSearchCategory(e.target.value)}
+                    className="w-full pl-9 pr-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500 transition-colors"
+                  />
+                </div>
 
-                        {filteredCategories.map((flow) => (
-                          <button
-                            key={flow._id}
-                            onClick={() => handleCategoryChange(flow._id)}
-                            className={`w-full text-left px-4 py-3 rounded-lg mb-2 transition-all duration-300 ${
-                              selectedCategory === flow._id
-                                ? "bg-blue-100/80 text-blue-700 font-medium border border-blue-200"
-                                : "hover:bg-gray-100/70 text-gray-700"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="truncate">{flow.title}</span>
-                              <span className="badge badge-primary text-white font-bold">
-                                {flow.mode}
-                              </span>
-                              {selectedCategory === flow._id && (
-                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                              )}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                <div className="max-h-48 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-950/70 p-1.5 space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => handleCategoryChange("all")}
+                    className={`w-full text-left px-3 py-2 rounded-md text-xs transition-colors flex items-center justify-between ${
+                      selectedCategory === "all"
+                        ? "bg-zinc-800 text-teal-400 font-medium border border-zinc-700"
+                        : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+                    }`}
+                  >
+                    <span>Semua Kategori</span>
+                    {selectedCategory === "all" && (
+                      <Check className="w-3.5 h-3.5 text-teal-400" />
+                    )}
+                  </button>
 
-                  {/* Pemohon dengan Search */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      Pemohon
-                    </label>
-
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search className="h-4 w-4 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Cari pemohon..."
-                        value={searchRequester}
-                        onChange={(e) => setSearchRequester(e.target.value)}
-                        className="pl-10 pr-4 py-2.5 w-full rounded-xl border border-gray-300/50 bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-300 text-gray-700 placeholder-gray-400"
-                      />
-                    </div>
-
-                    {/* List Pemohon dengan Scroll */}
-                    <div className="max-h-60 overflow-y-auto rounded-xl border border-gray-200/50 bg-white/60 backdrop-blur-sm">
-                      <div className="p-2">
-                        <button
-                          onClick={() => handleRequesterChange("all")}
-                          className={`w-full text-left px-4 py-3 rounded-lg mb-2 transition-all duration-300 ${
-                            selectedRequester === "all"
-                              ? "bg-blue-100/80 text-blue-700 font-medium border border-blue-200"
-                              : "hover:bg-gray-100/70 text-gray-700"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span>Semua Pemohon</span>
-                            {selectedRequester === "all" && (
-                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            )}
-                          </div>
-                        </button>
-
-                        {filteredRequesters.map((user) => (
-                          <button
-                            key={user._id}
-                            onClick={() => handleRequesterChange(user._id)}
-                            className={`w-full text-left px-4 py-3 rounded-lg mb-2 transition-all duration-300 ${
-                              selectedRequester === user._id
-                                ? "bg-blue-100/80 text-blue-700 font-medium border border-blue-200"
-                                : "hover:bg-gray-100/70 text-gray-700"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium truncate">
-                                  {user?.displayName || user?.username}
-                                </div>
-                                {user?.username && user.displayName && (
-                                  <div className="text-xs text-gray-500 truncate">
-                                    @{user.username}
-                                  </div>
-                                )}
-                              </div>
-                              {selectedRequester === user._id && (
-                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                              )}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Filter Tambahan */}
-                  <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-gray-200/50">
-                    {/* Status */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">
-                        Status
-                      </label>
-                      <select
-                        name="overallStatus"
-                        value={filter?.overallStatus || "all"}
-                        onChange={handleFilterChange}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300/50 bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-300 text-gray-700"
-                      >
-                        <option value="all">Semua Status</option>
-                        <option value="draft">Draft</option>
-                        <option value="in-progress">In Progress</option>
-                        <option value="completed">Completed</option>
-                        <option value="rejected">Rejected</option>
-                      </select>
-                    </div>
-
-                    {/* Tanggal Request */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        Tanggal Request
-                      </label>
-                      <input
-                        type="date"
-                        name="requestDate"
-                        value={filter?.requestDate || ""}
-                        onChange={handleFilterChange}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300/50 bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-300 text-gray-700"
-                      />
-                    </div>
-
-                    {/* Tombol Aksi */}
-                    <div className="flex items-end space-x-3">
+                  {filteredCategories.map((flow) => {
+                    const isSelected = selectedCategory === flow._id;
+                    return (
                       <button
-                        onClick={handleResetAll}
-                        className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300/50 bg-white/80 backdrop-blur-sm text-gray-700 hover:bg-gray-50/90 hover:border-gray-400/50 transition-all duration-300 flex items-center justify-center gap-2 font-medium"
+                        key={flow._id}
+                        type="button"
+                        onClick={() => handleCategoryChange(flow._id)}
+                        className={`w-full text-left px-3 py-2 rounded-md text-xs transition-colors flex items-center justify-between gap-2 ${
+                          isSelected
+                            ? "bg-zinc-800 text-teal-400 font-medium border border-zinc-700"
+                            : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+                        }`}
                       >
-                        <X className="w-4 h-4" />
-                        Reset All
+                        <span className="truncate">{flow.title}</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
+                            {flow.mode}
+                          </span>
+                          {isSelected && (
+                            <Check className="w-3.5 h-3.5 text-teal-400" />
+                          )}
+                        </div>
                       </button>
-                    </div>
-                  </div>
+                    );
+                  })}
+                </div>
+              </div>
 
-                  {/* Status Filter Aktif */}
-                  <div className="lg:col-span-2">
-                    <div className="flex flex-wrap gap-2 p-4 rounded-xl bg-blue-50/30 backdrop-blur-sm border border-blue-100/50">
-                      <span className="text-sm font-medium text-blue-700">
-                        Filter Aktif:
+              {/* Pemohon */}
+              <div className="space-y-2">
+                <label className="text-xs font-mono font-medium uppercase tracking-wider text-zinc-400 flex items-center gap-2">
+                  <User className="w-3.5 h-3.5 text-zinc-500" />
+                  Pemohon (Requester)
+                </label>
+
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Cari user pemohon..."
+                    value={searchRequester}
+                    onChange={(e) => setSearchRequester(e.target.value)}
+                    className="w-full pl-9 pr-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500 transition-colors"
+                  />
+                </div>
+
+                <div className="max-h-48 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-950/70 p-1.5 space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => handleRequesterChange("all")}
+                    className={`w-full text-left px-3 py-2 rounded-md text-xs transition-colors flex items-center justify-between ${
+                      selectedRequester === "all"
+                        ? "bg-zinc-800 text-teal-400 font-medium border border-zinc-700"
+                        : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+                    }`}
+                  >
+                    <span>Semua Pemohon</span>
+                    {selectedRequester === "all" && (
+                      <Check className="w-3.5 h-3.5 text-teal-400" />
+                    )}
+                  </button>
+
+                  {filteredRequesters.map((user) => {
+                    const isSelected = selectedRequester === user._id;
+                    return (
+                      <button
+                        key={user._id}
+                        type="button"
+                        onClick={() => handleRequesterChange(user._id)}
+                        className={`w-full text-left px-3 py-2 rounded-md text-xs transition-colors flex items-center justify-between gap-2 ${
+                          isSelected
+                            ? "bg-zinc-800 text-teal-400 font-medium border border-zinc-700"
+                            : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+                        }`}
+                      >
+                        <div className="truncate">
+                          <span className="font-medium text-zinc-200">
+                            {user?.displayName || user?.username}
+                          </span>
+                          {user?.username && user.displayName && (
+                            <span className="text-zinc-500 text-[11px] ml-1.5 font-mono">
+                              @{user.username}
+                            </span>
+                          )}
+                        </div>
+                        {isSelected && (
+                          <Check className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Filter Tambahan Row */}
+              <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-zinc-800">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-mono font-medium uppercase tracking-wider text-zinc-400 block">
+                    Status Eksekusi
+                  </label>
+                  <select
+                    name="overallStatus"
+                    value={filter?.overallStatus || "all"}
+                    onChange={handleFilterChange}
+                    className="w-full px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500 transition-colors"
+                  >
+                    <option value="all">Semua Status</option>
+                    <option value="draft">Draft</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-mono font-medium uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-zinc-500" />
+                    Tanggal Dibuat
+                  </label>
+                  <input
+                    type="date"
+                    name="requestDate"
+                    value={filter?.requestDate || ""}
+                    onChange={handleFilterChange}
+                    className="w-full px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500 transition-colors"
+                  />
+                </div>
+
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={handleResetAll}
+                    className="w-full py-2 px-3 rounded-lg bg-zinc-800 hover:bg-zinc-700/80 border border-zinc-700 text-xs text-zinc-300 font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    <X className="w-3.5 h-3.5 text-zinc-400" />
+                    <span>Reset Form Filter</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Active Filters Tag Pills */}
+              <div className="lg:col-span-2 pt-2">
+                <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs">
+                  <span className="font-mono text-zinc-500 text-[11px] uppercase tracking-wider mr-1">
+                    Active Filter:
+                  </span>
+
+                  {selectedCategory !== "all" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-800 border border-zinc-700 text-zinc-200 text-[11px]">
+                      <span>
+                        Kategori:{" "}
+                        {
+                          flowList?.data?.find(
+                            (f) => f._id === selectedCategory,
+                          )?.title
+                        }
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCategoryChange("all")}
+                        className="text-zinc-400 hover:text-zinc-100"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
 
-                      {selectedCategory !== "all" && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-100/80 text-blue-700 text-sm">
-                          Kategori:{" "}
-                          {
-                            flowList?.data?.find(
-                              (f) => f._id === selectedCategory,
-                            )?.title
-                          }
-                          <button
-                            onClick={() => handleCategoryChange("all")}
-                            className="ml-1 hover:text-blue-900"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      )}
+                  {selectedRequester !== "all" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-800 border border-zinc-700 text-zinc-200 text-[11px]">
+                      <span>
+                        Pemohon:{" "}
+                        {
+                          users?.data?.find((u) => u._id === selectedRequester)
+                            ?.displayName
+                        }
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRequesterChange("all")}
+                        className="text-zinc-400 hover:text-zinc-100"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
 
-                      {selectedRequester !== "all" && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-100/80 text-blue-700 text-sm">
-                          Pemohon:{" "}
-                          {
-                            users?.data?.find(
-                              (u) => u._id === selectedRequester,
-                            )?.displayName
-                          }
-                          <button
-                            onClick={() => handleRequesterChange("all")}
-                            className="ml-1 hover:text-blue-900"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      )}
+                  {filter?.overallStatus !== "all" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-800 border border-zinc-700 text-zinc-200 text-[11px]">
+                      <span className="capitalize">
+                        Status: {filter?.overallStatus}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleFilterChange({
+                            target: { name: "overallStatus", value: "all" },
+                          })
+                        }
+                        className="text-zinc-400 hover:text-zinc-100"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
 
-                      {filter?.overallStatus !== "all" && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-100/80 text-blue-700 text-sm">
-                          Status: {filter?.overallStatus}
-                          <button
-                            onClick={() =>
-                              handleFilterChange({
-                                target: { name: "overallStatus", value: "all" },
-                              })
-                            }
-                            className="ml-1 hover:text-blue-900"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      )}
-
-                      {filter?.requestDate && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-100/80 text-blue-700 text-sm">
-                          Tanggal: {filter.requestDate}
-                          <button
-                            onClick={() =>
-                              handleFilterChange({
-                                target: { name: "requestDate", value: "" },
-                              })
-                            }
-                            className="ml-1 hover:text-blue-900"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                  {filter?.requestDate && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-800 border border-zinc-700 text-zinc-200 text-[11px]">
+                      <span>Tgl: {filter.requestDate}</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleFilterChange({
+                            target: { name: "requestDate", value: "" },
+                          })
+                        }
+                        className="text-zinc-400 hover:text-zinc-100"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap justify-between gap-2">
-          <div className="flex flex-wrap gap-y-3 gap-x-4 items-center">
+        {/* QUICK SCOPE TABS & SEARCH BAR */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-2">
             <button
-              disabled={userInfo?.role == "member"}
+              disabled={userInfo?.role === "member"}
               onClick={() =>
                 setFilter((prev) => ({
                   ...prev,
@@ -525,10 +519,10 @@ export default function ProcessPage() {
                   isMyDepartmentOnly: false,
                 }))
               }
-              className={`px-4 disabled:bg-red-200  py-2 rounded-full text-sm font-medium transition-all ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 !filter?.isMyRequestOnly && !filter?.isMyDepartmentOnly
-                  ? "bg-blue-100 text-blue-700 border border-blue-200 shadow-inner"
-                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                  ? "bg-zinc-100 text-zinc-950 font-semibold"
+                  : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700"
               }`}
             >
               Semua Request
@@ -542,10 +536,10 @@ export default function ProcessPage() {
                   isMyDepartmentOnly: true,
                 }))
               }
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 filter?.isMyDepartmentOnly
-                  ? "bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-inner"
-                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                  ? "bg-zinc-100 text-zinc-950 font-semibold"
+                  : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700"
               }`}
             >
               Departemen Saya
@@ -559,31 +553,32 @@ export default function ProcessPage() {
                   isMyDepartmentOnly: false,
                 }))
               }
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 filter?.isMyRequestOnly
-                  ? "bg-green-100 text-green-700 border border-green-200 shadow-inner"
-                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                  ? "bg-zinc-100 text-zinc-950 font-semibold"
+                  : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700"
               }`}
             >
               Request Saya
             </button>
+
             <a
-              className="text-blue-600 hover:link flex items-center gap-1"
+              className="text-xs text-zinc-400 hover:text-teal-400 flex items-center gap-1 ml-2 font-mono transition-colors"
               href="/process/download"
             >
-              Ingin Mendownload data menjadi csv? <ArrowBigRight />
+              <span>Export CSV</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </a>
           </div>
 
-          <div className="relative flex-1 max-w-md shadow-md shadow-gray-200">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search color="gray" size={20} />
-            </div>
+          {/* Fast Instant Search */}
+          <div className="relative w-full lg:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 pointer-events-none" />
             <input
               type="text"
-              placeholder="Cari..."
-              className="pl-10 pr-4 py-2.5 w-full rounded-lg border-2 border-blue-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 shadow-sm w"
-              value={filter?.search}
+              placeholder="Cari ID, dokumen, requester..."
+              className="w-full pl-9 pr-3.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500 transition-colors"
+              value={filter?.search || ""}
               onChange={(e) => {
                 setFilter((prev) => ({
                   ...prev,
@@ -594,84 +589,153 @@ export default function ProcessPage() {
           </div>
         </div>
 
-        {/* --- Area Konten / Hasil --- */}
-        <div className="space-y-4 overflow-y-auto pb-20 ">
-          <div
-            className="flex flex-wrap items-center gap-4 p-4 rounded-xl mb-6"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(173, 216, 230, 0.1) 0%, rgba(176, 224, 230, 0.05) 100%)",
-              backdropFilter: "blur(10px)",
-              border: "1px solid rgba(173, 216, 230, 0.2)",
-            }}
-          >
-            {/* Informasi Hasil */}
-            <div className="flex flex-wrap items-center gap-4">
-              {/* Total Ditemukan */}
-              {totalData ? (
-                <div className="flex items-center gap-2 px-3 py-2 bg-white/50 rounded-lg border border-gray-200/50">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                  <span className="text-sm font-medium text-gray-700">
-                    Ditemukan:
-                  </span>
-                  <span className="font-semibold text-blue-600">
-                    {totalData ?? 0}
-                  </span>
-                  <span className="text-gray-600">proses</span>
-                </div>
-              ) : null}
-
-              {/* Sedang Ditampilkan */}
-              <div className="flex items-center gap-2 px-3 py-2 bg-white/50 rounded-lg border border-gray-200/50">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-sm font-medium text-gray-700">
-                  Menampilkan:
-                </span>
-                <span className="font-semibold text-green-600">
-                  {flowInstanceData?.data.length ?? 0}
-                </span>
-                <span className="text-gray-600">proses</span>
-              </div>
-
-              {/* Indikator Filter Aktif */}
-              {Object.values(filter || {}).some(
-                (v) => v && v !== "all" && v !== "",
-              ) && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50/50 rounded-lg border border-blue-100/50">
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs font-medium text-blue-600">
-                      Filter Aktif
-                    </span>
-                  </div>
-                  <span className="text-xs text-blue-700">
-                    {
-                      Object.values(filter || {}).filter(
-                        (v) => v && v !== "all" && v !== "",
-                      ).length
-                    }
-                  </span>
-                </div>
-              )}
+        {/* METRIC STRIP SUMMARY */}
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-zinc-900/60 border border-zinc-800 rounded-lg text-xs font-mono">
+          <div className="flex items-center gap-4 text-zinc-400">
+            <div>
+              TOTAL:{" "}
+              <span className="text-zinc-100 font-semibold">
+                {totalData ?? 0}
+              </span>
             </div>
-
-            {/* Tombol Reset */}
-            <button
-              onClick={resetFilters}
-              className="ml-auto flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-red-600 transition-colors duration-200 rounded-lg hover:bg-white/70 border border-gray-300/50"
-            >
-              X Reset Filter
-            </button>
+            <span className="text-zinc-700">/</span>
+            <div>
+              RENDERED:{" "}
+              <span className="text-teal-400 font-semibold">
+                {flowInstanceData?.data.length ?? 0}
+              </span>
+            </div>
           </div>
-          {isLoadingInstance ? (
-            <div className="flex justify-center items-center py-20">
-              <span className="loading loading-spinner loading-lg"></span>
+
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="text-zinc-400 hover:text-red-400 transition-colors text-[11px] uppercase tracking-wider"
+          >
+            Clear Query Filters
+          </button>
+        </div>
+
+        {/* TABLE / CONTENT AREA */}
+        {isLoadingInstance ? (
+          <div className="flex justify-center items-center py-20">
+            <span className="text-xs font-mono text-zinc-500 animate-pulse">
+              MEMUAT DATA SISTEM...
+            </span>
+          </div>
+        ) : flowInstanceData?.data.length > 0 ? (
+          <>
+            {/* Mobile Card List */}
+            <div className="md:hidden space-y-3">
+              {flowInstanceData?.data.map((instance) => {
+                const statusLength =
+                  instance?.flowTemplate?.status?.length || 1;
+                const currentIndex = instance?.currentStatusIndex ?? 0;
+                const progress = Math.round(
+                  (currentIndex / statusLength) * 100,
+                );
+                const currentApprovers =
+                  instance?.flowTemplate?.status?.[currentIndex]?.authorized
+                    ?.map((user) => user?.username)
+                    ?.filter(Boolean)
+                    ?.join(" & ") || "No approvers assigned";
+
+                return (
+                  <div
+                    key={instance._id}
+                    onClick={() => {
+                      setSelectedInstance(instance);
+                      document.getElementById("modalprocessaction").showModal();
+                    }}
+                    className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-3 active:border-zinc-600 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-0.5">
+                        <span className="text-xs font-mono text-zinc-500">
+                          {instance?.globalIndex || "NO-REF"}
+                        </span>
+                        <p className="text-sm font-medium text-zinc-100 leading-snug">
+                          {instance.instanceTitle || "Untitled Request"}
+                        </p>
+                      </div>
+                      <span
+                        className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded font-semibold border ${
+                          instance?.overallStatus === "completed"
+                            ? "bg-teal-950/60 border-teal-800 text-teal-400"
+                            : instance?.overallStatus === "rejected"
+                              ? "bg-red-950/60 border-red-800 text-red-400"
+                              : "bg-zinc-800 border-zinc-700 text-zinc-300"
+                        }`}
+                      >
+                        {instance?.overallStatus}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs border-t border-zinc-800/80 pt-2.5">
+                      <div>
+                        <span className="text-zinc-500 text-[10px] block">
+                          Flow:
+                        </span>
+                        <span className="text-zinc-300 truncate block">
+                          {instance?.flowTemplate?.title || "-"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-zinc-500 text-[10px] block">
+                          Requester:
+                        </span>
+                        <span className="text-zinc-300 truncate block">
+                          {instance?.requestedBy?.displayName ||
+                            instance?.requestedBy?.username ||
+                            "Stranger"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progress Line */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[10px] font-mono text-zinc-500">
+                        <span>
+                          STEP {currentIndex}/{statusLength}
+                        </span>
+                        <span>{progress}%</span>
+                      </div>
+                      <div className="h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-teal-500"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="text-[11px] text-zinc-400 pt-1 flex items-center justify-between font-mono">
+                      <span className="text-zinc-500">CURRENT:</span>
+                      <span className="text-zinc-300 truncate max-w-[200px]">
+                        {instance.overallStatus === "completed"
+                          ? "Selesai"
+                          : currentApprovers}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          ) : flowInstanceData?.data.length > 0 ? (
-            <>
-              {/* tampilan mobile */}
-              <div className="md:hidden flex-wrap text-wrap ">
-                <div className="grid gap-4 md:hidden flex-wrap text-wrap">
+
+            {/* Desktop Clean Table */}
+            <div className="hidden md:block bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead className="bg-zinc-950 text-zinc-400 uppercase font-mono tracking-wider border-b border-zinc-800">
+                  <tr>
+                    <th className="py-3 px-4">Judul Request</th>
+                    <th className="py-3 px-4">Global Index</th>
+                    <th className="py-3 px-4">Jenis Flow</th>
+                    <th className="py-3 px-4">Pemohon</th>
+                    <th className="py-3 px-4">Tanggal</th>
+                    <th className="py-3 px-4 w-32">Progress</th>
+                    <th className="py-3 px-4">Status / Approver</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/60">
                   {flowInstanceData?.data.map((instance) => {
                     const statusLength =
                       instance?.flowTemplate?.status?.length || 1;
@@ -679,14 +743,9 @@ export default function ProcessPage() {
                     const progress = Math.round(
                       (currentIndex / statusLength) * 100,
                     );
-                    const currentApprovers =
-                      instance?.flowTemplate?.status?.[currentIndex]?.authorized
-                        ?.map((user) => user?.username)
-                        ?.filter(Boolean)
-                        ?.join(" & ") || "No approvers assigned";
 
                     return (
-                      <div
+                      <tr
                         key={instance._id}
                         onClick={() => {
                           setSelectedInstance(instance);
@@ -694,241 +753,77 @@ export default function ProcessPage() {
                             .getElementById("modalprocessaction")
                             .showModal();
                         }}
-                        className="bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-sm border border-gray-200/70 cursor-pointer transition-all duration-200 hover:shadow-md hover:border-blue-200/70 active:scale-[0.98]"
+                        className="hover:bg-zinc-800/40 transition-colors cursor-pointer"
                       >
-                        {/* Card Header */}
-                        <p className="w-[60%]">
-                          {instance.instanceTitle || "Untitled Request"}
-                        </p>
-                        <div className="flex flex-col sm:flex-row justify-between gap-2 mb-3">
-                          <div className="flex-shrink-0 ">
-                            <span
-                              className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${
-                                instance?.overallStatus === "completed"
-                                  ? "bg-emerald-50 text-emerald-700"
-                                  : instance?.overallStatus === "rejected"
-                                    ? "bg-rose-50 text-rose-700"
-                                    : "bg-blue-50 text-blue-700"
-                              }`}
-                            >
-                              {instance?.overallStatus}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Metadata Grid - Responsive */}
-                        <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 mb-4">
-                          <div className="space-y-0.5">
-                            <p className="text-xs text-gray-500 font-medium">
-                              Jenis Flow
-                            </p>
-                            <p className="text-sm text-gray-800 line-clamp-1">
-                              {instance?.flowTemplate?.title || "-"}
-                            </p>
-                          </div>
-                          <div className="space-y-0.5">
-                            <p className="text-xs text-gray-500 font-medium">
-                              Pemohon
-                            </p>
-                            <p className="text-sm text-gray-800 line-clamp-1">
-                              {instance?.requestedBy?.displayName ||
-                                instance?.requestedBy?.username ||
-                                "Stranger"}
-                            </p>
-                          </div>
-                          <div className="space-y-0.5">
-                            <p className="text-xs text-gray-500 font-medium">
-                              Tanggal
-                            </p>
-                            <p className="text-sm text-gray-800">
-                              {new Date(instance.createdAt).toLocaleDateString(
-                                "id-ID",
-                                {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                },
-                              )}
-                            </p>
-                          </div>
-                          <div className="space-y-0.5">
-                            <p className="text-xs text-gray-500 font-medium">
-                              Progress
-                            </p>
-                            <p className="text-sm text-gray-800">
-                              {currentIndex}/{statusLength} ({progress}%)
-                            </p>
-                          </div>
-                          {instance?.globalIndex && (
-                            <div className="space-y-0.5 xs:col-span-2">
-                              <p className="text-xs text-gray-500 font-medium">
-                                Global Index
-                              </p>
-                              <p className="text-sm text-gray-800">
-                                {instance?.globalIndex}
-                              </p>
-                            </div>
+                        <td className="py-3 px-4 font-medium text-zinc-200 max-w-[220px] truncate">
+                          {instance.instanceTitle || "Judul Tidak Terisi"}
+                        </td>
+                        <td className="py-3 px-4 font-mono text-zinc-400">
+                          {instance?.globalIndex || "-"}
+                        </td>
+                        <td className="py-3 px-4 text-zinc-300 max-w-[180px] truncate">
+                          {instance?.flowTemplate?.title || "-"}
+                        </td>
+                        <td className="py-3 px-4 text-zinc-300">
+                          {instance?.requestedBy?.displayName ||
+                            instance?.requestedBy?.username ||
+                            "Stranger"}
+                        </td>
+                        <td className="py-3 px-4 font-mono text-zinc-400">
+                          {new Date(instance.createdAt).toLocaleDateString(
+                            "id-ID",
                           )}
-                        </div>
-
-                        {/* Progress Bar */}
-                        {instance?.overallStatus !== "completed" && (
-                          <div className="mb-4">
-                            <div className="flex justify-between text-xs text-gray-500 mb-1">
-                              <span>Progress</span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-[10px] font-mono text-zinc-400">
+                              <span>
+                                {currentIndex}/{statusLength}
+                              </span>
                               <span>{progress}%</span>
                             </div>
-                            <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-gradient-to-r from-blue-400 to-blue-500 rounded-full transition-all duration-500"
+                                className="h-full bg-teal-500"
                                 style={{ width: `${progress}%` }}
-                              ></div>
+                              />
                             </div>
                           </div>
-                        )}
-
-                        {/* Current Approver */}
-                        <div className="flex items-start gap-3 pt-2 border-t border-gray-100/80">
-                          <div className="flex-shrink-0 mt-0.5">
-                            <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-3.5 w-3.5 text-blue-500"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                />
-                              </svg>
-                            </div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-gray-500 font-medium">
-                              Proses Saat Ini
-                            </p>
-                            <p className="text-sm text-gray-800 truncate">
-                              {instance.overallStatus === "completed"
-                                ? "Selesai"
-                                : currentApprovers || "Menunggu persetujuan"}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded font-semibold border ${
+                              instance?.overallStatus === "completed"
+                                ? "bg-teal-950/60 border-teal-800 text-teal-400"
+                                : instance?.overallStatus === "rejected"
+                                  ? "bg-red-950/60 border-red-800 text-red-400"
+                                  : "bg-zinc-800 border-zinc-700 text-zinc-300"
+                            }`}
+                          >
+                            {instance?.overallStatus}
+                          </span>
+                        </td>
+                      </tr>
                     );
                   })}
-                </div>
-              </div>
-              {/* tampilan web */}
-              <div className="overflow-x-auto backdrop max-md:hidden shadow-xl rounded-2xl p-6 border border-gray-100">
-                <table className="table w-full border-separate border-spacing-y-2">
-                  {/* Header Tabel yang Lebih Menarik */}
-                  <thead className="bg-transparent text-gray-700 uppercase tracking-wider text-sm rounded-t-lg">
-                    <tr>
-                      <th className="py-4 px-6 rounded-tl-xl">Judul Request</th>
-                      <th className="py-4 px-6 rounded-tl-xl">Global Index</th>
-                      <th className="py-4 px-6">Jenis Flow</th>
-                      <th className="py-4 px-6">Pemohon</th>
-                      <th className="py-4 px-6">Tanggal</th>
-                      <th className="py-4 px-6">Progress</th>
-                      <th className="py-4 px-6">Proses Saat Ini</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {flowInstanceData?.data.map((instance) => {
-                      const statusLength =
-                        instance?.flowTemplate?.status?.length || 1;
-                      const currentIndex = instance?.currentStatusIndex ?? 0;
-                      const progress = Math.round(
-                        (currentIndex / statusLength) * 100,
-                      );
-
-                      return (
-                        <tr
-                          key={instance._id}
-                          onClick={() => {
-                            setSelectedInstance(instance);
-                            document
-                              .getElementById("modalprocessaction")
-                              .showModal();
-                          }}
-                          data-tip="awd"
-                          className="bg-transparent hover:bg-gray-50 transition duration-150 ease-in-out cursor-pointer shadow-sm rounded-xl"
-                        >
-                          {/* Data Baris yang Rapi */}
-                          <td className="max-w-[200px] truncate py-4 px-6 font-medium text-gray-900 rounded-l-xl">
-                            {instance.instanceTitle ||
-                              "Judul Request Tidak Terisi"}
-                          </td>
-                          <td className="max-w-[200px] truncate py-4 px-6 font-medium text-gray-900 rounded-l-xl">
-                            {instance?.globalIndex}
-                          </td>
-                          <td className="text-gray-600 py-4 px-6">
-                            {instance?.flowTemplate?.title || "-"}
-                          </td>
-                          <td className="text-gray-600 py-4 px-6">
-                            {instance?.requestedBy?.displayName ||
-                              instance?.requestedBy?.username ||
-                              "Stranger"}
-                          </td>
-                          <td className="text-gray-600 py-4 px-6">
-                            {new Date(instance.createdAt).toLocaleDateString()}
-                          </td>
-
-                          {/* Visualisasi Progres yang Lebih Jelas */}
-                          <td className="w-[150px] py-4 px-4 text-center">
-                            {instance?.overallStatus !== "completed" && (
-                              <div className="text-xs text-gray-500 font-semibold mb-1">
-                                {currentIndex}/{statusLength}
-                                <progress
-                                  className="progress progress-primary w-full h-2 rounded-full mb-2"
-                                  value={progress}
-                                  max="100"
-                                ></progress>
-                              </div>
-                            )}
-
-                            <span
-                              className={`badge ${getStatusBadge(
-                                instance?.overallStatus,
-                              )} text-white font-bold text-xs px-3 py-1 rounded-full shadow-sm w-full`}
-                            >
-                              {instance?.overallStatus}
-                            </span>
-                          </td>
-
-                          <td className="text-xs text-gray-600 py-4 px-6">
-                            {instance.overallStatus === "completed"
-                              ? "Selesai"
-                              : instance?.flowTemplate?.status?.[
-                                  currentIndex
-                                ]?.authorized
-                                  ?.map((user) => user.username)
-                                  .join(" & ") || "-"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-20 bg-base-100 rounded-lg shadow">
-              <p className="text-xl font-semibold">Data Tidak Ditemukan</p>
-              <p className="text-base-content/60 mt-2">
-                Coba ubah kriteria filter Anda atau buat request baru.
-              </p>
+                </tbody>
+              </table>
             </div>
-          )}
-        </div>
-      </div>
-      <div className="fixed bottom-20 left-0 right-0 px-4">
-        <div className="flex justify-center gap-4">
+          </>
+        ) : (
+          <div className="text-center py-16 bg-zinc-900/40 border border-zinc-800/80 rounded-xl space-y-1">
+            <p className="text-sm font-semibold text-zinc-200">
+              Data Tidak Ditemukan
+            </p>
+            <p className="text-xs text-zinc-500">
+              Kueri pencarian atau filter saat ini tidak menghasilkan antrean
+              aktif.
+            </p>
+          </div>
+        )}
+
+        {/* PAGINATION BAR */}
+        <div className="flex justify-center items-center gap-3 pt-4">
           <button
             disabled={filter?.page === 1}
             onClick={() => {
@@ -937,42 +832,13 @@ export default function ProcessPage() {
                 page: prev.page > 1 ? prev.page - 1 : prev.page,
               }));
             }}
-            className={`relative overflow-hidden px-6 py-3 rounded-full font-medium text-sm transition-all duration-300 ${
-              filter?.page === 1
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
-            }`}
+            className="px-3.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            {filter?.page === 1 ? (
-              "Prev"
-            ) : (
-              <>
-                <span className="relative z-10 flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 19l-7-7 7-7"
-                    />
-                  </svg>
-                  Prev
-                </span>
-                <span className="absolute inset-0 bg-[length:200%_200%] animate-shine bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.3)_50%,transparent_75%)] opacity-0 hover:opacity-100 transition-opacity duration-500" />
-              </>
-            )}
+            Previous
           </button>
 
-          <div className="flex items-center justify-center px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-gray-200 shadow-sm">
-            <span className="font-medium text-gray-700">
-              Page {filter?.page} {totalPage ? `of ${totalPage}` : ""}
-            </span>
+          <div className="px-3 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs font-mono text-zinc-400">
+            Page {filter?.page} {totalPage ? `of ${totalPage}` : ""}
           </div>
 
           <button
@@ -983,44 +849,17 @@ export default function ProcessPage() {
                 page: prev.page < totalPage ? prev.page + 1 : prev.page,
               }));
             }}
-            className={`relative overflow-hidden px-6 py-3 rounded-full font-medium text-sm transition-all duration-300 ${
-              filter?.page >= totalPage
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-indigo-600 to-blue-500 text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
-            }`}
+            className="px-3.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            {filter?.page >= totalPage ? (
-              "Next"
-            ) : (
-              <>
-                <span className="relative z-10 flex items-center gap-2">
-                  Next
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </span>
-                <span className="absolute inset-0 bg-[length:200%_200%] animate-shine bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.3)_50%,transparent_75%)] opacity-0 hover:opacity-100 transition-opacity duration-500" />
-              </>
-            )}
+            Next
           </button>
         </div>
-      </div>
 
-      <ProcessActionOption
-        key={"modalprocessaction"}
-        selectedInstance={selectedInstance}
-      />
+        <ProcessActionOption
+          key={"modalprocessaction"}
+          selectedInstance={selectedInstance}
+        />
+      </div>
     </div>
   );
 }
